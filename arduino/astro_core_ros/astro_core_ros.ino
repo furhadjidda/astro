@@ -11,7 +11,7 @@
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
  *
- *   You should have received a copy of the GNU General Public License
+ *   You should have received a copy of the GNU General Public License v3.0
  *   along with astro_core_ros.  If not, see <https://www.gnu.org/licenses/>.
  *   Description: Main file of the program.
  *   Author: Furhad Jidda

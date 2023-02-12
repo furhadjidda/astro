@@ -1,22 +1,18 @@
 /*
- *  This program is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *   This file is part of astro_core_ros.
  *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
+ *   astro_core_ros is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
  *
- *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *   astro_core_ros is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
  *
- *  Description: Core configuration file for foxbot robot.
- *  Author: Matthieu Magnon
- *
- *  Serial communication is enabled with the following command:
- *  rosrun rosserial_python serial_node.py _port:=/dev/ttyACM0 _baud:=115200
+ *   You should have received a copy of the GNU General Public License v3.0
+ *   along with astro_core_ros.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #ifndef FOXBOT_CORE_CONFIG_H_
