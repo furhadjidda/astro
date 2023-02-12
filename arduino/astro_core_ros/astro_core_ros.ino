@@ -25,13 +25,15 @@ RosCommunication gComm;
 /* Set the delay between fresh samples */
 uint16_t DELAY_MS = 100;
 
-void setup() {
-  // put your setup code here, to run once:
-  gComm.InitNode();
+void setup() 
+{
+    // put your setup code here, to run once:
+    gComm.InitNode();
 }
 
-void loop() {
-  // put your main code here, to run repeatedly:
+void loop() 
+{
+    // put your main code here, to run repeatedly:
     gComm.PublishData();
     gComm.SpinOnce();
     delay(DELAY_MS);

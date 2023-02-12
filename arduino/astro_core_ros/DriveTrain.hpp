@@ -48,8 +48,8 @@ class DriveTrain{
 
        void GetOdomData(  nav_msgs::Odometry& aOdom )
        {
-         PublishOdom();
-         aOdom = mOdom;
+          PublishOdom();
+          aOdom = mOdom;
        }
 
       void CommandVelocityCallback( const geometry_msgs::Twist& aMsg );
@@ -138,22 +138,10 @@ class DriveTrain{
 
         // ROS Variables
         ros::NodeHandle mNodeHandle;    
-        //ros::Subscriber<geometry_msgs::Twist,DriveTrain> mTeleopSubscriber;    
-        
-        /* DEBUG */
-        geometry_msgs::Point mDebugLeft;
-        ros::Publisher mDebugLeftPub{"debug_left", &mDebugLeft};
-        geometry_msgs::Point mDebugRight;
-        ros::Publisher mDebugRightPub{"debug_right", &mDebugRight};
     
-        /* Odometry publisher */
+        // Odometry publisher
         nav_msgs::Odometry mOdom;
         ros::Publisher mOdomPublisher{"odom", &mOdom};
-
-        sensor_msgs::Imu mImuData;
-        ros::Publisher mImuPub{"imu",&mImuData};
-
-        //ImuProcessor mProcessor;
 };
 
 

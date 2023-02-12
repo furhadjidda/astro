@@ -14,14 +14,15 @@
  *   You should have received a copy of the GNU General Public License v3.0
  *   along with astro_core_ros.  If not, see <https://www.gnu.org/licenses/>.
  */
- 
+
 #ifndef  ENCODER_H
 #define ENCODER_H
 
 #include <Arduino.h>
 #include <Encoder.h>
 
-enum MotorInstance {
+enum MotorInstance 
+{
     MC_LEFT = 0,
     MC_RIGHT,
     MC_MAX         

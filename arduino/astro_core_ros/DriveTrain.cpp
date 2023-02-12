@@ -21,13 +21,14 @@
 
 
 template <typename type>
-type sign(type value) {
+type sign(type value) 
+{
     return type((value>0)-(value<0));
 }
 
 DriveTrain::DriveTrain
     (
-        ros::NodeHandle& nodeHandle
+    ros::NodeHandle& nodeHandle
     )
     : mNodeHandle( nodeHandle )
 {
@@ -35,18 +36,13 @@ DriveTrain::DriveTrain
 
 void DriveTrain::InitNode()
 {   
-    //mNodeHandle.subscribe(mTeleopSubscriber);
-
     mRightMotor = new MotorControl( mNodeHandle, MC_LEFT, encoder1, M1);
     mLeftMotor = new MotorControl( mNodeHandle, MC_RIGHT, encoder2, M2);
-    mNodeHandle.logwarn("Initializing");
     mRightMotor->InitMotorControl();
-    mLeftMotor->InitMotorControl();
-    
+    mLeftMotor->InitMotorControl();    
     mFreqRate.start((unsigned long) millis());
     mFreqOdometry.start((unsigned long) millis());
     mFreqController.start((unsigned long) millis());
-    //mProcessor.Init();
 }
 
 
@@ -207,11 +203,6 @@ void DriveTrain::PublishOdom()
     dx = cos(mYawEst) * mLinearVelocityEst * dt;
     dy = sin(mYawEst) * mLinearVelocityEst * dt;
 
-    // DEBUG
-    //mDebugLeft.y = mYawEst * 57.2958;
-    //mDebugLeft.z = mAngularVelocityEst * dt;
-    //mDebugLeftPub.publish(&mDebugLeft);
-
     // compute quaternion
     qw = cos(abs(mYawEst) / 2.0f);
     qx = 0.0f;
@@ -234,13 +225,6 @@ void DriveTrain::PublishOdom()
     mOdom.twist.twist.linear.y = 0.0f;
     mOdom.twist.twist.angular.z = mAngularVelocityEst; 
 
-}
-
-void DriveTrain::PublishImu()
-{
-    //mProcessor.GetIMUData( mImuData );    
-    mImuData.header.stamp = mNodeHandle.now();
-    mImuData.header.frame_id = "imu_link";   
 }
 
 void DriveTrain::RateControler
@@ -269,8 +253,6 @@ void DriveTrain::RateControler
 
     aPrevTime = millis();
     aPrevEpsilon = epsilon;
-
-    mDebugLeft.z = aIEpsilon * RATE_CONTROLLER_KI;
 
     aPwmRate = epsilon * RATE_CONTROLLER_KP
              + d_epsilon * RATE_CONTROLLER_KD

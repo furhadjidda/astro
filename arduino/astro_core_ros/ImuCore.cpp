@@ -17,20 +17,20 @@
 
 #include "ImuCore.hpp"
 
-static char *dtostrf (double val, signed char width, unsigned char prec, char *sout) 
+static char *dtostrf(double val, signed char width, unsigned char prec, char *sout)
 {
-  char fmt[20];
-  sprintf(fmt, "%%%d.%df", width, prec);
-  sprintf(sout, fmt, val);
-  return sout;
+    char fmt[20];
+    sprintf(fmt, "%%%d.%df", width, prec);
+    sprintf(sout, fmt, val);
+    return sout;
 }
 
 void ImuCore::Init()
 {
     // Node Handle Instance for logging
-    //mNodeHandle = aNh;
+    // mNodeHandle = aNh;
 
-    if (!mBno055.begin()) 
+    if (!mBno055.begin())
     {
       mNodeHandle.logerror("Failed to initialize IMU!");
       while (1);
@@ -40,23 +40,23 @@ void ImuCore::Init()
 
     /* Display the current temperature */
     int8_t temp = mBno055.getTemp();
-    char buf[64]={0};
-    char val[16]={0};
-    strcpy_P(buf, (const char*) F("Current Temperature = "));
+    char buf[64] = {0};
+    char val[16] = {0};
+    strcpy_P(buf, (const char *)F("Current Temperature = "));
     // Adding  temperature to val buffer
     dtostrf(temp, 8, 4, val);
     // Concatenating val to buf
     strcat(buf, val);
     // Concatenating " C" to buf
     strcat(buf, " C");
-    mNodeHandle.loginfo( buf );
+    mNodeHandle.loginfo(buf);
 
     mBno055.setExtCrystalUse(true);
 
     mNodeHandle.loginfo("Calibration status values: 0=Uncalibrated, 3=Fully Calibrated");
 }
 
-void ImuCore::GetIMUData( sensor_msgs::Imu& aImuData )
+void ImuCore::GetIMUData(sensor_msgs::Imu &aImuData)
 {
     sensors_event_t orientationData;
     sensors_event_t angVelocityData;
@@ -83,21 +83,20 @@ void ImuCore::GetIMUData( sensor_msgs::Imu& aImuData )
     aImuData.orientation.z = quat.z();
     aImuData.orientation.w = quat.w();
 
-
     aImuData.linear_acceleration.x = linearAccelData.acceleration.x;
     aImuData.linear_acceleration.y = linearAccelData.acceleration.y;
     aImuData.linear_acceleration.z = linearAccelData.acceleration.z;
-    
-    aImuData.angular_velocity.x = angVelocityData.gyro.x; 
-    aImuData.angular_velocity.y = angVelocityData.gyro.y; 
+
+    aImuData.angular_velocity.x = angVelocityData.gyro.x;
+    aImuData.angular_velocity.y = angVelocityData.gyro.y;
     aImuData.angular_velocity.z = angVelocityData.gyro.z;
 
     uint8_t system, gyro, accel, mag = 0;
     mBno055.getCalibration(&system, &gyro, &accel, &mag);
     String calibrationMessage("CALIBRATION:");
-    calibrationMessage.concat(" Sys = " + String(system) + 
-                              " Gyro = " + String(gyro) + 
+    calibrationMessage.concat(" Sys = " + String(system) +
+                              " Gyro = " + String(gyro) +
                               " Accel = " + String(accel) +
-                              " Mag = " + String(mag) );
-    mNodeHandle.loginfo( calibrationMessage.c_str() );
+                              " Mag = " + String(mag));
+    mNodeHandle.loginfo(calibrationMessage.c_str());
 }

@@ -18,8 +18,8 @@
 #ifndef IMUCORE_HPP
 #define IMUCORE_HPP
 
-//#define ROSSERIAL_ARDUINO_WIFI_MKR1010
-//#define ARDUINO_MKR_WIFI
+// #define ROSSERIAL_ARDUINO_WIFI_MKR1010
+// #define ARDUINO_MKR_WIFI
 
 #include <ros.h>
 #include <sensor_msgs/Imu.h>
@@ -28,25 +28,26 @@
 #include <Adafruit_BNO055.h>
 #include <utility/imumaths.h>
 
-class ImuCore{
-    public:
-        ImuCore(ros::NodeHandle& aNh):mNodeHandle(aNh)
-        {}
-        virtual ~ImuCore(){}
-        void Init();
+class ImuCore
+{
+public:
+    ImuCore(ros::NodeHandle &aNh) : mNodeHandle(aNh)
+    {
+    }
+    virtual ~ImuCore() {}
+    void Init();
 
-        void GetIMUData( sensor_msgs::Imu& aImuData );
+    void GetIMUData(sensor_msgs::Imu &aImuData);
 
-    private:
-        ros::NodeHandle& mNodeHandle;
-        geometry_msgs::Quaternion  mQuaternion;        // [w, x, y, z]         quaternion container
-        float mAccel[3];             // [x, y, z]            accel sensor measurements
-        //VectorFloat mGravity;           // [x, y, z]            gravity vector
-        float mEuler[3];                 // [psi, theta, phi]    Euler angle container
-        float mYpr[3];                   // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
-        int32_t mGyro[3];                  //Angular velocity
-        Adafruit_BNO055 mBno055{Adafruit_BNO055(55, 0x28)};
-    
+private:
+    ros::NodeHandle &mNodeHandle;
+    geometry_msgs::Quaternion mQuaternion; // [w, x, y, z]         quaternion container
+    float mAccel[3];                       // [x, y, z]            accel sensor measurements
+    // VectorFloat mGravity;           // [x, y, z]            gravity vector
+    float mEuler[3];  // [psi, theta, phi]    Euler angle container
+    float mYpr[3];    // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
+    int32_t mGyro[3]; // Angular velocity
+    Adafruit_BNO055 mBno055{Adafruit_BNO055(55, 0x28)};
 };
 
 #endif // IMUCORE_HPP

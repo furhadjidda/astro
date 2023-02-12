@@ -47,29 +47,32 @@ public:
         mNodeHandle.spinOnce();
     }
 
-    void CommandVelocityCallback(const geometry_msgs::Twist& aMsg) 
+    void CommandVelocityCallback(const geometry_msgs::Twist &aMsg)
     {
-        mDriveTrain.CommandVelocityCallback( aMsg );
+        mDriveTrain.CommandVelocityCallback(aMsg);
     }
 
 private:
+    void InitMotorCarrier();
+
     ros::NodeHandle mNodeHandle;
     VL53L0X mSensor_vl53l0x;
-    ImuCore mSensorImu{ mNodeHandle };;
-  
-    DriveTrain mDriveTrain{ mNodeHandle };
-    /* Odometry publisher */
+    ImuCore mSensorImu{mNodeHandle};
+    DriveTrain mDriveTrain{mNodeHandle};
+
+    // Odometry publisher
     nav_msgs::Odometry mOdom;
     ros::Publisher mOdomPublisher{"odom", &mOdom};
 
+    // Imu publisher
     sensor_msgs::Imu mImuData;
-    ros::Publisher mImuPub{"imu",&mImuData};
+    ros::Publisher mImuPub{"imu", &mImuData};
 
-    ros::Subscriber<geometry_msgs::Twist,RosCommunication> mTeleopSubscriber; 
-
-    void InitMotorCarrier();
-
+    // Ranger publisher
     sensor_msgs::Range mRangeData;
-    ros::Publisher mRangePub{"irange",&mRangeData};
+    ros::Publisher mRangePub{"irange", &mRangeData};
+
+    // Teleop subscriber
+    ros::Subscriber<geometry_msgs::Twist, RosCommunication> mTeleopSubscriber;
 };
-#endif // BALLCHASER_COMMUNICATION_HPP_
+#endif

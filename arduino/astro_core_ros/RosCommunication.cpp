@@ -17,12 +17,11 @@
 
 #include "RosCommunication.hpp"
 
-
 RosCommunication::RosCommunication()
-  : mTeleopSubscriber( "cmd_vel", &RosCommunication::CommandVelocityCallback, this )
+    : mTeleopSubscriber("cmd_vel", &RosCommunication::CommandVelocityCallback, this)
 {
-
 }
+
 void RosCommunication::InitNode()
 {
     mNodeHandle.getHardware()->setBaud(115200);
@@ -35,25 +34,25 @@ void RosCommunication::InitNode()
     InitMotorCarrier();
     delay(500);
     mDriveTrain.InitNode();
-    mSensor_vl53l0x.Init( mNodeHandle );
+    mSensor_vl53l0x.Init(mNodeHandle);
     mSensorImu.Init();
 }
 
 void RosCommunication::PublishData()
 {
     mDriveTrain.UpdateOdometry();
-    mDriveTrain.GetOdomData( mOdom );
+    mDriveTrain.GetOdomData(mOdom);
     mOdom.header.stamp = mNodeHandle.now();
     mOdom.header.frame_id = "odom";
     mOdom.child_frame_id = "base_link";
     mOdomPublisher.publish(&mOdom);
 
-    mSensorImu.GetIMUData( mImuData );
+    mSensorImu.GetIMUData(mImuData);
     mImuData.header.stamp = mNodeHandle.now();
-    mImuData.header.frame_id = "imu_link"; 
+    mImuData.header.frame_id = "imu_link";
     mImuPub.publish(&mImuData);
 
-    mSensor_vl53l0x.GetRangeData( mRangeData );    
+    mSensor_vl53l0x.GetRangeData(mRangeData);
     mRangeData.header.stamp = mNodeHandle.now();
     mRangePub.publish(&mRangeData);
     controller.ping();
@@ -61,29 +60,29 @@ void RosCommunication::PublishData()
 
 void RosCommunication::InitMotorCarrier()
 {
-    if (controller.begin()) 
+    if (controller.begin())
     {
         String message = "Motor Carrier connected, firmware version : " + controller.getFWVersion();
-        //mNodeHandle.loginfo( message.c_str() );
     }
-    else 
+    else
     {
         mNodeHandle.logerror("Couldn't connect! Is the red LED blinking? You may need to update the firmware with FWUpdater sketch");
-        while (1);
+        while (1)
+            ;
     }
 
-  // Reboot the motor controller; brings every value back to default
-  mNodeHandle.loginfo("reboot");
-  controller.reboot();
-  delay(500);
+    // Reboot the motor controller; brings every value back to default
+    mNodeHandle.loginfo("reboot");
+    controller.reboot();
+    delay(500);
 
-  // Reset the encoder internal counter to zero (can be set to any initial value)
-  mNodeHandle.loginfo("reset counters");
-  encoder1.resetCounter(0);
-  encoder2.resetCounter(0); 
-  
-  //Take the battery status
-  float batteryVoltage = (float)battery.getConverted();
-  String message = "Battery voltage: " + String(batteryVoltage) + "V";
-  mNodeHandle.loginfo( message.c_str() );
+    // Reset the encoder internal counter to zero (can be set to any initial value)
+    mNodeHandle.loginfo("reset counters");
+    encoder1.resetCounter(0);
+    encoder2.resetCounter(0);
+
+    // Take the battery status
+    float batteryVoltage = (float)battery.getConverted();
+    String message = "Battery voltage: " + String(batteryVoltage) + "V";
+    mNodeHandle.loginfo(message.c_str());
 }
