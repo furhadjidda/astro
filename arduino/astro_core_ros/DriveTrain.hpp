@@ -137,7 +137,7 @@ class DriveTrain{
         unsigned long mOdomPrevTime;
 
         // ROS Variables
-        ros::NodeHandle mNodeHandle;    
+        ros::NodeHandle& mNodeHandle;    
     
         // Odometry publisher
         nav_msgs::Odometry mOdom;

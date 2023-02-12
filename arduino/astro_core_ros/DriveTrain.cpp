@@ -64,8 +64,6 @@ void DriveTrain::UpdateOdometry()
     // Refer : http://www.cs.columbia.edu/~allen/F17/NOTES/icckinematics.pdf
     if( mFreqRate.delay( millis() ) ) 
     {
-        //digitalWrite(RT_PIN0, HIGH);
-    
         float dt;
     
         // MOTOR RIGHT
@@ -98,9 +96,6 @@ void DriveTrain::UpdateOdometry()
             mMotorRight_RateEst = 0.0f;
         }
     
-        //mRightMotor->SetMotorCheckDirectionVal( 1 );
-        //mRightMotor->SetMotorDirectionVal( 0 );
-    
         // MOTOR LEFT
         // direction
         mMotorLeft_DirMedianFilter.in( mLeftMotor->GetMotorDirectionVal() );
@@ -127,16 +122,10 @@ void DriveTrain::UpdateOdometry()
         {
             mMotorLeft_RateEst = 0.0f;
         }
-
-        //mLeftMotor->SetMotorCheckDirectionVal( 1 );
-        //mLeftMotor->SetMotorDirectionVal( 0 );
-    
-        //digitalWrite(RT_PIN0, LOW);
     }
 
     if( mFreqController.delay( millis() ) ) 
     {
-        //digitalWrite(RT_PIN1, HIGH);
         // MOTOR RIGHT
         RateControler
             (
@@ -164,9 +153,8 @@ void DriveTrain::UpdateOdometry()
         mMotorLeftPwm = mMotorLeftPwm + mMotorLeft_PwmRate;
         mMotorLeftPwm = constrain(mMotorLeftPwm, 0, PWM_MAX);
 
-
-        mLeftMotor->SetMotorRateAndDirection( mMotorLeftPwm, mMotorLeft_RateRef );
         mRightMotor->SetMotorRateAndDirection( mMotorRightPwm, mMotorRight_RateRef );
+        mLeftMotor->SetMotorRateAndDirection( mMotorLeftPwm, mMotorLeft_RateRef );
     }
 }
 

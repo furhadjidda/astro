@@ -52,6 +52,6 @@ private:
   mc::DCMotor mMotor;
   mc::Encoder mEncoder;
   MotorInstance mInstance;
-  ros::NodeHandle mNh;
+  ros::NodeHandle& mNh;
 };
 #endif
