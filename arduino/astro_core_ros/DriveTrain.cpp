@@ -36,8 +36,8 @@ DriveTrain::DriveTrain
 
 void DriveTrain::InitNode()
 {   
-    mRightMotor = new MotorControl( mNodeHandle, MC_LEFT, encoder1, M1);
-    mLeftMotor = new MotorControl( mNodeHandle, MC_RIGHT, encoder2, M2);
+    mRightMotor = new MotorControl( mNodeHandle, MC_RIGHT, encoder1, M1);
+    mLeftMotor = new MotorControl( mNodeHandle, MC_LEFT, encoder2, M2);
     mRightMotor->InitMotorControl();
     mLeftMotor->InitMotorControl();    
     mFreqRate.start((unsigned long) millis());
@@ -52,10 +52,10 @@ void DriveTrain::CommandVelocityCallback(const geometry_msgs::Twist& aMsg)
     mAngularVelocityRef = aMsg.angular.z;
     // MIXER
     mMotorRight_RateRef 
-        = (mLinearVelocityRef + BASE_LENGTH / 2.f * mAngularVelocityRef) / (WHEEL_RADIUS);
+        = (mLinearVelocityRef - BASE_LENGTH / 2.f * mAngularVelocityRef) / (WHEEL_RADIUS);
 
     mMotorLeft_RateRef 
-        = (mLinearVelocityRef - BASE_LENGTH / 2.f * mAngularVelocityRef) / (WHEEL_RADIUS);
+        = (mLinearVelocityRef + BASE_LENGTH / 2.f * mAngularVelocityRef) / (WHEEL_RADIUS);
 }
 
 
