@@ -1,0 +1,41 @@
+<launch>
+    <!--param name="robot_description" textfile="$(find astro_description)/urdf/turtlebot3_waffle_pi.urdf.xacro"/-->
+    <arg name="urdf_file" default="$(find xacro)/xacro --inorder '$(find astro_description)/urdf/turtlebot3_waffle_pi.urdf.xacro'" />
+    <param name="robot_description" command="$(arg urdf_file)" />
+
+    <!-- http://wiki.ros.org/rosserial -->
+    <node pkg="rosserial_python" type="serial_node.py" name="astro_core">
+        <param name="port" value="/dev/ttyArduinoProgram"/>
+        <param name="baud" value="115200"/>
+    </node>
+
+        <!-- http://wiki.ros.org/rosserial -->
+    <!-- <node pkg="rosserial_python" type="serial_node.py" name="astro_core_sensors">
+        <param name="port" value="/dev/ttySensorNode"/>
+        <param name="baud" value="115200"/>
+    </node> -->
+
+    <node pkg="odometry_transform_broadcaster" type="broadcast"  name="broadcast" output="screen" />
+
+    <!-- http://wiki.ros.org/robot_state_publisher -->
+    <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" >
+        <param name="publish_frequency" value="10"/>
+        <param name="rate" value="50" />
+    </node>
+
+    <!-- http://wiki.ros.org/joint_state_publisher -->
+    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+        <param name="use_gui" value="false"/>
+    </node>
+    <!-- http://wiki.ros.org/tf#static_transform_publisher -->
+    <!--
+        static_transform_publisher x y z yaw pitch roll frame_id child_frame_id period_in_ms
+        Publish a static coordinate transform to tf using an x/y/z offset in meters and yaw/pitch/roll in radians.
+        (yaw is rotation about Z, pitch is rotation about Y, and roll is rotation about X).
+        The period, in milliseconds, specifies how often to send a transform. 100ms (10hz) is a good value.
+    -->
+    <node pkg="tf" type="static_transform_publisher" name="base_to_camera_broadcaster" args="0 0 0 0 0 0 base_link astro_usb_cam 100"/>
+    <node pkg="tf" type="static_transform_publisher" name="basefootprint_to_baselink_broadcaster" args="0 0 0 0 0 0 base_link base_footprint 100"/>
+    <node pkg="tf" type="static_transform_publisher" name="d455_to_baselink_broadcaster" args="0.015 -0.07 0.095 0 0 0 base_link d455_link 100"/>
+    <node pkg="odometry_transform_broadcaster" type="broadcast"  name="broadcast_imu" output="screen" />
+</launch>

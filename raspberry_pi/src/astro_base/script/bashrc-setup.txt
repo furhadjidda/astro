@@ -1,0 +1,27 @@
+echo "Do you want to export ROS variables ?"
+echo "1. Raspberry Pi-4 = 10.0.0.56"
+echo "2. Jetson Nano = 192.168.1.114"
+echo "3. Adeept Pi4 = 10.0.0.23"
+read choice
+
+if [ "$choice" == "1" ]
+then
+    export ROS_MASTER_URI=http://10.0.0.56:11311
+elif [ "$choice" == "2" ]
+then
+    export ROS_MASTER_URI=http://192.168.1.114:11311
+elif [ "$choice" == "3" ]
+then
+    export ROS_MASTER_URI=http://10.0.0.23:11311
+else
+    echo ">> Nothing set for ROS << "
+fi
+
+machine_ip=$(ifconfig | sed -En 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p')
+
+export ROS_HOSTNAME=$machine_ip
+export ROS_IP=$machine_ip
+echo "ROS_MASTER_URI = " $ROS_MASTER_URI
+echo "ROS_HOSTNAME = "$ROS_HOSTNAME
+echo "ROS_IP = "$ROS_IP
+

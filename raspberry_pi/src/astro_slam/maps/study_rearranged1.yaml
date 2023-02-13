@@ -1,0 +1,7 @@
+image: /projects/Pi_Rover_Ros/src/astro_slam/maps/study_rearranged1.pgm
+resolution: 0.040000
+origin: [-5.000000, -5.000000, 0.000000]
+negate: 0
+occupied_thresh: 0.65
+free_thresh: 0.196
+
