@@ -158,22 +158,7 @@ void DriveTrain::UpdateOdometry()
     }
 }
 
-
-void DriveTrain::UpdateOdometry2()
-{
-
-}
-
-
-
-void DriveTrain::PublishOdom2()
-{
-
-}
-
-
-
-void DriveTrain::PublishOdom()
+void DriveTrain::GetOdomData(nav_msgs::Odometry &aOdom)
 {
     float dt, dx, dy;
     float qw, qx, qy, qz;
@@ -211,7 +196,9 @@ void DriveTrain::PublishOdom()
     // Velocity expressed in base_link frame
     mOdom.twist.twist.linear.x = mLinearVelocityEst;
     mOdom.twist.twist.linear.y = 0.0f;
-    mOdom.twist.twist.angular.z = mAngularVelocityEst; 
+    mOdom.twist.twist.angular.z = mAngularVelocityEst;
+
+    aOdom = mOdom;
 
 }
 

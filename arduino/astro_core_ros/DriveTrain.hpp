@@ -41,16 +41,10 @@ class DriveTrain{
         }
 
         void UpdateOdometry();
-
-        void UpdateOdometry2();
         
         void InitNode();
 
-       void GetOdomData(  nav_msgs::Odometry& aOdom )
-       {
-          PublishOdom();
-          aOdom = mOdom;
-       }
+       void GetOdomData(  nav_msgs::Odometry& aOdom );
 
       void CommandVelocityCallback( const geometry_msgs::Twist& aMsg );
 
@@ -71,10 +65,6 @@ class DriveTrain{
             const float aVal,
             const int aSize
             );
-
-        void PublishOdom();
-        void PublishOdom2();
-        void PublishImu();
 
         /* Define frequency loops */
         Timer mFreqRate{FREQUENCY_RATE};
