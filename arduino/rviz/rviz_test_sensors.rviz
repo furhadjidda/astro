@@ -10,7 +10,6 @@ Panels:
         - /Range1
         - /Range1/Status1
         - /Imu1
-        - /Imu1/Status1
         - /PoseWithCovariance1
         - /Imu2
         - /Imu2/Status1
@@ -175,7 +174,7 @@ Visualization Manager:
   Global Options:
     Background Color: 48; 48; 48
     Default Light: true
-    Fixed Frame: imu_link
+    Fixed Frame: odom
     Frame Rate: 30
   Name: root
   Tools:
@@ -199,7 +198,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 0.6116620302200317
+      Distance: 3.7497286796569824
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1

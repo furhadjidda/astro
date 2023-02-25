@@ -35,14 +35,14 @@ if os.name == 'nt':
 else:
   import tty, termios
 
-BURGER_MAX_LIN_VEL = 0.22
-BURGER_MAX_ANG_VEL = 2.84
+BURGER_MAX_LIN_VEL = 1.0
+BURGER_MAX_ANG_VEL = 2.0
 
 WAFFLE_MAX_LIN_VEL = 1.2
 WAFFLE_MAX_ANG_VEL = 1.82
 
-LIN_VEL_STEP_SIZE = 0.06
-ANG_VEL_STEP_SIZE = 0.1
+LIN_VEL_STEP_SIZE = 0.25
+ANG_VEL_STEP_SIZE = 0.25
 
 msg = """
 Control Your Astro!
@@ -131,7 +131,7 @@ if __name__=="__main__":
     rospy.init_node('astro_teleop')
     pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
 
-    turtlebot3_model = "waffle_pi"
+    turtlebot3_model = "burger"
 
     status = 0
     target_linear_vel   = 0.0

@@ -23,7 +23,7 @@
 
 RosCommunication gComm;
 /* Set the delay between fresh samples */
-uint16_t DELAY_MS = 100;
+uint16_t DELAY_MS = 200;
 
 void setup() 
 {

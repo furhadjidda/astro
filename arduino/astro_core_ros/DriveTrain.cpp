@@ -50,6 +50,15 @@ void DriveTrain::CommandVelocityCallback(const geometry_msgs::Twist& aMsg)
 {
     mLinearVelocityRef  = aMsg.linear.x;
     mAngularVelocityRef = aMsg.angular.z;
+    // Vr = (2V + Wb * W) / 2R
+    // Vl = (2V - Wb * W) / 2R
+    // Vr is the right wheel speed
+    // Vl is the left wheel speed
+    // V is the linear velocity of the robot
+    // W is the angular velocity (in radians per second) of the robot
+    // R is the radius of the turning circle (equal to V / W)
+    // Wb is the wheelbase length
+
     // MIXER
     mMotorRight_RateRef 
         = (mLinearVelocityRef - BASE_LENGTH / 2.f * mAngularVelocityRef) / (WHEEL_RADIUS);
@@ -68,7 +77,7 @@ void DriveTrain::UpdateOdometry()
     
         // MOTOR RIGHT
         // direction
-        // Pass it through median filter to remove noise
+        // Pass it through median filter to remove noise  
         mMotorRight_DirMedianFilter.in( mRightMotor->GetMotorDirectionVal() );
         mMotorRight_FilteredDirection = mMotorRight_DirMedianFilter.out();
     
@@ -90,12 +99,17 @@ void DriveTrain::UpdateOdometry()
 
         // Clear encoder increments
         mRightMotor->SetMotorIncValue( 0 );
+        
+        String messageR = "mMotorRight_RateEst Right = " + String(mMotorRight_RateEst);
+        mNodeHandle.logdebug(messageR.c_str());
+        
     
         if ( abs(mMotorRight_RateEst) < 0.1f )
         {
             mMotorRight_RateEst = 0.0f;
         }
     
+        mRightMotor->SetMotorDirectionVal( 0 );
         // MOTOR LEFT
         // direction
         mMotorLeft_DirMedianFilter.in( mLeftMotor->GetMotorDirectionVal() );
@@ -117,11 +131,15 @@ void DriveTrain::UpdateOdometry()
         mMotorLeft_RateEst
             = (float)mMotorLeft_FilteredDirection * mMotorLeft_FilteredIncrementPerSecond * RATE_CONV;
         mLeftMotor->SetMotorIncValue( 0 );
+        
+        String messageL = "mMotorLeft_RateEst Right = " + String(mMotorLeft_RateEst);
+        mNodeHandle.logdebug(messageL.c_str());
     
         if (abs(mMotorLeft_RateEst) < 0.1f)
         {
             mMotorLeft_RateEst = 0.0f;
         }
+        mLeftMotor->SetMotorDirectionVal( 0 );
     }
 
     if( mFreqController.delay( millis() ) ) 
@@ -139,6 +157,8 @@ void DriveTrain::UpdateOdometry()
 
         mMotorRightPwm = mMotorRightPwm + mMotorRight_PwmRate;
         mMotorRightPwm = constrain(mMotorRightPwm, 0, PWM_MAX);
+        String messageR = "Pwm Right = " + String(mMotorRightPwm);
+        mNodeHandle.logdebug(messageR.c_str());
 
         // MOTOR LEFT
         RateControler
@@ -152,9 +172,13 @@ void DriveTrain::UpdateOdometry()
             );
         mMotorLeftPwm = mMotorLeftPwm + mMotorLeft_PwmRate;
         mMotorLeftPwm = constrain(mMotorLeftPwm, 0, PWM_MAX);
-
-        mRightMotor->SetMotorRateAndDirection( mMotorRightPwm, mMotorRight_RateRef );
-        mLeftMotor->SetMotorRateAndDirection( mMotorLeftPwm, mMotorLeft_RateRef );
+        String messageL = "Pwm Left = " + String(mMotorRightPwm);
+        mNodeHandle.logdebug(messageL.c_str());
+               
+        double leftDutyCycle = (mLinearVelocityRef + 0.5 * mAngularVelocityRef) * 100 ;
+        double rightDutyCycle = (mLinearVelocityRef - 0.5 * mAngularVelocityRef)* 100;
+        mLeftMotor->SetDutyCycle(leftDutyCycle);
+        mRightMotor->SetDutyCycle(rightDutyCycle);
     }
 }
 
@@ -212,8 +236,9 @@ void DriveTrain::RateControler
     float & aIEpsilon
     )
 {
+    double deltaTime = (double)(millis() - aPrevTime);
     float epsilon = abs(aRateRef) - abs(aRateEst);
-    float d_epsilon = (epsilon - aPrevEpsilon) / (aPrevTime - millis());
+    float d_epsilon = (epsilon - aPrevEpsilon) / deltaTime;
 
     // reset and clamp integral (todo : add anti windup)
     if (aRateRef == 0.0) 
@@ -222,16 +247,17 @@ void DriveTrain::RateControler
     } 
     else 
     {
-        aIEpsilon += epsilon * (aPrevTime - millis()) * RATE_CONTROLLER_KI;
+        aIEpsilon += epsilon * deltaTime;
     }
     aIEpsilon = constrain(aIEpsilon, -RATE_INTEGRAL_FREEZE, RATE_INTEGRAL_FREEZE);
 
     aPrevTime = millis();
     aPrevEpsilon = epsilon;
 
-    aPwmRate = epsilon * RATE_CONTROLLER_KP
-             + d_epsilon * RATE_CONTROLLER_KD
-             + aIEpsilon * RATE_CONTROLLER_KI;
+    aPwmRate = ( epsilon * RATE_CONTROLLER_KP ) + ( d_epsilon * RATE_CONTROLLER_KD ) + ( aIEpsilon * RATE_CONTROLLER_KI );
+    
+    String messepsilon = "epsilon = " + String(epsilon) + " d_epsilon = " + String(d_epsilon) + " aIEpsilon = " + String(aIEpsilon) + " deltaTime = " + String(deltaTime);
+    mNodeHandle.logdebug(messepsilon.c_str());
 
     // saturate output
     aPwmRate = constrain(aPwmRate, RATE_CONTROLLER_MIN_PWM, RATE_CONTROLLER_MAX_PWM);

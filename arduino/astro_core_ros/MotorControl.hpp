@@ -42,10 +42,9 @@ public:
 
   void InitMotorControl();
 
-  void SetMotorRateAndDirection
+  void SetDutyCycle
     (
-    int aPwmRef,
-    const float aRateRef
+    int aVal
     );
 
 private:

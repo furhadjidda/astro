@@ -69,7 +69,6 @@ class DriveTrain{
         /* Define frequency loops */
         Timer mFreqRate{FREQUENCY_RATE};
         Timer mFreqOdometry{FREQUENCY_ODOMETRY};
-        Timer mFreqRosSpinOnce{FREQUENCY_ROSPINONCE};
         Timer mFreqController{FREQUENCY_CONTROLLER};
 
 

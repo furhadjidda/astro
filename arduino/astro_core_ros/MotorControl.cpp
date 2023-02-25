@@ -1,3 +1,4 @@
+#include "api/Common.h"
 /*
  *   This file is part of astro_core_ros.
  *
@@ -41,27 +42,15 @@ void MotorControl::InitMotorControl()
     mMotor.setDuty(0);
 }
 
-void MotorControl::SetMotorRateAndDirection
+void MotorControl::SetDutyCycle
     (
-    int aPwmRef,         // Controls the speed
-    const float aRateRef // Controls the direction
+    int aVal // Controls the speed
     )
 {
-    // avoid noisy pwm range
-    if (abs(aRateRef) < 0.1)
-      aPwmRef = 0;
-
     int duty = 50;
-    duty = duty * aRateRef;
-    if (duty > 100)
-    {
-      duty = 100;
-    }
-    if (duty < -100)
-    {
-      duty = -100;
-    }
-    String message = "Setting aRateRef = " + String(aRateRef) + " aPwmRef = " + String(aPwmRef) + " Duty =" + String(duty) + " for motor " + String(mMotor.getInstanceId()) + " encoder = " + String(mEncoder.getInstance());
+    duty = aVal;
+    duty = constrain(duty, -95, 95);
+    String message = "Setting Duty Cycle = " + String(duty) + " Original Duty =" + String(aVal) + " for motor " + String(mMotor.getInstanceId()) + " encoder = " + String(mEncoder.getInstance());
     mNh.loginfo(message.c_str());
     mMotor.setDuty(duty);
 }

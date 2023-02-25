@@ -42,6 +42,11 @@ class Encoder{
         virtual ~Encoder()
         {
         }
+
+        void SetMotorDirectionVal( int aVal )
+        {
+            mMotorDirection = aVal;
+        }
         
         int GetMotorDirectionVal()
         {
@@ -67,6 +72,8 @@ class Encoder{
 
     private:
         mc::Encoder mEncoderObj;
+        int mMotorDirection;
+        int mMotorCheckDirection;
 };  
 
 
