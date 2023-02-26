@@ -1,6 +1,6 @@
 <launch>
     <!--param name="robot_description" textfile="$(find astro_description)/urdf/turtlebot3_waffle_pi.urdf.xacro"/-->
-    <arg name="urdf_file" default="$(find xacro)/xacro --inorder '$(find astro_description)/urdf/turtlebot3_waffle_pi.urdf.xacro'" />
+    <arg name="urdf_file" default="$(find xacro)/xacro --inorder '$(find astro_description)/urdf/turtlebot3_burger_pi.urdf.xacro'" />
     <param name="robot_description" command="$(arg urdf_file)" />
 
     <!-- http://wiki.ros.org/rosserial -->
