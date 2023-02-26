@@ -61,10 +61,10 @@ void DriveTrain::CommandVelocityCallback(const geometry_msgs::Twist& aMsg)
 
     // MIXER
     mMotorRight_RateRef 
-        = (mLinearVelocityRef - BASE_LENGTH / 2.f * mAngularVelocityRef) / (WHEEL_RADIUS);
+        = (mLinearVelocityRef + BASE_LENGTH / 2.f * mAngularVelocityRef) / (WHEEL_RADIUS);
 
     mMotorLeft_RateRef 
-        = (mLinearVelocityRef + BASE_LENGTH / 2.f * mAngularVelocityRef) / (WHEEL_RADIUS);
+        = (mLinearVelocityRef - BASE_LENGTH / 2.f * mAngularVelocityRef) / (WHEEL_RADIUS);
 }
 
 
@@ -175,8 +175,8 @@ void DriveTrain::UpdateOdometry()
         String messageL = "Pwm Left = " + String(mMotorRightPwm);
         mNodeHandle.logdebug(messageL.c_str());
                
-        double leftDutyCycle = (mLinearVelocityRef + 0.5 * mAngularVelocityRef) * 100 ;
-        double rightDutyCycle = (mLinearVelocityRef - 0.5 * mAngularVelocityRef)* 100;
+        double leftDutyCycle = (mLinearVelocityRef - 0.5 * mAngularVelocityRef) * 100 ;
+        double rightDutyCycle = (mLinearVelocityRef + 0.5 * mAngularVelocityRef)* 100;
         mLeftMotor->SetDutyCycle(leftDutyCycle);
         mRightMotor->SetDutyCycle(rightDutyCycle);
     }
