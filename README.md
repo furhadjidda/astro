@@ -5,7 +5,7 @@
 ###  Version of ROS used : ROS Noetic
 ###  Raspberry pi OS : buster
 
-This project was started to create a turtlebot burger based ROS robot.
+This project was started to create a turtlebot burger based ROS robot. I did not just went and buy the whole kit for turtle bot because of the things that interested me is using arduino and motors and recreate odometry algorithms,even if it is very basic. The kit does not fully allows me to do that. Not to my knowledge anyway.
 Below are my goals with the project
 * Learn more about odometry in ROS and be able to write a smooth algorithm that could work with the motor shields out there.
 * Learn how to work with different sensors like IMU and ToF sensors.
