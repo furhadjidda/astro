@@ -32,7 +32,7 @@ void RosCommunication::InitNode()
     mNodeHandle.advertise(mRangePub);
     mNodeHandle.subscribe(mTeleopSubscriber);
     InitMotorCarrier();
-    delay(500);
+    delay(1000);
     mDriveTrain.InitNode();
     mSensor_vl53l0x.Init(mNodeHandle);
     mSensorImu.Init();
@@ -56,6 +56,9 @@ void RosCommunication::PublishData()
     mRangeData.header.stamp = mNodeHandle.now();
     mRangePub.publish(&mRangeData);
     controller.ping();
+    float batteryVoltage = (float)battery.getConverted();
+    String message = "Battery voltage: " + String(batteryVoltage) + "V , Firmware Verison : " + controller.getFWVersion();
+    mNodeHandle.loginfo(message.c_str());
 }
 
 void RosCommunication::InitMotorCarrier()
