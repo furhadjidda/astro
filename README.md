@@ -1,5 +1,6 @@
 # astro ( A Turtlebot based ROS Robot )
 ![astro_burger](images/astro_urdf_burger.png)
+![astro_waffle](images/astro_urdf_waffle.png)
 ## Note : This is a work in progress and there will be frequent updates to this repository.
 ###  Version of ROS used : ROS Noetic
 ###  Raspberry pi OS : buster
