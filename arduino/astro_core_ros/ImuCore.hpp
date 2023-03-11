@@ -39,6 +39,8 @@ public:
 
     void GetIMUData(sensor_msgs::Imu &aImuData);
 
+    void PublishTemp();
+
 private:
     ros::NodeHandle &mNodeHandle;
     geometry_msgs::Quaternion mQuaternion; // [w, x, y, z]         quaternion container
@@ -48,6 +50,13 @@ private:
     float mYpr[3];    // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
     int32_t mGyro[3]; // Angular velocity
     Adafruit_BNO055 mBno055{Adafruit_BNO055(55, 0x28)};
+    double mXpos{0};
+    double mYpos{0};
+    double mHeadingVel{0};
+
+    void CalculateTemp();
+
+    void GetSensoreData();
 };
 
 #endif // IMUCORE_HPP
