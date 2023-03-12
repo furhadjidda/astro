@@ -26,10 +26,10 @@ Below are my goals with the project
 
 6. Chassis and Parts
    * 2 X TB3 Waffle Plate-IPL-01 - [https://www.robotis.us/tb3-waffle-plate-ipl-01-8ea/]
-   * 2 X TB3 Ball Caster-A01 - [https://www.robotis.us/tb3-ball-caster-a01-1ea/]
+   * 1 X  Pololu Ball Caster with 3/4" Metal Ball  - [https://www.robotshop.com/products/pololu-ball-caster-3-4-in-metal-ball]
    * 2 X TB3 PCB Support-IBB-01 - [https://www.robotis.us/tb3-pcb-support-ibb-01-12ea/]
    * 5 X Bracket-Dual-L (SPL-2b3(K)) - [https://www.robotis.us/bracket-dual-l-spl-2b3-k-5pcs/]
-   * 2 x  70mm Aluminium Wheel - 4mm Bore - [https://www.robotshop.com/products/70mm-aluminium-wheel-4mm-bore]
+   * 2 x  78mm Tires - [https://www.amazon.com/dp/B09YXPF1K4?psc=1&ref=ppx_yo2ov_dt_b_product_details]
 
 7. 3S Lipo Battery 50C 2200mAh 11.1V [https://www.amazon.com/dp/B08CZF373Y?psc=1&ref=ppx_yo2ov_dt_b_product_details]
 
