@@ -29,7 +29,7 @@
 #include <MedianFilter.h>
 #include <ArduinoMotorCarrier.h>
 #include "MotorControl.hpp"
-#include "RoverControllerConfig.h"
+#include "AstroConfig.hpp"
 
 
 class DriveTrain{

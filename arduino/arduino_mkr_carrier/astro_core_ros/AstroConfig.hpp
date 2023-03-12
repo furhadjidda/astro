@@ -18,11 +18,13 @@
 #ifndef ASTRO_CONFIG_H_
 #define ASTRO_CONFIG_H_
 
-// enable this line for Arduino Due
+// enable this line for Arduino Due and mkr
 #define USE_USBCON
 
-/* Include librairies */
+// Type of ROS Platform
+#define ASTRO_BURGER
 
+/* Include librairies */
 #include <Arduino.h>
 
 /* Global parameters */
@@ -49,9 +51,23 @@
 #define RATE_CONTROLLER_MIN_PWM -500
 #define RATE_CONTROLLER_MAX_PWM 500
 
-/* Mechanical parameters */
-#define WHEEL_RADIUS 0.036 // [m]
-// distance between the two wheels
-#define BASE_LENGTH 0.140 // [m]  0.288
+// If nothing is selected then by default Burger will be selected
+#ifdef ASTRO_BURGER
+    /* Mechanical parameters */
+    #define WHEEL_RADIUS 0.036 // [m]
+    // distance between the two wheels
+    #define BASE_LENGTH 0.140 // [m]  0.288
+#elif ASTRO_WAFFLE
+    /* Mechanical parameters */
+    #define WHEEL_RADIUS 						0.0326 		// [m]
+    // distance between the two wheels
+    #define BASE_LENGTH 						0.272 		// [m]  0.288
+#else
+    /* Mechanical parameters */
+    #define WHEEL_RADIUS 0.036 // [m]
+    // distance between the two wheels
+    #define BASE_LENGTH 0.140 // [m]  0.288
+#endif
+
 
 #endif //ASTRO_CONFIG_H_
