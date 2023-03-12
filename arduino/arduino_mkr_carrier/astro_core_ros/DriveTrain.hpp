@@ -44,9 +44,14 @@ class DriveTrain{
         
         void InitNode();
 
-       void GetOdomData(  nav_msgs::Odometry& aOdom );
+        void GetOdomData(  nav_msgs::Odometry& aOdom );
 
-      void CommandVelocityCallback( const geometry_msgs::Twist& aMsg );
+        void CommandVelocityCallback( const geometry_msgs::Twist& aMsg );
+
+        void Ping()
+        {
+            controller.ping();
+        }
 
     private:
         void RateControler
@@ -65,6 +70,8 @@ class DriveTrain{
             const float aVal,
             const int aSize
             );
+
+        void InitMotorCarrier();
 
         /* Define frequency loops */
         Timer mFreqRate{FREQUENCY_RATE};

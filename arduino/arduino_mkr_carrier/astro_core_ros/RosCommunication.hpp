@@ -53,7 +53,6 @@ public:
     }
 
 private:
-    void InitMotorCarrier();
 
     ros::NodeHandle mNodeHandle;
     VL53L0X mSensor_vl53l0x;

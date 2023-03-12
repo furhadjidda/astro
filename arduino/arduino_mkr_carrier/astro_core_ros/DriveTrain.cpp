@@ -35,7 +35,8 @@ DriveTrain::DriveTrain
 }
 
 void DriveTrain::InitNode()
-{   
+{
+    InitMotorCarrier();
     mRightMotor = new MotorControl( mNodeHandle, MC_RIGHT, encoder1, M1);
     mLeftMotor = new MotorControl( mNodeHandle, MC_LEFT, encoder2, M2);
     mRightMotor->InitMotorControl();
@@ -180,6 +181,11 @@ void DriveTrain::UpdateOdometry()
         mLeftMotor->SetDutyCycle(leftDutyCycle);
         mRightMotor->SetDutyCycle(rightDutyCycle);
     }
+
+    // Printing System Data for Motor Carrier
+    float batteryVoltage = (float)battery.getConverted();
+    String message = "Battery voltage: " + String(batteryVoltage) + "V , Firmware Verison : " + controller.getFWVersion();
+    mNodeHandle.loginfo(message.c_str());
 }
 
 void DriveTrain::GetOdomData(nav_msgs::Odometry &aOdom)
@@ -272,4 +278,35 @@ float DriveTrain::RunningAverage
     )
 {
     return (mPrevAvg * (aSize - 1) + aVal) / aSize;
+}
+
+void DriveTrain::InitMotorCarrier()
+{
+    if (controller.begin())
+    {
+        String message = "Motor Carrier connected, firmware version : " + controller.getFWVersion();
+    }
+    else
+    {
+        mNodeHandle.logerror("Couldn't connect! Is the red LED blinking? You may need to update the firmware with FWUpdater sketch");
+        while (1)
+            ;
+    }
+
+    // Reboot the motor controller; brings every value back to default
+    mNodeHandle.loginfo("reboot");
+    controller.reboot();
+    delay(500);
+
+    // Reset the encoder internal counter to zero (can be set to any initial value)
+    mNodeHandle.loginfo("reset counters");
+    encoder1.resetCounter(0);
+    encoder2.resetCounter(0);
+
+    // Take the battery status
+    float batteryVoltage = (float)battery.getConverted();
+    String message = "Battery voltage: " + String(batteryVoltage) + "V";
+    mNodeHandle.loginfo(message.c_str());
+
+    delay(1000);
 }

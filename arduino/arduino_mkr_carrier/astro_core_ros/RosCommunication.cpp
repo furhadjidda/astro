@@ -24,17 +24,22 @@ RosCommunication::RosCommunication()
 
 void RosCommunication::InitNode()
 {
+    // Set the ros serial at 115200
     mNodeHandle.getHardware()->setBaud(115200);
+    // Initialize the ros node
     mNodeHandle.initNode();
     Serial.begin(115200);
+    // Advertise whats being published
     mNodeHandle.advertise(mOdomPublisher);
     mNodeHandle.advertise(mImuPub);
     mNodeHandle.advertise(mRangePub);
     mNodeHandle.subscribe(mTeleopSubscriber);
-    InitMotorCarrier();
-    delay(1000);
+    // Initialize hardware
+    // Initialize motors and encoders
     mDriveTrain.InitNode();
+    // Initialize range sensor
     mSensor_vl53l0x.Init(mNodeHandle);
+    // Initialize IMU
     mSensorImu.Init();
 }
 
@@ -42,6 +47,7 @@ void RosCommunication::PublishData()
 {
     mDriveTrain.UpdateOdometry();
     mDriveTrain.GetOdomData(mOdom);
+    mDriveTrain.Ping();
     mOdom.header.stamp = mNodeHandle.now();
     mOdom.header.frame_id = "odom";
     mOdom.child_frame_id = "base_link";
@@ -55,37 +61,4 @@ void RosCommunication::PublishData()
     mSensor_vl53l0x.GetRangeData(mRangeData);
     mRangeData.header.stamp = mNodeHandle.now();
     mRangePub.publish(&mRangeData);
-    controller.ping();
-    float batteryVoltage = (float)battery.getConverted();
-    String message = "Battery voltage: " + String(batteryVoltage) + "V , Firmware Verison : " + controller.getFWVersion();
-    mNodeHandle.loginfo(message.c_str());
-}
-
-void RosCommunication::InitMotorCarrier()
-{
-    if (controller.begin())
-    {
-        String message = "Motor Carrier connected, firmware version : " + controller.getFWVersion();
-    }
-    else
-    {
-        mNodeHandle.logerror("Couldn't connect! Is the red LED blinking? You may need to update the firmware with FWUpdater sketch");
-        while (1)
-            ;
-    }
-
-    // Reboot the motor controller; brings every value back to default
-    mNodeHandle.loginfo("reboot");
-    controller.reboot();
-    delay(500);
-
-    // Reset the encoder internal counter to zero (can be set to any initial value)
-    mNodeHandle.loginfo("reset counters");
-    encoder1.resetCounter(0);
-    encoder2.resetCounter(0);
-
-    // Take the battery status
-    float batteryVoltage = (float)battery.getConverted();
-    String message = "Battery voltage: " + String(batteryVoltage) + "V";
-    mNodeHandle.loginfo(message.c_str());
 }
