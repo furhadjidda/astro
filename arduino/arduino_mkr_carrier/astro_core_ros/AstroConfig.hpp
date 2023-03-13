@@ -52,12 +52,12 @@
 #define RATE_CONTROLLER_MAX_PWM 500
 
 // If nothing is selected then by default Burger will be selected
-#ifdef ASTRO_BURGER
+#if  defined(ASTRO_BURGER)
     /* Mechanical parameters */
     #define WHEEL_RADIUS 0.036 // [m]
     // distance between the two wheels
     #define BASE_LENGTH 0.140 // [m]  0.288
-#elif ASTRO_WAFFLE
+#elif defined(ASTRO_WAFFLE)
     /* Mechanical parameters */
     #define WHEEL_RADIUS 						0.0326 		// [m]
     // distance between the two wheels
