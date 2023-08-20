@@ -1,0 +1,10 @@
+{
+    "python.autoComplete.extraPaths": [
+        "/projects/Development/astro/github/astro/raspberry_pi/devel/lib/python3/dist-packages",
+        "/opt/ros/noetic/lib/python3/dist-packages"
+    ],
+    "python.analysis.extraPaths": [
+        "/projects/Development/astro/github/astro/raspberry_pi/devel/lib/python3/dist-packages",
+        "/opt/ros/noetic/lib/python3/dist-packages"
+    ]
+}
