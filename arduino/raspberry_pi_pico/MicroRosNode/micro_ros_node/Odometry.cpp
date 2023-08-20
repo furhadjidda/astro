@@ -1,4 +1,4 @@
-#include <chrono>
+
 /*
  *   This file is part of astro_core_ros.
  *
@@ -20,7 +20,7 @@
 #include "Common.hpp"
 #include <geometry_msgs/msg/transform_stamped.h>
 #include <tf2_msgs/msg/tf_message.h>
-
+#include <chrono>
 #include <micro_ros_utilities/type_utilities.h>
 #include <micro_ros_utilities/string_utilities.h>
 
@@ -36,7 +36,6 @@ void Odometry::Init( MotorControl* aMotorControl)
 {
     mMotorControl = aMotorControl;
     mTimer.start();
-    rmw_uros_sync_session(timeout_ms);
 }
 
 void Odometry::SetPublisher(rcl_publisher_t* aPub)
@@ -47,12 +46,11 @@ void Odometry::SetPublisher(rcl_publisher_t* aPub)
 
 void Odometry::UpdateOdometry()
 {
-
-    mTimer.stop();
-    long int elapsedTime = duration_cast<milliseconds>(mTimer.elapsed_time()).count();
-
+    mCurrentTime = millis();
+    unsigned long elapsedTime = mCurrentTime - mPreviousTime;
+    mPreviousTime = mCurrentTime;
     // Refer : http://www.cs.columbia.edu/~allen/F17/NOTES/icckinematics.pdf
-    //if( FREQUENCY_RATE == elapsedTime )
+    if( FREQUENCY_RATE <= elapsedTime )
     {
         float dt;
 
@@ -120,7 +118,7 @@ void Odometry::UpdateOdometry()
         //mLeftMotor.SetMotorDirectionVal( 0 );
     }
 
-    //if( FREQUENCY_CONTROLLER == elapsedTime )
+    if( FREQUENCY_CONTROLLER <= elapsedTime )
     {
         // MOTOR RIGHT
         RateControler
@@ -157,6 +155,7 @@ void Odometry::UpdateOdometry()
         mJsonDoc["mMotorLeft_RateRef"] = String(mMotorLeft_RateRef).c_str();
         mJsonDoc["mMotorRightPwm"] = String(mMotorRightPwm).c_str();
         mJsonDoc["mMotorRight_RateRef"] = String(mMotorRight_RateRef).c_str();
+        mJsonDoc["elapsedTime"] = String(elapsedTime).c_str();
         serializeJson(mJsonDoc, &mLogBuffer, 200);
         debugMsg.data.data = (char*)mLogBuffer;
         debugMsg.data.capacity = strlen((const char*)mLogBuffer);
@@ -191,7 +190,7 @@ void Odometry::CalculateOdometry(nav_msgs__msg__Odometry& aOdometry)
     qz = sign(mYawEst) * sin(abs(mYawEst) / 2.0f);
 
     // feed odom message
-    aOdometry.header.stamp.nanosec = rmw_uros_epoch_nanos();
+    //aOdometry.header.stamp.nanosec = rmw_uros_epoch_nanos();
     aOdometry.header.frame_id = mFrameId;
     aOdometry.child_frame_id = mChildFrameId;
     aOdometry.pose.pose.position.x += dx;

@@ -71,10 +71,10 @@ void timer_callback(rcl_timer_t * timer, int64_t last_call_time)
 {  
   RCLC_UNUSED(last_call_time);
   if (timer != NULL) {
-    odometry.UpdateOdometry();
-    nav_msgs__msg__Odometry odometryData;
-    odometry.CalculateOdometry( odometryData );
-    rcl_publish(&publisher, &odometryData, NULL);
+    //odometry.UpdateOdometry();
+    //nav_msgs__msg__Odometry odometryData;
+    //odometry.CalculateOdometry( odometryData );
+    //rcl_publish(&publisher, &odometryData, NULL);
   }
 }
 
@@ -141,7 +141,10 @@ void setup()
 
 void loop()
 {
-    delay(100);
+    odometry.UpdateOdometry();
+    nav_msgs__msg__Odometry odometryData;
+    odometry.CalculateOdometry( odometryData );
+    rcl_publish(&publisher, &odometryData, NULL);
     RCCHECK(rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100)));
     RCCHECK(rclc_executor_spin_some(&pubexecutor, RCL_MS_TO_NS(100)));
     RCCHECK(rclc_executor_spin_some(&logpubexecutor, RCL_MS_TO_NS(100)));
