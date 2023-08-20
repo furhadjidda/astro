@@ -1,3 +1,6 @@
 raspberry_pi/build
 raspberry_pi/devel
 raspberry_pi/src/astro_slam/rtab_db
+ros2_rpi_ws/build
+ros2_rpi_ws/install
+ros2_rpi_ws/log
