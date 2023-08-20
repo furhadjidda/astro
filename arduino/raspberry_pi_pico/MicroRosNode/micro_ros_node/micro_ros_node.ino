@@ -18,6 +18,7 @@
 #include "MotorControl.hpp"
 #include "micro_ros_arduino.h"
 #include <geometry_msgs/msg/twist.h>
+#include <nav_msgs/msg/odometry.h>
 #include <rcl/error_handling.h>
 #include <rcl/rcl.h>
 #include <rclc/executor.h>
@@ -71,6 +72,9 @@ void timer_callback(rcl_timer_t * timer, int64_t last_call_time)
   RCLC_UNUSED(last_call_time);
   if (timer != NULL) {
     odometry.UpdateOdometry();
+    nav_msgs__msg__Odometry odometryData;
+    odometry.CalculateOdometry( odometryData );
+    rcl_publish(&publisher, &odometryData, NULL);
   }
 }
 
@@ -110,7 +114,7 @@ void setup()
     RCCHECK(rclc_publisher_init_default(
       &publisher,
       &node,
-      ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
+      ROSIDL_GET_MSG_TYPE_SUPPORT(nav_msgs, msg, Odometry),
       "odom"));
 
     RCCHECK(rclc_publisher_init_default(
