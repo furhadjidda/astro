@@ -60,20 +60,20 @@ static const unsigned int FREQUENCY_CONTROLLER 	= 30; 	// [ms] default 50ms
 
 /* Rate computing parameters */
 #define RATE_DIRECTION_MEDIAN_FILTER_SIZE 	3
-#define RATE_CONV 							0.021 // 0.0073882 	// [inc] -> [rad]
+#define RATE_CONV 							0.005343197 // 0.0073882 	// [inc] -> [rad]
 // 853 (234) inc per wheel rotation
 // RATE_CONV = 2*pi/(Nb_increments_per_wheel_rotation) = 2*pi/299
 // In my case this is close to 299 which is why the value 0.021
 #define RATE_AVERAGE_FILTER_SIZE 			4
 
 /* Rate controller parameters */
-#define PWM_MAX				 				100            // 12 bit
+#define PWM_MAX				 				4095            // 12 bit
 #define RATE_CONTROLLER_KP 					130.0 		    // default 150
 #define RATE_CONTROLLER_KD 					5000000000000.0 //4500000000000
 #define RATE_CONTROLLER_KI 					0.00005 	    //0.00001
 #define RATE_INTEGRAL_FREEZE				250
-#define RATE_CONTROLLER_MIN_PWM 			0
-#define RATE_CONTROLLER_MAX_PWM 			100
+#define RATE_CONTROLLER_MIN_PWM 			-500
+#define RATE_CONTROLLER_MAX_PWM 			500
 
 /* Mechanical parameters */
 #define WHEEL_RADIUS 						0.039 		// [m]

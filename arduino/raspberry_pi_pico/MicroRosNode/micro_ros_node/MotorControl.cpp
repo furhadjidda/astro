@@ -43,7 +43,7 @@ void MotorControl::Init()
 
 void MotorControl::MotorRun(MotorId aMotorId, MotorDirection aDirection, uint8_t aSpeed)
 {
-    if (aSpeed > 100)
+    if (aSpeed > 4096)
         return;
 
     Serial.println("set PWM PIN " + String(mMotor[aMotorId].GetPwmPinValue()) + " speed = " + String(aSpeed));
@@ -138,18 +138,12 @@ void MotorControl::SetMotorRateAndDirection(MotorId aMotorId, int aPwmRef, const
     {
         mPwm.SetLevel(mMotor[aMotorId].GetPinAValue(), 1);
         mPwm.SetLevel(mMotor[aMotorId].GetPinBValue(), 0);
-        //mPwm.SetServoPulse(mMotor[aMotorId].GetPwmPinValue(), 80); // ONLY for testing
     }
     else if (aRateRef < 0) 
     {
         mPwm.SetLevel(mMotor[aMotorId].GetPinAValue(), 0);
         mPwm.SetLevel(mMotor[aMotorId].GetPinBValue(), 1);
-        //mPwm.SetServoPulse(mMotor[aMotorId].GetPwmPinValue(), 80); // ONLY for testing
     }
-    else {
-         //mPwm.SetServoPulse(mMotor[aMotorId].GetPwmPinValue(), 0);
-    }
-  
     // write pwm -- CONTROLS THE SPEED
     mPwm.SetServoPulse(mMotor[aMotorId].GetPwmPinValue(), abs(aPwmRef));
 }

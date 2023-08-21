@@ -31,6 +31,7 @@ public:
     void Init();
     void MotorRun(MotorId aMotorId, MotorDirection aDirection, uint8_t aSpeed);
     void MotorStop();
+    // NOTE: The speed should be in the range of 0-4096
     void Forward(uint8_t aSpeed, uint32_t aDistance); // Distance is in mm
     void Backward(uint8_t aSpeed);
     void Right(uint8_t aSpeed);

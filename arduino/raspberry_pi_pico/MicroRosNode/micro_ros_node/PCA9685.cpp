@@ -106,7 +106,8 @@ void PCA9685::SetPWM(uint16_t aChannel, uint16_t aOn, uint16_t aOff)
 
 void PCA9685::SetServoPulse(uint16_t aChannel, uint16_t aPulse)
 {
-    unsigned int pulse = aPulse * (4095 / 100);
+    //unsigned int pulse = aPulse * (4095 / 100);
+    unsigned int pulse = aPulse;
     SetPWM(aChannel, 0, pulse);
 }
 

@@ -1,4 +1,3 @@
-
 /*
  *   This file is part of astro_core_ros.
  *
@@ -47,6 +46,11 @@ void Odometry::UpdateOdometry()
     mCurrentTime = millis();
     unsigned long elapsedTime = mCurrentTime - mPreviousTime;
     mPreviousTime = mCurrentTime;
+
+    /// Publish Debug data on debug topic
+    memset(mLogBuffer, 0x00, sizeof(mLogBuffer));
+    std_msgs__msg__String debugMsg;
+
     // Refer : http://www.cs.columbia.edu/~allen/F17/NOTES/icckinematics.pdf
     if (FREQUENCY_RATE <= elapsedTime) {
         float dt;
@@ -104,7 +108,6 @@ void Odometry::UpdateOdometry()
         if (abs(mMotorLeft_RateEst) < 0.1f) {
             mMotorLeft_RateEst = 0.0f;
         }
-
         //mLeftMotor.SetMotorCheckDirectionVal( 1 );
         //mLeftMotor.SetMotorDirectionVal( 0 );
     }
@@ -134,14 +137,12 @@ void Odometry::UpdateOdometry()
         mMotorLeftPwm = constrain(mMotorLeftPwm, 0, PWM_MAX);
         mMotorControl->SetMotorRateAndDirection(MotorId::MotorB, mMotorLeftPwm, mMotorLeft_RateRef);
 
-        /// Publish Debug data on debug topic
-        memset(mLogBuffer, 0x00, sizeof(mLogBuffer));
-        std_msgs__msg__String debugMsg;
-        mJsonDoc["mMotorLeftPwm"] = String(mMotorLeftPwm).c_str();
-        mJsonDoc["mMotorLeft_RateRef"] = String(mMotorLeft_RateRef).c_str();
-        mJsonDoc["mMotorRightPwm"] = String(mMotorRightPwm).c_str();
-        mJsonDoc["mMotorRight_RateRef"] = String(mMotorRight_RateRef).c_str();
-        mJsonDoc["elapsedTime"] = String(elapsedTime).c_str();
+
+        mJsonDoc["mMotorLeftPwm"] = mMotorLeftPwm;
+        mJsonDoc["mMotorLeft_RateRef"] = mMotorLeft_RateRef;
+        mJsonDoc["mMotorRightPwm"] = mMotorRightPwm;
+        mJsonDoc["mMotorRight_RateRef"] = mMotorRight_RateRef;
+        mJsonDoc["elapsedTime"] = elapsedTime;
         serializeJson(mJsonDoc, &mLogBuffer, 200);
         debugMsg.data.data = (char*)mLogBuffer;
         debugMsg.data.capacity = strlen((const char*)mLogBuffer);
@@ -207,10 +208,10 @@ void Odometry::cmd_vel_callback(const void* msgin)
     // logging
     memset(mLogBuffer, 0x00, sizeof(mLogBuffer));
     std_msgs__msg__String debugMsg;
-    mJsonDoc["linear"] = String(mLinearVelocityRef).c_str();
-    mJsonDoc["angular"] = String(mAngularVelocityRef).c_str();
-    mJsonDoc["mMotorRight_RateRef"] = String(mMotorRight_RateRef).c_str();
-    mJsonDoc["mMotorLeft_RateRef"] = String(mMotorLeft_RateRef).c_str();
+    mJsonDoc["linear"] = mLinearVelocityRef;
+    mJsonDoc["angular"] = mAngularVelocityRef;
+    mJsonDoc["mMotorRight_RateRef"] = mMotorRight_RateRef;
+    mJsonDoc["mMotorLeft_RateRef"] = mMotorLeft_RateRef;
     serializeJson(mJsonDoc, &mLogBuffer, 200);
     debugMsg.data.data = (char*)mLogBuffer;
     debugMsg.data.capacity = strlen((const char*)mLogBuffer);
