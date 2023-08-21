@@ -78,10 +78,6 @@ private:
     StaticJsonDocument<500> mJsonDoc;
     uint8_t mLogBuffer[500];
 
-
-    /* Define frequency loops */
-    mbed::Timer mTimer;
-
     /* Define median filter for direction */
     // https://en.wikipedia.org/wiki/Median_filter#Worked_one-dimensional_example
     // The median filter is a non-linear digital filtering technique, often used 

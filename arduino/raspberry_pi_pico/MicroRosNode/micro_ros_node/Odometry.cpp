@@ -18,31 +18,29 @@
 
 #include "Odometry.hpp"
 #include "Common.hpp"
-#include <geometry_msgs/msg/transform_stamped.h>
-#include <tf2_msgs/msg/tf_message.h>
 #include <chrono>
-#include <micro_ros_utilities/type_utilities.h>
+#include <geometry_msgs/msg/transform_stamped.h>
 #include <micro_ros_utilities/string_utilities.h>
+#include <micro_ros_utilities/type_utilities.h>
+#include <tf2_msgs/msg/tf_message.h>
 
 const int timeout_ms = 1000;
 
 template <typename type>
-type sign(type value) {
-    return type((value>0)-(value<0));
+type sign(type value)
+{
+    return type((value > 0) - (value < 0));
 }
 
-
-void Odometry::Init( MotorControl* aMotorControl)
+void Odometry::Init(MotorControl* aMotorControl)
 {
     mMotorControl = aMotorControl;
-    mTimer.start();
 }
 
 void Odometry::SetPublisher(rcl_publisher_t* aPub)
-{ 
+{
     mLogPublisher = aPub;
 }
-
 
 void Odometry::UpdateOdometry()
 {
@@ -50,37 +48,33 @@ void Odometry::UpdateOdometry()
     unsigned long elapsedTime = mCurrentTime - mPreviousTime;
     mPreviousTime = mCurrentTime;
     // Refer : http://www.cs.columbia.edu/~allen/F17/NOTES/icckinematics.pdf
-    if( FREQUENCY_RATE <= elapsedTime )
-    {
+    if (FREQUENCY_RATE <= elapsedTime) {
         float dt;
 
         // MOTOR RIGHT
         // direction
         // Pass it through median filter to remove noise
-        mMotorRight_DirMedianFilter.in( mMotorControl->GetMotorDirection(MotorId::MotorA) );
+        mMotorRight_DirMedianFilter.in(mMotorControl->GetMotorDirection(MotorId::MotorA));
         mMotorRight_FilteredDirection = mMotorRight_DirMedianFilter.out();
 
         // filter increment per second
-        dt = ( millis() - mMotorRight_PrevTime );
+        dt = (millis() - mMotorRight_PrevTime);
         mMotorRight_PrevTime = millis();
         // Calculate Motor Encoder Increment Value / per second
-        mMotorRight_FilteredIncrementPerSecond 
-            = RunningAverage
-                (
+        mMotorRight_FilteredIncrementPerSecond
+            = RunningAverage(
                 mMotorRight_FilteredIncrementPerSecond,
                 (float)mMotorControl->GetEncoderIncrementValue(MotorId::MotorA) / dt * 1000.0f,
-                RATE_AVERAGE_FILTER_SIZE
-                );
+                RATE_AVERAGE_FILTER_SIZE);
 
         // Estimating Rate
-        mMotorRight_RateEst 
+        mMotorRight_RateEst
             = (float)mMotorRight_FilteredDirection * mMotorRight_FilteredIncrementPerSecond * RATE_CONV;
 
         // Clear encoder increments
         mMotorControl->ResetEncoderIncrementValue(MotorId::MotorA);
 
-        if ( abs(mMotorRight_RateEst) < 0.1f )
-        {
+        if (abs(mMotorRight_RateEst) < 0.1f) {
             mMotorRight_RateEst = 0.0f;
         }
 
@@ -89,28 +83,25 @@ void Odometry::UpdateOdometry()
 
         // MOTOR LEFT
         // direction
-        mMotorLeft_DirMedianFilter.in( mMotorControl->GetMotorDirection(MotorId::MotorB) );
+        mMotorLeft_DirMedianFilter.in(mMotorControl->GetMotorDirection(MotorId::MotorB));
         mMotorLeft_FilteredDirection = mMotorLeft_DirMedianFilter.out();
 
         // filter increment per second
-        dt = ( millis() - mMotorLeft_PrevTime );
+        dt = (millis() - mMotorLeft_PrevTime);
         mMotorLeft_PrevTime = millis();
-        
-        mMotorLeft_FilteredIncrementPerSecond 
-            = RunningAverage
-                (
+
+        mMotorLeft_FilteredIncrementPerSecond
+            = RunningAverage(
                 mMotorLeft_FilteredIncrementPerSecond,
                 (float)mMotorControl->GetEncoderIncrementValue(MotorId::MotorB) / dt * 1000.0f,
-                RATE_AVERAGE_FILTER_SIZE
-                );
+                RATE_AVERAGE_FILTER_SIZE);
 
         // estimated rate
         mMotorLeft_RateEst
             = (float)mMotorLeft_FilteredDirection * mMotorLeft_FilteredIncrementPerSecond * RATE_CONV;
         mMotorControl->ResetEncoderIncrementValue(MotorId::MotorB);
 
-        if (abs(mMotorLeft_RateEst) < 0.1f)
-        {
+        if (abs(mMotorLeft_RateEst) < 0.1f) {
             mMotorLeft_RateEst = 0.0f;
         }
 
@@ -118,38 +109,33 @@ void Odometry::UpdateOdometry()
         //mLeftMotor.SetMotorDirectionVal( 0 );
     }
 
-    if( FREQUENCY_CONTROLLER <= elapsedTime )
-    {
+    if (FREQUENCY_CONTROLLER <= elapsedTime) {
         // MOTOR RIGHT
-        RateControler
-            (
+        RateControler(
             mMotorRight_RateRef,
             mMotorRight_RateEst,
             mMotorRight_PwmRate,
             mController_MotorRightPrevTime,
             mController_MotorRightPrevEpsilon,
-            mController_MotorRightInt
-            );
+            mController_MotorRightInt);
         mMotorRightPwm = mMotorRightPwm + mMotorRight_PwmRate;
         mMotorRightPwm = constrain(mMotorRightPwm, 0, PWM_MAX);
-        mMotorControl->SetMotorRateAndDirection( MotorId::MotorA, mMotorRightPwm, mMotorRight_RateRef );
+        mMotorControl->SetMotorRateAndDirection(MotorId::MotorA, mMotorRightPwm, mMotorRight_RateRef);
 
         // MOTOR LEFT
-        RateControler
-            (
+        RateControler(
             mMotorLeft_RateRef,
             mMotorLeft_RateEst,
             mMotorLeft_PwmRate,
             mController_MotorLeftPrevTime,
             mController_MotorLeftPrevEpsilon,
-            mController_MotorLeftInt
-            );
+            mController_MotorLeftInt);
         mMotorLeftPwm = mMotorLeftPwm + mMotorLeft_PwmRate;
         mMotorLeftPwm = constrain(mMotorLeftPwm, 0, PWM_MAX);
-        mMotorControl->SetMotorRateAndDirection( MotorId::MotorB, mMotorLeftPwm, mMotorLeft_RateRef );
+        mMotorControl->SetMotorRateAndDirection(MotorId::MotorB, mMotorLeftPwm, mMotorLeft_RateRef);
 
         /// Publish Debug data on debug topic
-        memset(mLogBuffer,0x00,sizeof(mLogBuffer));
+        memset(mLogBuffer, 0x00, sizeof(mLogBuffer));
         std_msgs__msg__String debugMsg;
         mJsonDoc["mMotorLeftPwm"] = String(mMotorLeftPwm).c_str();
         mJsonDoc["mMotorLeft_RateRef"] = String(mMotorLeft_RateRef).c_str();
@@ -162,7 +148,6 @@ void Odometry::UpdateOdometry()
         debugMsg.data.size = sizeof(mLogBuffer);
         rcl_publish(mLogPublisher, &debugMsg, NULL);
     }
-    mTimer.start();
 }
 
 void Odometry::CalculateOdometry(nav_msgs__msg__Odometry& aOdometry)
@@ -203,26 +188,24 @@ void Odometry::CalculateOdometry(nav_msgs__msg__Odometry& aOdometry)
     // Velocity expressed in base_link frame
     aOdometry.twist.twist.linear.x = mLinearVelocityEst;
     aOdometry.twist.twist.linear.y = 0.0f;
-    aOdometry.twist.twist.angular.z = mAngularVelocityEst;    
-
+    aOdometry.twist.twist.angular.z = mAngularVelocityEst;
 }
-
 
 void Odometry::cmd_vel_callback(const void* msgin)
 {
     const geometry_msgs__msg__Twist* msg = (const geometry_msgs__msg__Twist*)msgin;
-    mLinearVelocityRef  = msg->linear.x;
+    mLinearVelocityRef = msg->linear.x;
     mAngularVelocityRef = msg->angular.z;
-        
+
     // MIXER
-    mMotorRight_RateRef 
+    mMotorRight_RateRef
         = (mLinearVelocityRef + BASE_LENGTH / 2.f * mAngularVelocityRef) / (WHEEL_RADIUS);
 
-    mMotorLeft_RateRef 
+    mMotorLeft_RateRef
         = (mLinearVelocityRef - BASE_LENGTH / 2.f * mAngularVelocityRef) / (WHEEL_RADIUS);
 
-    // logging 
-    memset(mLogBuffer,0x00,sizeof(mLogBuffer));
+    // logging
+    memset(mLogBuffer, 0x00, sizeof(mLogBuffer));
     std_msgs__msg__String debugMsg;
     mJsonDoc["linear"] = String(mLinearVelocityRef).c_str();
     mJsonDoc["angular"] = String(mAngularVelocityRef).c_str();
@@ -235,26 +218,21 @@ void Odometry::cmd_vel_callback(const void* msgin)
     rcl_publish(mLogPublisher, &debugMsg, NULL);
 }
 
-void Odometry::RateControler
-    (
+void Odometry::RateControler(
     const float aRateRef,
     const float aRateEst,
-    int & aPwmRate,
-    unsigned long & aPrevTime,
-    float & aPrevEpsilon,
-    float & aIEpsilon
-    )
+    int& aPwmRate,
+    unsigned long& aPrevTime,
+    float& aPrevEpsilon,
+    float& aIEpsilon)
 {
     float epsilon = abs(aRateRef) - abs(aRateEst);
     float d_epsilon = (epsilon - aPrevEpsilon) / (aPrevTime - millis());
 
     // reset and clamp integral (todo : add anti windup)
-    if (aRateRef == 0.0) 
-    {
+    if (aRateRef == 0.0) {
         aIEpsilon = 0.0;
-    } 
-    else 
-    {
+    } else {
         aIEpsilon += epsilon * (aPrevTime - millis()) * RATE_CONTROLLER_KI;
     }
     aIEpsilon = constrain(aIEpsilon, -RATE_INTEGRAL_FREEZE, RATE_INTEGRAL_FREEZE);
@@ -263,22 +241,17 @@ void Odometry::RateControler
     aPrevEpsilon = epsilon;
 
     aPwmRate = epsilon * RATE_CONTROLLER_KP
-             + d_epsilon * RATE_CONTROLLER_KD
-             + aIEpsilon * RATE_CONTROLLER_KI;
+        + d_epsilon * RATE_CONTROLLER_KD
+        + aIEpsilon * RATE_CONTROLLER_KI;
 
     // saturate output
     aPwmRate = constrain(aPwmRate, RATE_CONTROLLER_MIN_PWM, RATE_CONTROLLER_MAX_PWM);
 }
 
-
-
-float Odometry::RunningAverage
-    (
+float Odometry::RunningAverage(
     float mPrevAvg,
     const float aVal,
-    const int aSize
-    )
+    const int aSize)
 {
     return (mPrevAvg * (aSize - 1) + aVal) / aSize;
 }
-

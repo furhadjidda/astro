@@ -1,3 +1,4 @@
+#include <sys/_types.h>
 #include <sys/_intsup.h>
 #include <sys/_stdint.h>
 
@@ -51,18 +52,10 @@ const double Kp = 1.0;
 const double Ki = 0.0;
 const double Kd = 0.0; // PID constants
 
-const double minLinear = 5;
-const double maxLinear = 100;
-
-const double minAngular = -50;
-const double maxAngular = 50;
-
-
 /* Global parameters */
-#define FREQUENCY_RATE 						30 			// [ms] default 50ms
-#define FREQUENCY_ODOMETRY 				    150 		// [ms] default 250ms
-#define FREQUENCY_ROSPINONCE 				150 		// [ms]
-#define FREQUENCY_CONTROLLER 				30 			// [ms] default 50ms
+static const unsigned int FREQUENCY_RATE = 30; 			    // [ms] default 50ms
+static const unsigned int FREQUENCY_ODOMETRY = 150; 		// [ms] default 250ms
+static const unsigned int FREQUENCY_CONTROLLER 	= 30; 	// [ms] default 50ms
 
 
 /* Rate computing parameters */

@@ -71,10 +71,7 @@ void timer_callback(rcl_timer_t * timer, int64_t last_call_time)
 {  
   RCLC_UNUSED(last_call_time);
   if (timer != NULL) {
-    //odometry.UpdateOdometry();
-    //nav_msgs__msg__Odometry odometryData;
-    //odometry.CalculateOdometry( odometryData );
-    //rcl_publish(&publisher, &odometryData, NULL);
+
   }
 }
 
@@ -124,7 +121,7 @@ void setup()
       "debug"));
 
     // create timer,
-    const unsigned int timer_timeout = 10;
+    const unsigned int timer_timeout = 150;
     RCCHECK(rclc_timer_init_default(
       &timer,
       &support,
