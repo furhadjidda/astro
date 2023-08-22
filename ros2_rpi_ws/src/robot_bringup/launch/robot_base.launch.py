@@ -13,6 +13,16 @@ def generate_launch_description():
         package="astro_odometry_tf_broadcaster",
         executable = "odometry_tf_broadcaster",
     )
+    base_link_to_base_footprint = Node(package = "tf2_ros", 
+                executable = "static_transform_publisher",
+                arguments = ["0", "0", "0", "0", "0", "0", "base_link", "base_footprint"]
+    )
+    base_link_to_imu_link = Node(package = "tf2_ros", 
+                executable = "static_transform_publisher",
+                arguments = ["0", "0", "0", "0", "0", "0", "base_link", "imu_link"]
+    )
     ld.add_action(microros_node)
     ld.add_action(odometry_tf2_broadcaster)
+    ld.add_action(base_link_to_base_footprint)
+    ld.add_action(base_link_to_imu_link)
     return ld
