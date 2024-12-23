@@ -40,6 +40,10 @@ Below are my goals with the project
 10. Adafruit VL53L0X Time of Flight Distance Sensor [https://www.adafruit.com/product/3317]
 
 
+# ROS Instructions 
+![Robot Animation](images/ros_gif.gif)
+
+
 # Setting Up Raspberry Pi 4
 * Setting up ROS Noetic on Raspberry pi 4 and Lidar Integration.
   * [https://www.hackster.io/shahizat005/lidar-integration-with-ros-noetic-on-raspberry-pi-os-8ea140]
@@ -118,6 +122,9 @@ python astro_gmapping.py
 ```
 python astro_navigation.py
 ```
+
+# ROS 2 Instructions
+![ROS2](images/ROS2_Humble_Hawksbill.png)
 
 # Gratitude and References:
 * A big thanks to Matthieu M  whose work on Fox bot not only helped me building my odometry but with his 3D printed stl files and ideas he presented in his project helped out a lot.
