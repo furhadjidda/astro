@@ -1,0 +1,13 @@
+[submodule "raspberry_pi/src/odometry_transform_broadcaster"]
+	path = raspberry_pi/src/odometry_transform_broadcaster
+	url = https://github.com/furhadjidda/odometry_transform_broadcaster.git
+[submodule "pico_firmware/external/micro_ros_raspberrypi_pico_sdk"]
+	path = pico_firmware/external/micro_ros_raspberrypi_pico_sdk
+	url = https://github.com/micro-ROS/micro_ros_raspberrypi_pico_sdk.git
+	branch = humble
+[submodule "pico_firmware/external/pico-sdk"]
+	path = pico_firmware/external/pico-sdk
+	url = https://github.com/raspberrypi/pico-sdk.git
+[submodule "pico_firmware/external/FreeRTOS-Kernel"]
+	path = pico_firmware/external/FreeRTOS-Kernel
+	url = https://github.com/FreeRTOS/FreeRTOS-Kernel.git
