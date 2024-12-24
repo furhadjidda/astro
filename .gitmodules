@@ -14,3 +14,6 @@
 [submodule "pico_firmware/sensor_drivers"]
 	path = pico_firmware/sensor_drivers
 	url = git@github.com:furhadjidda/sensor_drivers.git
+[submodule "pico_firmware/external/googletest"]
+	path = pico_firmware/external/googletest
+	url = https://github.com/google/googletest.git
