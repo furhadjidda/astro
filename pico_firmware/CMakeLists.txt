@@ -108,6 +108,7 @@ else()### --------------------- TARGET BUILD -----------------------------------
     add_subdirectory(${MICROROS_ROOT})
     #add_subdirectory(${PCA9685_CORE_TEST})
     #add_subdirectory(${GPS_LIBRARY})
+    add_subdirectory("${CMAKE_SOURCE_DIR}/sensor_drivers")
 
     message(STATUS "Configuring for target platform complete !!")
 endif()
