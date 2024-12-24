@@ -11,3 +11,6 @@
 [submodule "pico_firmware/external/FreeRTOS-Kernel"]
 	path = pico_firmware/external/FreeRTOS-Kernel
 	url = https://github.com/FreeRTOS/FreeRTOS-Kernel.git
+[submodule "pico_firmware/sensor_drivers"]
+	path = pico_firmware/sensor_drivers
+	url = git@github.com:furhadjidda/sensor_drivers.git
