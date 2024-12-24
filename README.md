@@ -126,6 +126,19 @@ python astro_navigation.py
 # ROS 2 Instructions
 ![ROS2](images/ROS2_Humble_Hawksbill.png)
 
+## How to install and use micro-ros
+
+* Reference - https://micro.ros.org/docs/tutorials/core/first_application_linux/
+
+
+## How to compile and install pico firmware
+1. After cloning the astro repo make sure to run `git submodule update --init --recursive`.
+2. Configure cmake `cmake -S . -B build/`.
+3. Build the firmware `cmake --build build`.
+4. Connect your device so it’s ready for file transfer.
+
+
+
 # Gratitude and References:
 * A big thanks to Matthieu M  whose work on Fox bot not only helped me building my odometry but with his 3D printed stl files and ideas he presented in his project helped out a lot.
   * His project page - https://www.instructables.com/Build-Your-Own-Turtblebot-Robot/ and https://hackaday.io/project/167074-build-your-own-turtlebot-3-backbone
