@@ -44,6 +44,10 @@ if (BUILD_FOR_HOST)
 else()### --------------------- TARGET BUILD -------------------------------------------------
     message(STATUS "Configuring for target platform")
 
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -mcpu=cortex-m0 -mthumb")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -mcpu=cortex-m0 -mthumb")
+
+
     # Set the Pico board to use
     set(PICO_BOARD pico_w)
 
