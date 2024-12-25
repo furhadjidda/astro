@@ -1,4 +1,5 @@
-# astro ( A Turtlebot based ROS Robot )
+# Astro ( A Turtlebot based ROS Robot )
+![Raspberry pi](images/Powered-by-Pi-Logo-White.png)
 ![astro_burger](images/astro_urdf_burger.png)
 ![astro_waffle](images/astro_urdf_waffle.png)
 ## Note : This is a work in progress and there will be frequent updates to this repository.
@@ -41,8 +42,7 @@ Below are my goals with the project
 
 
 # ROS Instructions 
-![Robot Animation](images/ros_gif.gif)
-
+<img src="images/ros_noetic_logo1-1024x601-1.webp" alt="Example Image" width="600">
 
 # Setting Up Raspberry Pi 4
 * Setting up ROS Noetic on Raspberry pi 4 and Lidar Integration.
@@ -124,12 +124,14 @@ python astro_navigation.py
 ```
 
 # ROS 2 Instructions
-![ROS2](images/ROS2_Humble_Hawksbill.png)
+<img src="images/ROS2_Humble_Hawksbill.png" alt="Example Image" width="500">
 
 ## How to install and use micro-ros
 
 * Reference - https://micro.ros.org/docs/tutorials/core/first_application_linux/
 
+
+# Raspberry pi configurations and access
 
 ## How to compile and install pico firmware
 1. After cloning the astro repo make sure to run `git submodule update --init --recursive`.
@@ -137,7 +139,14 @@ python astro_navigation.py
 3. Build the firmware `cmake --build build`.
 4. Connect your device so it’s ready for file transfer.
 
+## VNC Server
+These are commands you will need to run everytime you need to access raspberry pi through VNC
 
+`vncserver :1 -localhost no -geometry 1920x1080`
+
+From the host side you will need to use this in place of the ip address
+
+`<ip-address>:1`
 
 # Gratitude and References:
 * A big thanks to Matthieu M  whose work on Fox bot not only helped me building my odometry but with his 3D printed stl files and ideas he presented in his project helped out a lot.
