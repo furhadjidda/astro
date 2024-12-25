@@ -77,13 +77,14 @@ sensor_msgs__msg__NavSatFix gnss_parser::parseGGA(const std::vector<std::string>
     return msg;
 }
 
-sensor_msgs__msg__NavSatFix gnss_parser::packData(const double& latitude, const char lat, const double& longitude, const char lon, const double& altitude , const bool& fix)
+sensor_msgs__msg__NavSatFix gnss_parser::packData(const double& latitude, const char lat,
+                                        const double& longitude, const char lon,
+                                        const double& altitude , const bool& fix ,
+                                        const uint8_t& fixQuality,
+                                        const double& hdop, const double& pdop, const double& vdop)
 {
     sensor_msgs__msg__NavSatFix msg = {};
-    // @todo need to clean this up to provide proper lat and long
-
     // Latitude
-    //msg.latitude = 4.0;
     double lat_deg = static_cast<int>(latitude / 100);
     double lat_min = latitude - lat_deg * 100;
     msg.latitude = lat_deg + lat_min / 60.0;
@@ -92,7 +93,6 @@ sensor_msgs__msg__NavSatFix gnss_parser::packData(const double& latitude, const 
     }
 
     // Longitude
-    //msg.longitude = 5.0;
     double lon_deg = static_cast<int>(longitude / 100);
     double lon_min = longitude - lon_deg * 100;
     msg.longitude = lon_deg + lon_min / 60.0;
@@ -103,7 +103,6 @@ sensor_msgs__msg__NavSatFix gnss_parser::packData(const double& latitude, const 
 
     // Altitude
     msg.altitude = altitude;
-
     // Status
     int status = fix;
     // Set the status based on the value
@@ -111,6 +110,13 @@ sensor_msgs__msg__NavSatFix gnss_parser::packData(const double& latitude, const 
                         sensor_msgs__msg__NavSatStatus__STATUS_FIX :
                         sensor_msgs__msg__NavSatStatus__STATUS_NO_FIX;
     msg.status.service = sensor_msgs__msg__NavSatStatus__SERVICE_GPS;
+
+    msg.position_covariance_type = fixQuality;
+
+    // position covariance
+    msg.position_covariance[0] = hdop * hdop;
+    msg.position_covariance[4] = hdop * hdop;
+    msg.position_covariance[8] = vdop * vdop;
 
     return msg;
 }

@@ -82,7 +82,7 @@ void loop() {
         rcl_publish(&dbg_publisher, &dbg_msg, NULL);  // Publish to dbg_mesg topic
 
 
-        nav_sat_fix_msg = parser.packData(GPS.mLatitude,GPS.mLat, GPS.mLongitude,GPS.mLon ,GPS.mAltitude, GPS.mFix );
+        nav_sat_fix_msg = parser.packData(GPS.mLatitude,GPS.mLat, GPS.mLongitude,GPS.mLon ,GPS.mAltitude, GPS.mFix,GPS.mFixquality_3d,GPS.mHDOP,GPS.mPDOP,GPS.mVDOP );
         rcl_publish(&publisher, &nav_sat_fix_msg, NULL);
     }
 }

@@ -26,6 +26,10 @@ class gnss_parser{
     public:
         sensor_msgs__msg__NavSatFix parseGGA(const std::vector<std::string> &tokens);
         std::vector<std::string> split(const std::string &str, char delimiter);
-        sensor_msgs__msg__NavSatFix packData(const double& latitude, const char lat, const double& longitude, const char lon, const double& altitude , const bool& fix);
+        sensor_msgs__msg__NavSatFix packData(const double& latitude, const char lat,
+                                             const double& longitude, const char lon,
+                                             const double& altitude , const bool& fix ,
+                                             const uint8_t& mFixQuality,
+                                             const double& hdop, const double& pdop, const double& vdop);
 
 };
