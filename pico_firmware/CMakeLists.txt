@@ -25,22 +25,27 @@ if (BUILD_FOR_HOST)
     # Name the project
     project(${PROJECT_NAME}
         LANGUAGES C CXX ASM
-        DESCRIPTION "Embedded Software Pico"
+        DESCRIPTION "Astro Firmware for Pico"
     )
 
     # Path to Google Test
-    #set(GTEST_ROOT "${CMAKE_SOURCE_DIR}/external/googletest")
-    #set(TESTS_ROOT "${CMAKE_SOURCE_DIR}/tests")
-    #set(GPS_LIBRARY "${CMAKE_SOURCE_DIR}/lib/adafruit_gps")
-    #set(MOCKS_PATH "${CMAKE_SOURCE_DIR}/tests/mocks")
-    #add_subdirectory(${GTEST_ROOT})
-    #add_subdirectory(${TESTS_ROOT})
-    #add_subdirectory(${GPS_LIBRARY})
+    set(GTEST_ROOT "${CMAKE_SOURCE_DIR}/external/googletest")
+    set(GNSS_PARSER "${CMAKE_SOURCE_DIR}/gnss_node_firmware/gnss_parser")
+    set(TESTS_ROOT "${CMAKE_SOURCE_DIR}/gnss_node_firmware/tests")
+    set(GPS_LIBRARY "${CMAKE_SOURCE_DIR}/sensor_drivers/adafruit_pa1010d_mini_gps")
+    set(MOCKS_PATH "${CMAKE_SOURCE_DIR}/tests_common/mocks")
+    set(ROOT_DIR_FIRMWARE "${CMAKE_SOURCE_DIR}")
+    add_subdirectory(${GTEST_ROOT})
+    add_subdirectory(${TESTS_ROOT})
+    add_subdirectory(${GPS_LIBRARY})
 
 
     message(STATUS "Configuring for host platform complete !!")
 else()### --------------------- TARGET BUILD -------------------------------------------------
     message(STATUS "Configuring for target platform")
+    # Set compiler flags for host build
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
 
     # Set the Pico board to use
     set(PICO_BOARD pico_w)
@@ -109,6 +114,7 @@ else()### --------------------- TARGET BUILD -----------------------------------
     #add_subdirectory(${PCA9685_CORE_TEST})
     #add_subdirectory(${GPS_LIBRARY})
     add_subdirectory("${CMAKE_SOURCE_DIR}/sensor_drivers")
+    add_subdirectory("${CMAKE_SOURCE_DIR}/gnss_node_firmware")
 
     message(STATUS "Configuring for target platform complete !!")
 endif()
