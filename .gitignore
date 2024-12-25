@@ -62,3 +62,4 @@ dkms.conf
 build
 build_host
 build_target
+*_build

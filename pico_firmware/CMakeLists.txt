@@ -43,9 +43,6 @@ if (BUILD_FOR_HOST)
     message(STATUS "Configuring for host platform complete !!")
 else()### --------------------- TARGET BUILD -------------------------------------------------
     message(STATUS "Configuring for target platform")
-    # Set compiler flags for host build
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
 
     # Set the Pico board to use
     set(PICO_BOARD pico_w)

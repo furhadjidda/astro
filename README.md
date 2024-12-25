@@ -19,7 +19,7 @@ Below are my goals with the project
 
 2. Arduino Mkr zero
 
-3. Arduino Mkr Motor Carrier 
+3. Arduino Mkr Motor Carrier
 
 4. RPLIDAR(Slam Tech) [https://www.slamtec.com/en/Lidar/A1]
 
@@ -41,7 +41,7 @@ Below are my goals with the project
 10. Adafruit VL53L0X Time of Flight Distance Sensor [https://www.adafruit.com/product/3317]
 
 
-# ROS Instructions 
+# ROS Instructions
 <img src="images/ros_noetic_logo1-1024x601-1.webp" alt="Example Image" width="600">
 
 # Setting Up Raspberry Pi 4
@@ -101,10 +101,10 @@ $ rosrun teleop_twist_keyboard teleop_twist_keyboard.py
 6. Open another terminal, and run the `RpiLIDAR` node
 ```
 $ source devel/setup.bash
-$ roslaunch astro_bringup astro_lidar.launch 
+$ roslaunch astro_bringup astro_lidar.launch
 ```
 
-7. Alternatively you could also launch the "launch_rover.py" script 
+7. Alternatively you could also launch the "launch_rover.py" script
 by logging into the VNC desktop connection. This will automatically
 launch different nodes on different terminals in some cases the script
 will even detect if the device is connected before launching the nodes.
@@ -134,9 +134,16 @@ python astro_navigation.py
 # Raspberry pi configurations and access
 
 ## How to compile and install pico firmware
+### host build( for running tests )
 1. After cloning the astro repo make sure to run `git submodule update --init --recursive`.
-2. Configure cmake `cmake -S . -B build/`.
-3. Build the firmware `cmake --build build`.
+2. Configure cmake `cmake -S . -B host_build/ -DBUILD_FOR_HOST=ON`.
+3. Build the firmware `cmake --build host_build`.
+4. You can now run tests
+
+### target build( Firmware image)
+1. After cloning the astro repo make sure to run `git submodule update --init --recursive`.
+2. Configure cmake `cmake -S . -B target_build/`.
+3. Build the firmware `cmake --build target_build`.
 4. Connect your device so it’s ready for file transfer.
 
 ## VNC Server
