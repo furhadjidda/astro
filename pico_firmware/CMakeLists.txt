@@ -101,6 +101,7 @@ else()### --------------------- TARGET BUILD -----------------------------------
     add_subdirectory(${MICROROS_ROOT})
     add_subdirectory("${CMAKE_SOURCE_DIR}/sensor_drivers")
     add_subdirectory("${CMAKE_SOURCE_DIR}/gnss_node_firmware")
+    add_subdirectory("${CMAKE_SOURCE_DIR}/bno055_node_firmware")
 
     message(STATUS "Configuring for target platform complete !!")
 endif()
