@@ -3,13 +3,14 @@
 #include "pico/cyw43_arch.h"
 #include "pico/stdlib.h"
 #include "pico_uart_transports.h"
+#include "rcl/time.h"
+#include "rcutils/time.h"
 #include <math.h>
 #include <rcl/rcl.h>
 #include <rclc/executor.h>
 #include <rclc/rclc.h>
 #include <rmw_microros/rmw_microros.h>
 #include <sensor_msgs/msg/imu.h>
-
 // Structure for quaternion
 struct Quaternion {
     float x;
@@ -69,8 +70,12 @@ void populate_imu_msg(sensor_msgs__msg__Imu &msg) {
 
     msg.header.frame_id.data = "imu_frame";
     rcl_time_point_value_t now;
-    msg.header.stamp.sec = RCL_NS_TO_S(now);
-    msg.header.stamp.nanosec = now % RCL_S_TO_NS(1);
+    rcutils_time_point_value_t time_now;
+    rcutils_system_time_now(&time_now);
+    now = static_cast<rcl_time_point_value_t>(time_now);
+    // Populate the timestamp
+    msg.header.stamp.sec = static_cast<uint32_t>(now / RCL_S_TO_NS(1));
+    msg.header.stamp.nanosec = static_cast<uint32_t>(now % RCL_S_TO_NS(1));
 
     // Fill accelerometer data
     msg.linear_acceleration.x = accel[0];
