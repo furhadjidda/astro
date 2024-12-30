@@ -17,13 +17,12 @@
 
 #include "gnss_parser.hpp"
 
-sensor_msgs__msg__NavSatFix gnss_parser::parseGGA(const std::vector<std::string> &tokens)
-{
+sensor_msgs__msg__NavSatFix gnss_parser::parseGGA(const std::vector<std::string> &tokens) {
     sensor_msgs__msg__NavSatFix msg;
 
     // Check if there are enough tokens
     if (tokens.size() < 15) {
-        //std::cerr << "Invalid GGA sentence: insufficient tokens" << std::endl;
+        // std::cerr << "Invalid GGA sentence: insufficient tokens" << std::endl;
         return msg; // Return an empty message if the sentence is invalid
     }
 
@@ -69,21 +68,20 @@ sensor_msgs__msg__NavSatFix gnss_parser::parseGGA(const std::vector<std::string>
     }
 
     // Set the status based on the value
-    msg.status.status = (status == 1 || status == 2) ?
-                        sensor_msgs__msg__NavSatStatus__STATUS_FIX :
-                        sensor_msgs__msg__NavSatStatus__STATUS_NO_FIX;
+    msg.status.status = (status == 1 || status == 2) ? sensor_msgs__msg__NavSatStatus__STATUS_FIX
+                                                     : sensor_msgs__msg__NavSatStatus__STATUS_NO_FIX;
     msg.status.service = sensor_msgs__msg__NavSatStatus__SERVICE_GPS;
 
     return msg;
 }
 
-sensor_msgs__msg__NavSatFix gnss_parser::packData(const double& latitude, const char lat,
-                                        const double& longitude, const char lon,
-                                        const double& altitude , const bool& fix ,
-                                        const uint8_t& fixQuality,
-                                        const double& hdop, const double& pdop, const double& vdop)
-{
+sensor_msgs__msg__NavSatFix gnss_parser::packData(const double &latitude, const char lat, const double &longitude,
+                                                  const char lon, const double &altitude, const bool &fix,
+                                                  const uint8_t &fixQuality, const double &hdop, const double &pdop,
+                                                  const double &vdop) {
     sensor_msgs__msg__NavSatFix msg = {};
+    msg.header.frame_id.data = "gnss_frame";
+    msg.header.frame_id.size = sizeof("gnss_frame");
     // Latitude
     double lat_deg = static_cast<int>(latitude / 100);
     double lat_min = latitude - lat_deg * 100;
@@ -100,15 +98,13 @@ sensor_msgs__msg__NavSatFix gnss_parser::packData(const double& latitude, const 
         msg.longitude = -msg.longitude;
     }
 
-
     // Altitude
     msg.altitude = altitude;
     // Status
     int status = fix;
     // Set the status based on the value
-    msg.status.status = (status == true ) ?
-                        sensor_msgs__msg__NavSatStatus__STATUS_FIX :
-                        sensor_msgs__msg__NavSatStatus__STATUS_NO_FIX;
+    msg.status.status =
+        (status == true) ? sensor_msgs__msg__NavSatStatus__STATUS_FIX : sensor_msgs__msg__NavSatStatus__STATUS_NO_FIX;
     msg.status.service = sensor_msgs__msg__NavSatStatus__SERVICE_GPS;
 
     msg.position_covariance_type = fixQuality;
@@ -121,11 +117,7 @@ sensor_msgs__msg__NavSatFix gnss_parser::packData(const double& latitude, const 
     return msg;
 }
 
-
-
-
-std::vector<std::string> gnss_parser::split(const std::string &str, char delimiter)
-{
+std::vector<std::string> gnss_parser::split(const std::string &str, char delimiter) {
     std::vector<std::string> tokens;
     std::string token;
     std::istringstream tokenStream(str);
