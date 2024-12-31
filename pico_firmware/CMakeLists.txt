@@ -64,6 +64,7 @@ else()### --------------------- TARGET BUILD -----------------------------------
     # Set FreeRTOS directories
     set(FREERTOS_CFG_DIRECTORY "${CMAKE_SOURCE_DIR}/free_rtos_config")
     set(FREERTOS_SRC_DIRECTORY "${CMAKE_SOURCE_DIR}/external/FreeRTOS-Kernel")
+    set(ROOT_DIR_FIRMWARE "${CMAKE_SOURCE_DIR}")
 
     # Include the Pico SDK
     include(pico_sdk_import.cmake)
@@ -102,6 +103,7 @@ else()### --------------------- TARGET BUILD -----------------------------------
     add_subdirectory("${CMAKE_SOURCE_DIR}/sensor_drivers")
     add_subdirectory("${CMAKE_SOURCE_DIR}/gnss_node_firmware")
     add_subdirectory("${CMAKE_SOURCE_DIR}/bno055_node_firmware")
+    add_subdirectory("${CMAKE_SOURCE_DIR}/imu_gnss_node")
 
     message(STATUS "Configuring for target platform complete !!")
 endif()
