@@ -1,0 +1,33 @@
+@startuml
+start
+if (Is in Auto mode?) then (No)
+    :Return false;
+    stop
+else (Yes)
+    :Get current time;
+    :Calculate time difference (now - lastTime);
+    if (Time difference >= SampleTime?) then (No)
+        :Return false;
+        stop
+    else (Yes)
+        :Compute error (Setpoint - Input);
+        :Compute dInput (Input - lastInput);
+        :Update integral sum (outputSum += ki * error);
+        if (P_ON_M?) then (Yes)
+            :Subtract kp * dInput from outputSum;
+        endif
+        :Clamp outputSum within [outMin, outMax];
+        if (P_ON_E?) then (Yes)
+            :Compute proportional term (kp * error);
+        else (No)
+            :Set proportional term to 0;
+        endif
+        :Compute output = Proportional + Integral - Derivative;
+        :Clamp output within [outMin, outMax];
+        :Set myOutput to output;
+        :Update lastInput and lastTime;
+        :Return true;
+        stop
+    endif
+endif
+@enduml

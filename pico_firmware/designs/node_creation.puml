@@ -1,0 +1,68 @@
+@startuml
+!define RECTANGLE #D3D3D3
+title ROS 2 Node Lifecycle with Publishers, Subscribers, Timers, and Callbacks
+
+skinparam backgroundColor RECTANGLE
+
+start
+
+:Initialize ROS 2 environment;
+:Create rcl_allocator_t using rcl_get_default_allocator();
+:Initialize rclc_support_t with rclc_support_init();
+
+if (Support initialization success?) then (Yes)
+    :Create rcl_node_t with rclc_node_init_default();
+    if (Node initialization success?) then (Yes)
+        fork
+        :Create publisher(s) with rclc_publisher_init_default;
+        note right: <back:LightGreen>Publisher</back> is created to send messages
+        if (Publisher creation success?) then (Yes)
+            :<back:LightGreen>Publisher created successfully</back>;
+        else (No)
+            :Log error: "Failed to create publisher";
+        endif
+        fork again
+        :Create subscriber(s) with rclc_subscription_init_default;
+        note right: <back:LightSkyBlue>Subscriber</back> is created to receive messages
+        if (Subscriber creation success?) then (Yes)
+            :<back:LightSkyBlue>Subscriber created successfully</back>;
+        else (No)
+            :Log error: "Failed to create subscriber";
+        endif
+        fork again
+        :Create timer(s) with rclc_timer_init_default;
+        note right: <back:LightCoral>Timer</back> is created to trigger periodic callbacks
+        if (Timer creation success?) then (Yes)
+            :<back:LightCoral>Timer created successfully</back>;
+        else (No)
+            :Log error: "Failed to create timer";
+        endif
+        end fork
+        :Create rclc_executor_t for spinning;
+        note right: Executor is created but not yet populated with subscriptions, timers, or publishers.
+
+        :Explicitly add <back:LightSkyBlue>subscribers</back> to executor with rclc_executor_add_subscription;
+        note right: Subscribers are explicitly added to the executor.
+
+        :Explicitly add <back:LightCoral>timers</back> to executor with rclc_executor_add_timer;
+        note right: Timers are explicitly added to the executor after initialization.
+
+        :Explicitly add <back:LightGreen>publishers</back> to executor (if needed);
+
+        :Run spin loop;
+        while (Run loop) is (Yes)
+            :Spin the node with rclc_executor_spin_some;
+            :Execute callbacks for timers and subscribers;
+        endwhile
+
+        :Clean up resources;
+    else (No)
+        :Log error: "Failed to create node";
+    endif
+else (No)
+    :Log error: "Failed to initialize support";
+endif
+
+stop
+
+@enduml

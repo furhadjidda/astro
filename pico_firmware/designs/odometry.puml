@@ -1,0 +1,46 @@
+@startuml
+
+start
+
+:Initialize motor control interface;
+:Initialize publisher;
+
+partition "Motor Odometry Update" {
+    :Fetch current time (mCurrentTime);
+    :Calculate elapsed time (dt);
+    :Filter motor direction (Median Filter);
+    :Calculate encoder increments for both motors;
+    :Update filtered increments per second;
+
+    :Estimate motor rates (aRateEst);
+    :If frequency controller update required, update PWM;
+    :Adjust PWM based on PID-like control loop;
+}
+
+partition "Odometry Calculation" {
+    :Calculate linear velocity (mLinearVelocityEst);
+    :Calculate angular velocity (mAngularVelocityEst);
+    :Calculate change in position (dx, dy);
+    :Update robot yaw (mYawEst);
+    :Calculate quaternion for orientation;
+    :Set odometry message (aOdometry);
+}
+
+partition "Handling Command Velocity" {
+    :Listen for incoming cmd_vel (geometry_msgs__msg__Twist);
+    :Calculate desired motor rates (aRateRef);
+    :Send reference rates to motors;
+    :Log motor rates and PWM values;
+}
+
+partition "Rate Control Logic" {
+    :Calculate error (epsilon) between reference and estimated rates;
+    :Adjust PWM using PID (P, I, D);
+    :Constrain PWM within allowed limits;
+}
+
+:Publish log data;
+
+stop
+
+@enduml

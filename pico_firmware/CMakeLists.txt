@@ -104,6 +104,7 @@ else()### --------------------- TARGET BUILD -----------------------------------
     add_subdirectory("${CMAKE_SOURCE_DIR}/gnss_node_firmware")
     add_subdirectory("${CMAKE_SOURCE_DIR}/bno055_node_firmware")
     add_subdirectory("${CMAKE_SOURCE_DIR}/imu_gnss_node")
+    add_subdirectory("${CMAKE_SOURCE_DIR}/differential_drive_node")
 
     message(STATUS "Configuring for target platform complete !!")
 endif()

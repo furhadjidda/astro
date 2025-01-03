@@ -1,0 +1,32 @@
+@startuml
+start
+:Initialize median_filter;
+if (Constructor type?) then (Default)
+    :Set _filter_size to 1;
+    :Allocate _buffer[1];
+else (Parameterized)
+    :Set _filter_size to input size;
+    :Allocate _buffer[_filter_size];
+endif
+
+:Wait for input;
+if (Input action?) then (Set Size)
+    :Resize buffer;
+    :Copy old data to new buffer;
+    :Reset _current_filter_size;
+else if (Add Sample)
+    if (_current_filter_size < _filter_size) then (Yes)
+        :Append sample to _buffer;
+        :Increment _current_filter_size;
+    else (No)
+        :Shift samples left in _buffer;
+        :Add new sample to end;
+    endif
+else if (Get Median)
+    :Copy _buffer to temp array;
+    :Sort temp array;
+    :Return middle value;
+endif
+
+stop
+@enduml

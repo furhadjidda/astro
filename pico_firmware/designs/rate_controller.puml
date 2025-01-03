@@ -1,0 +1,29 @@
+@startuml
+start
+
+:Input: aRateRef, aRateEst, aPrevTime, aPrevEpsilon, aIEpsilon;
+:Output: aPwmRate;
+
+:Calculate epsilon = abs(aRateRef) - abs(aRateEst);
+
+:Calculate d_epsilon = (epsilon - aPrevEpsilon) / (aPrevTime - millis());
+
+if (aRateRef == 0.0) then (yes)
+    :Set aIEpsilon = 0.0;
+else (no)
+    :Update aIEpsilon = aIEpsilon + epsilon * (aPrevTime - millis()) * RATE_CONTROLLER_KI;
+endif
+
+:Clamp aIEpsilon to range [-RATE_INTEGRAL_FREEZE, RATE_INTEGRAL_FREEZE];
+
+:Update aPrevTime = millis();
+:Update aPrevEpsilon = epsilon;
+
+:Calculate aPwmRate = epsilon * RATE_CONTROLLER_KP + d_epsilon * RATE_CONTROLLER_KD + aIEpsilon * RATE_CONTROLLER_KI;
+
+:Clamp aPwmRate to range [RATE_CONTROLLER_MIN_PWM, RATE_CONTROLLER_MAX_PWM];
+
+:Output aPwmRate;
+
+stop
+@enduml

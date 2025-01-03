@@ -130,8 +130,44 @@ python astro_navigation.py
 
 * Reference - https://micro.ros.org/docs/tutorials/core/first_application_linux/
 
+## Static transformations
+### For odomtery
+ros2 run tf2_ros static_transform_publisher 0 0 0 0 0 0 1 odom base_link
+### For imu
+ros2 run tf2_ros static_transform_publisher 0 0 0 0 0 0 map imu_frame
+
+
+## Lidar
+ros2 launch sllidar_ros2 view_sllidar_a1_launch.py scan_mode:=Standard
+
 
 # Raspberry pi configurations and access
+
+## Configuring host and target machines
+I want to be able to see all the nodes my raspberry pi has on it and vice versa. This way I can potentially offload CPU intensive operations on the host machine like SLAM and 3D mapping. for me to be able to do that I added these lines in the ~/.bashrc file.
+
+```
+# Set the same domain ID for all devices
+export ROS_DOMAIN_ID=10
+
+# Choose a common DDS implementation (e.g., CycloneDDS or FastDDS)
+export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+
+```
+
+to test if this is working or not you can run one of these node on a raspberry pi and one on desktop pc.
+
+```
+ros2 run demo_nodes_cpp talker
+
+ros2 run demo_nodes_cpp listener
+```
+
+NOTE: Make sure that both the raspberry pi and the desktop PC are on the same network.
+
+NOTE: After making the changes in the ~/.bashrc file please make sure that the node is also setting the domain id as 10, otherwise you will not see any topics using `ros2 topic echo <topic_name>`.
+so basically make sure that the if your environment has domain id as 10 the nodes you are trying to list or echo also has the same domain id.
+
 
 ## How to compile and install pico firmware
 ### host build( for running tests )

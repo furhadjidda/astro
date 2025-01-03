@@ -1,6 +1,4 @@
-#include <sys/_intsup.h>
-#include <sys/_stdint.h>
-#include <sys/_types.h>
+
 
 /*
  *   This file is part of astro_core_ros.
@@ -21,27 +19,37 @@
 
 #ifndef __COMMON_HPP__
 #define __COMMON_HPP__
-
-#include "Arduino.h"
-#include "mbed.h"
-#include <Timer.h>
+#include "hardware/i2c.h"
+#include "pico/cyw43_arch.h"
+#include "pico/stdlib.h"
+#include "pico_uart_transports.h"
+#include "utility/utils.hpp"
 #include <chrono>
+#include <memory>
+#include <rclc/executor.h>
+#include <rclc/rclc.h>
+#include <rmw_microros/rmw_microros.h>
+#include <rosidl_runtime_c/string_functions.h>
+#include <std_msgs/msg/string.h>
+#include <string>
+#include <sys/_intsup.h>
+#include <sys/_stdint.h>
+#include <sys/_types.h>
+
 using namespace std::chrono;
 
 enum MotorId {
-  MotorA = 0, // Right
-  MotorB,     // Left
-  MaxMotorValue
+    MotorA = 0, // Right
+    MotorB,     // Left
+    MaxMotorValue
 };
 
 enum MotorDirection { Forward = 0, Backward, MotorDirectionMaxValue };
 
 // Motor Characteristics
-static const uint16_t ppr =
-    1176; // pulses/ticks per revolution , gear Ration = 1/98 and each loop
-          // output pulses = 12 PPR. Hence 98*12 = 1176. Also called as
-          // resolution
-static const uint8_t cpr = 48;            // counts per revolution
+static const uint16_t ppr = 1176; // pulses/ticks per revolution , gear Ration = 1/98 and each loop output pulses = 12
+                                  // PPR. Hence 98*12 = 1176. Also called as resolution
+static const uint8_t cpr = 48;    // counts per revolution
 static const uint8_t wheelRadius = 39;    // 78 mm diameter
 static const uint8_t wheelDistance = 182; // distance between the wheels
 

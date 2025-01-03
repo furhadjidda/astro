@@ -132,14 +132,14 @@ void MotorControl::SetMotorRateAndDirection(MotorId aMotorId, int aPwmRef, const
     // avoid noisy pwm range
     if (abs(aRateRef) < 0.1)
       aPwmRef = 0;
-  
+
     // write direction
-    if (aRateRef > 0) 
+    if (aRateRef > 0)
     {
         mPwm.SetLevel(mMotor[aMotorId].GetPinAValue(), 1);
         mPwm.SetLevel(mMotor[aMotorId].GetPinBValue(), 0);
     }
-    else if (aRateRef < 0) 
+    else if (aRateRef < 0)
     {
         mPwm.SetLevel(mMotor[aMotorId].GetPinAValue(), 0);
         mPwm.SetLevel(mMotor[aMotorId].GetPinBValue(), 1);
