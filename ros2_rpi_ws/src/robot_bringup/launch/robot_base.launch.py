@@ -7,17 +7,18 @@ def generate_launch_description():
     microros_node = Node(
         package="micro_ros_agent",
         executable = "micro_ros_agent",
-        arguments=["serial", "--dev", "/dev/ttyACM0", "-v6"]
+        name='micro_ros_agent',
+        arguments=["serial", "--dev", "/dev/ttyACM1"],
     )
     odometry_tf2_broadcaster = Node(
         package="astro_odometry_tf_broadcaster",
         executable = "odometry_tf_broadcaster",
     )
-    base_link_to_base_footprint = Node(package = "tf2_ros", 
+    base_link_to_base_footprint = Node(package = "tf2_ros",
                 executable = "static_transform_publisher",
                 arguments = ["0", "0", "0", "0", "0", "0", "base_link", "base_footprint"]
     )
-    base_link_to_imu_link = Node(package = "tf2_ros", 
+    base_link_to_imu_link = Node(package = "tf2_ros",
                 executable = "static_transform_publisher",
                 arguments = ["0", "0", "0", "0", "0", "0", "base_link", "imu_link"]
     )
