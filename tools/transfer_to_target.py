@@ -25,7 +25,8 @@ print("Parent Directory:", parent_dir)
 paths = [parent_dir+'/ros2_rpi_ws/src/astro_odometry_tf_broadcaster',
     parent_dir+'/ros2_rpi_ws/src/astro_robot_description',
     parent_dir+'/ros2_rpi_ws/src/astro_teleop_twist_joy',
-    parent_dir+'/ros2_rpi_ws/src/robot_bringup']
+    parent_dir+'/ros2_rpi_ws/src/robot_bringup',
+    parent_dir+'/ros2_rpi_ws/src/astro_cartographer']
 
 def Usage():
   print(Fore.MAGENTA +'USAGE')
