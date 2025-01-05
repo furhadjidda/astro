@@ -127,6 +127,13 @@ int main() {
         odometry.UpdateOdometry();
         rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100));
         odometry.CalculateOdometry(odometry_msg);
+        rcl_time_point_value_t now;
+        rcutils_time_point_value_t time_now;
+        rcutils_system_time_now(&time_now);
+        now = static_cast<rcl_time_point_value_t>(time_now);
+        // Populate the timestamp
+        odometry_msg.header.stamp.sec = static_cast<uint32_t>(now / RCL_S_TO_NS(1));
+        odometry_msg.header.stamp.nanosec = static_cast<uint32_t>(now % RCL_S_TO_NS(1));
         // Publish odometry data
         if (RCL_RET_OK != rcl_publish(&odometry_publisher, &odometry_msg, NULL)) {
             printf("Failed to publish odometry data\n");
