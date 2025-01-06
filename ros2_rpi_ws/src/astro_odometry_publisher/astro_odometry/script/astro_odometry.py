@@ -44,7 +44,7 @@ class TimeSynchronizerNode(Node):
         self.latest_odom_time = msg.header.stamp
         self.latest_odom_pose = msg.pose  # Assign pose data here
         self.latest_twist = msg.twist  # Assign pose data here
-        self.get_logger().info(f"Received Odometry with timestamp: {self.latest_odom_time}")
+        # self.get_logger().info(f"Received Odometry with timestamp: {self.latest_odom_time}")
 
         if self.latest_laser_time:
             self.sync_time()
@@ -52,7 +52,7 @@ class TimeSynchronizerNode(Node):
     def laser_callback(self, msg: LaserScan):
         # Update the latest laser time
         self.latest_laser_time = msg.header.stamp
-        self.get_logger().info(f"Received LaserScan with timestamp: {self.latest_laser_time}")
+        # self.get_logger().info(f"Received LaserScan with timestamp: {self.latest_laser_time}")
 
         if self.latest_odom_time:
             self.sync_time()

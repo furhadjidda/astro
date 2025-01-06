@@ -1,7 +1,7 @@
 from setuptools import find_packages
 from setuptools import setup
 
-package_name = 'astro_time'
+package_name = 'astro_odometry'
 
 setup(
     name=package_name,
@@ -22,7 +22,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'time_sync = astro_time.script.time_sync:main'
+            'astro_odometry = astro_odometry.script.astro_odometry:main'
         ],
     },
 )
