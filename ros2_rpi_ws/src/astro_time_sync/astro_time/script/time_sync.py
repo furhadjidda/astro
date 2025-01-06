@@ -12,7 +12,7 @@ class TimeSynchronizerNode(Node):
         # Subscriber for Odometry messages (odom frame)
         self.odom_subscriber = self.create_subscription(
             Odometry,
-            '/odom',
+            '/odom_raw',
             self.odom_callback,
             10
         )
@@ -60,7 +60,15 @@ class TimeSynchronizerNode(Node):
     def sync_time(self):
         # Synchronize odom timestamp with laser timestamp
         if self.latest_odom_time and self.latest_laser_time:
-            synced_time = self.latest_laser_time
+
+            if (self.latest_odom_time.sec > self.latest_laser_time.sec) or \
+                (self.latest_odom_time.sec == self.latest_laser_time.sec and
+                self.latest_odom_time.nanosec > self.latest_laser_time.nanosec):
+                synced_time = self.latest_odom_time
+            else:
+                synced_time = self.latest_laser_time
+
+            synced_time.nanosec += 1
 
             # Create a new Odometry message with the synchronized time
             synchronized_odom = Odometry()
@@ -94,7 +102,7 @@ class TimeSynchronizerNode(Node):
             # Broadcasting the transform
             self.tf_broadcaster.sendTransform(transform)
 
-            self.get_logger().info(f"Synchronized time: {synced_time} for Odometry and Laser")
+            self.get_logger().info(f">>Synchronized time: {synced_time} for Odometry and Laser")
 
 def main(args=None):
     rclpy.init(args=args)

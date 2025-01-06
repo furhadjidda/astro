@@ -53,7 +53,7 @@ class Odometry {
 
     motor_control *mMotorControl;
     geometry_msgs__msg__Quaternion mQuat;
-    rosidl_runtime_c__String mFrameId = {"odom", strlen("odom"), sizeof("odom")};
+    rosidl_runtime_c__String mFrameId = {"odom_raw", strlen("odom_raw"), sizeof("odom_raw")};
     rosidl_runtime_c__String mChildFrameId = {"base_footprint", strlen("base_footprint"), sizeof("base_footprint")};
     rcl_publisher_t *mLogPublisher;
     unsigned long mCurrentTime;

@@ -114,7 +114,7 @@ Visualization Manager:
       Topic:
         Depth: 5
         Durability Policy: Volatile
-        Filter size: 10
+        Filter size: 1000
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /scan
@@ -155,7 +155,7 @@ Visualization Manager:
       Topic:
         Depth: 5
         Durability Policy: Volatile
-        Filter size: 10
+        Filter size: 1000
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /odom
@@ -169,7 +169,7 @@ Visualization Manager:
       Topic:
         Depth: 5
         Durability Policy: Volatile
-        Filter size: 10
+        Filter size: 1000
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /map
@@ -194,7 +194,7 @@ Visualization Manager:
               Topic:
                 Depth: 5
                 Durability Policy: Volatile
-                Filter size: 10
+                Filter size: 1000
                 History Policy: Keep Last
                 Reliability Policy: Reliable
                 Value: /global_costmap/costmap

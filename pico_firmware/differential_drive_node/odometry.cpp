@@ -149,7 +149,7 @@ void Odometry::CalculateOdometry(nav_msgs__msg__Odometry &aOdometry) {
     // feed odom message
     // aOdometry.header.stamp.nanosec = rmw_uros_epoch_nanos();
     aOdometry.header.frame_id = mFrameId;
-    aOdometry.child_frame_id = mChildFrameId;
+    // aOdometry.child_frame_id = mChildFrameId;
     aOdometry.pose.pose.position.x += dx;
     aOdometry.pose.pose.position.y += dy;
     aOdometry.pose.pose.position.z = 0.0;

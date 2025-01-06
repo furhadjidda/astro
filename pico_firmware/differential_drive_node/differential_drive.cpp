@@ -106,9 +106,9 @@ int main() {
     rclc_subscription_init_default(&cmd_vel_subscriber, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(geometry_msgs, msg, Twist),
                                    "/cmd_vel");
     rclc_publisher_init_default(&odometry_publisher, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(nav_msgs, msg, Odometry),
-                                "/odom");
+                                "/odom_raw");
     rclc_publisher_init_default(&debug_publisher, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, String),
-                                "/odom_debug");
+                                "/odom_raw_debug");
 
     rclc_executor_t executor;
     rclc_executor_init(&executor, &support.context, 1, &allocator);
@@ -117,8 +117,8 @@ int main() {
     rclc_executor_add_subscription(&executor, &cmd_vel_subscriber, &msg, cmd_vel_callback, ON_NEW_DATA);
 
     // Initialize odometry message
-    odometry_msg.header.frame_id.data = strdup("odom");
-    odometry_msg.child_frame_id.data = strdup("base_link");
+    odometry_msg.header.frame_id.data = strdup("odom_raw");
+    // odometry_msg.child_frame_id.data = strdup("base_link");
     odometry_msg.header.frame_id.capacity = strlen(odometry_msg.header.frame_id.data) + 1;
     odometry_msg.child_frame_id.capacity = strlen(odometry_msg.child_frame_id.data) + 1;
     odometry.SetPublisher(&debug_publisher);
