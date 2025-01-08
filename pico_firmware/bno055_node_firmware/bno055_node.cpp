@@ -34,6 +34,7 @@ bool init_bno055() {
         printf("BNO055 initialization failed!\n");
         return false;
     }
+    imu.set_ext_crystal_use(true);
     printf("BNO055 initialized successfully.\n");
     return true;
 }
@@ -58,15 +59,17 @@ Quaternion eulerToQuaternion(float roll, float pitch, float yaw) {
 }
 
 void populate_imu_msg(sensor_msgs__msg__Imu &msg) {
+    // if (imu.is_fully_calibrated()) {
     double accel[3] = {0.0, 0.0, 0.0};
     double gyro[3] = {0.0, 0.0, 0.0};
     double mag[3] = {0.0, 0.0, 0.0};
     double euler[3] = {0.0, 0.0, 0.0};
-
+    quaternion_data q = {};
     imu.get_vector(VECTOR_ACCELEROMETER, accel);
     imu.get_vector(VECTOR_GYROSCOPE, gyro);
     imu.get_vector(VECTOR_MAGNETOMETER, mag);
     imu.get_vector(VECTOR_EULER, euler);
+    imu.get_quaternion(q);
 
     msg.header.frame_id.data = "imu_frame";
     rcl_time_point_value_t now;
@@ -88,7 +91,7 @@ void populate_imu_msg(sensor_msgs__msg__Imu &msg) {
     msg.angular_velocity.z = gyro[2];
 
     // Fill orientation (optional: needs quaternion calculation)
-    Quaternion q = eulerToQuaternion(euler[0], euler[1], euler[2]);
+    // Quaternion q = eulerToQuaternion(euler[0], euler[1], euler[2]);
     msg.orientation.x = q.x;
     msg.orientation.y = q.y;
     msg.orientation.z = q.z;
@@ -101,9 +104,10 @@ void populate_imu_msg(sensor_msgs__msg__Imu &msg) {
         msg.angular_velocity_covariance[i] = 0.0;
         msg.orientation_covariance[i] = 0.0;
     }
+    //}
 }
 int main() {
-
+    setenv("ROS_DOMAIN_ID", "10", 1);
     rmw_uros_set_custom_transport(true, NULL, pico_serial_transport_open, pico_serial_transport_close,
                                   pico_serial_transport_write, pico_serial_transport_read);
 
@@ -112,14 +116,20 @@ int main() {
         return 1;
     }
     cyw43_arch_init();
+    cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
     // Initialize micro-ROS
     rcl_allocator_t allocator = rcl_get_default_allocator();
-    rclc_support_t support;
+    // Initialize and modify options (Set DOMAIN ID to 10)
+    rcl_init_options_t init_options = rcl_get_zero_initialized_init_options();
+    rcl_init_options_init(&init_options, allocator);
+    rcl_init_options_set_domain_id(&init_options, 10);
 
-    rclc_support_init(&support, 0, NULL, &allocator);
+    // Initialize rclc support object with custom option
+    rclc_support_t support;
+    rclc_support_init_with_options(&support, 0, NULL, &init_options, &allocator);
 
     rcl_node_t node;
-    rclc_node_init_default(&node, "bno055_publisher", "", &support);
+    rclc_node_init_default(&node, "_fram", "", &support);
 
     rclc_publisher_init_default(&imu_publisher, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, Imu), "imu/data");
 
