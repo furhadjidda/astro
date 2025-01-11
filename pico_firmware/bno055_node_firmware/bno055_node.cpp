@@ -5,12 +5,15 @@
 #include "pico_uart_transports.h"
 #include "rcl/time.h"
 #include "rcutils/time.h"
+#include <cstdio>
+#include <cstring>
 #include <math.h>
 #include <rcl/rcl.h>
 #include <rclc/executor.h>
 #include <rclc/rclc.h>
 #include <rmw_microros/rmw_microros.h>
 #include <sensor_msgs/msg/imu.h>
+#include <std_msgs/msg/string.h>
 // Structure for quaternion
 struct Quaternion {
     float x;
@@ -19,6 +22,9 @@ struct Quaternion {
     float w;
 };
 
+float previous_yaw = 0.0;
+float previous_pitch = 0.0;
+float previous_roll = 0.0;
 // Micro-ROS Configuration
 #define LED_PIN 25
 #define PUBLISH_RATE_HZ 5 // Publishing frequency
@@ -28,6 +34,10 @@ bno055_sensor::Bno055 imu;
 sensor_msgs__msg__Imu imu_msg;
 
 rcl_publisher_t imu_publisher;
+rcl_publisher_t imu_debug_publisher;
+std_msgs__msg__String imu_data_msg;
+
+char json_buffer[1024];
 
 bool init_bno055() {
     if (!imu.initialization()) {
@@ -58,13 +68,16 @@ Quaternion eulerToQuaternion(float roll, float pitch, float yaw) {
     return q;
 }
 
-void populate_imu_msg(sensor_msgs__msg__Imu &msg) {
-    // if (imu.is_fully_calibrated()) {
+void populate_imu_msg(sensor_msgs__msg__Imu &msg, std_msgs__msg__String &debug_msg) {
     double accel[3] = {0.0, 0.0, 0.0};
     double gyro[3] = {0.0, 0.0, 0.0};
     double mag[3] = {0.0, 0.0, 0.0};
     double euler[3] = {0.0, 0.0, 0.0};
     quaternion_data q = {};
+    uint8_t calibration[4] = {0};
+    // get_calibration(uint8_t *sys, uint8_t *gyro, uint8_t *accel, uint8_t *mag)
+    imu.get_calibration(&calibration[0], &calibration[1], &calibration[3], &calibration[4]);
+
     imu.get_vector(VECTOR_ACCELEROMETER, accel);
     imu.get_vector(VECTOR_GYROSCOPE, gyro);
     imu.get_vector(VECTOR_MAGNETOMETER, mag);
@@ -104,7 +117,19 @@ void populate_imu_msg(sensor_msgs__msg__Imu &msg) {
         msg.angular_velocity_covariance[i] = 0.0;
         msg.orientation_covariance[i] = 0.0;
     }
-    //}
+    std::snprintf(json_buffer, sizeof(json_buffer),
+                  "{\"accelerometer\":{\"x\":%.2f,\"y\":%.2f,\"z\":%.2f},"
+                  "\"gyroscope\":{\"x\":%.2f,\"y\":%.2f,\"z\":%.2f},"
+                  "\"magnetometer\":{\"x\":%.2f,\"y\":%.2f,\"z\":%.2f},"
+                  "\"euler\":{\"roll\":%.2f,\"pitch\":%.2f,\"yaw\":%.2f},"
+                  "\"quaternion\":{\"w\":%.2f,\"x\":%.2f,\"y\":%.2f,\"z\":%.2f},"
+                  "\"calibration\":{\"sys\":%d,\"gyro\":%d,\"accel\":%d,\"mag\":%d}}",
+                  accel[0], accel[1], accel[2], gyro[0], gyro[1], gyro[2], mag[0], mag[1], mag[2], euler[0], euler[1],
+                  euler[2], q.w, q.x, q.y, q.z, calibration[0], calibration[1], calibration[2], calibration[3]);
+
+    debug_msg.data.data = strdup(json_buffer);
+    debug_msg.data.size = strlen(json_buffer);
+    debug_msg.data.capacity = debug_msg.data.size + 1;
 }
 int main() {
     setenv("ROS_DOMAIN_ID", "10", 1);
@@ -132,12 +157,16 @@ int main() {
     rclc_node_init_default(&node, "_fram", "", &support);
 
     rclc_publisher_init_default(&imu_publisher, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, Imu), "imu/data");
+    rclc_publisher_init_default(&imu_debug_publisher, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, String),
+                                "imu/debug");
+    // imu_debug_publisher
 
     rcl_timer_t timer;
     rclc_timer_init_default(&timer, &support, RCL_MS_TO_NS(1000 / PUBLISH_RATE_HZ),
                             [](rcl_timer_t *timer, int64_t last_call_time) {
-                                populate_imu_msg(imu_msg);
+                                populate_imu_msg(imu_msg, imu_data_msg);
                                 rcl_publish(&imu_publisher, &imu_msg, NULL);
+                                rcl_publish(&imu_debug_publisher, &imu_data_msg, NULL);
                                 cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, !cyw43_arch_gpio_get(CYW43_WL_GPIO_LED_PIN));
                             });
 
