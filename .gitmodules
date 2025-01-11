@@ -1,5 +1,5 @@
 [submodule "raspberry_pi/src/odometry_transform_broadcaster"]
-	path = raspberry_pi/src/odometry_transform_broadcaster
+	path = ros_ws/src/odometry_transform_broadcaster
 	url = https://github.com/furhadjidda/odometry_transform_broadcaster.git
 [submodule "pico_firmware/external/micro_ros_raspberrypi_pico_sdk"]
 	path = pico_firmware/external/micro_ros_raspberrypi_pico_sdk
