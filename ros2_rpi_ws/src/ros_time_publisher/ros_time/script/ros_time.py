@@ -1,7 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from builtin_interfaces.msg import Time as BuiltinTime
-
+from signal import signal, SIGINT
 
 class RosTimePublisher(Node):
     def __init__(self):
@@ -23,13 +23,21 @@ class RosTimePublisher(Node):
 def main(args=None):
     rclpy.init(args=args)
     node = RosTimePublisher()
+
+    def handle_interrupt(signum, frame):
+        node.destroy_node()
+        if rclpy.ok():
+            rclpy.shutdown()
+
+    signal(SIGINT, handle_interrupt)
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
         node.get_logger().info('Node interrupted, shutting down...')
     finally:
         node.destroy_node()
-        rclpy.shutdown()
+        if rclpy.ok():  # Shutdown only if not already shut down
+            rclpy.shutdown()
 
 if __name__ == '__main__':
     main()

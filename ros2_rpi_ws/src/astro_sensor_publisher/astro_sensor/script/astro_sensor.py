@@ -3,6 +3,7 @@ from rclpy.node import Node
 from sensor_msgs.msg import Imu, NavSatFix
 from builtin_interfaces.msg import Time as BuiltinTime
 from tf2_ros import TransformListener, TransformBroadcaster, Buffer
+from signal import signal, SIGINT
 
 class SensorSynchronization(Node):
     def __init__(self):
@@ -92,9 +93,22 @@ class SensorSynchronization(Node):
 def main(args=None):
     rclpy.init(args=args)
     node = SensorSynchronization()
-    rclpy.spin(node)
-    node.destroy_node()
-    rclpy.shutdown()
+
+    def handle_interrupt(signum, frame):
+        node.destroy_node()
+        if rclpy.ok():
+            rclpy.shutdown()
+
+    signal(SIGINT, handle_interrupt)
+
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        node.get_logger().info('Node interrupted, shutting down...')
+    finally:
+        node.destroy_node()
+        if rclpy.ok():  # Shutdown only if not already shut down
+            rclpy.shutdown()
 
 if __name__ == '__main__':
     main()
