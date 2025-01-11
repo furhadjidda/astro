@@ -156,7 +156,8 @@ int main() {
     rcl_node_t node;
     rclc_node_init_default(&node, "_fram", "", &support);
 
-    rclc_publisher_init_default(&imu_publisher, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, Imu), "imu/data");
+    rclc_publisher_init_default(&imu_publisher, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, Imu),
+                                "imu/data_raw");
     rclc_publisher_init_default(&imu_debug_publisher, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, String),
                                 "imu/debug");
     // imu_debug_publisher
