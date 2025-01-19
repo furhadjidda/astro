@@ -1,0 +1,18 @@
+[0.327s] Invoking command in '/projects/github_repos/astro/ros2_rpi_ws/build/robot_bringup': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/projects/github_repos/astro/ros2_rpi_ws/install/astro_time:/projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop:/projects/ros/microros_ws/install/sensor_msgs_py:/opt/ros/humble /usr/bin/cmake /projects/github_repos/astro/ros2_rpi_ws/src/robot_bringup -DCMAKE_INSTALL_PREFIX=/projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup
+[0.364s] -- The C compiler identification is GNU 11.4.0
+[0.402s] -- The CXX compiler identification is GNU 11.4.0
+[0.407s] -- Detecting C compiler ABI info
+[0.461s] -- Detecting C compiler ABI info - done
+[0.468s] -- Check for working C compiler: /usr/bin/cc - skipped
+[0.468s] -- Detecting C compile features
+[0.468s] -- Detecting C compile features - done
+[0.470s] -- Detecting CXX compiler ABI info
+[0.527s] -- Detecting CXX compiler ABI info - done
+[0.530s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[0.531s] -- Detecting CXX compile features
+[0.531s] -- Detecting CXX compile features - done
+[0.533s] -- Found ament_cmake: 1.3.11 (/opt/ros/humble/share/ament_cmake/cmake)
+[0.668s] -- Found Python3: /usr/bin/python3 (found version "3.10.12") found components: Interpreter 
+[0.794s] -- Configuring done
+[0.795s] -- Generating done
+[0.796s] -- Build files have been written to: /projects/github_repos/astro/ros2_rpi_ws/build/robot_bringup

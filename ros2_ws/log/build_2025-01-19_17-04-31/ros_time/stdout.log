@@ -1,0 +1,28 @@
+running egg_info
+creating ../../build/ros_time/ros_time.egg-info
+writing ../../build/ros_time/ros_time.egg-info/PKG-INFO
+writing dependency_links to ../../build/ros_time/ros_time.egg-info/dependency_links.txt
+writing entry points to ../../build/ros_time/ros_time.egg-info/entry_points.txt
+writing requirements to ../../build/ros_time/ros_time.egg-info/requires.txt
+writing top-level names to ../../build/ros_time/ros_time.egg-info/top_level.txt
+writing manifest file '../../build/ros_time/ros_time.egg-info/SOURCES.txt'
+reading manifest file '../../build/ros_time/ros_time.egg-info/SOURCES.txt'
+writing manifest file '../../build/ros_time/ros_time.egg-info/SOURCES.txt'
+running build
+running build_py
+creating /projects/github_repos/astro/ros2_ws/build/ros_time/build
+creating /projects/github_repos/astro/ros2_ws/build/ros_time/build/lib
+creating /projects/github_repos/astro/ros2_ws/build/ros_time/build/lib/ros_time
+copying ros_time/__init__.py -> /projects/github_repos/astro/ros2_ws/build/ros_time/build/lib/ros_time
+creating /projects/github_repos/astro/ros2_ws/build/ros_time/build/lib/ros_time/script
+copying ros_time/script/ros_time.py -> /projects/github_repos/astro/ros2_ws/build/ros_time/build/lib/ros_time/script
+copying ros_time/script/__init__.py -> /projects/github_repos/astro/ros2_ws/build/ros_time/build/lib/ros_time/script
+running install
+running install_lib
+running install_data
+running install_egg_info
+removing '/projects/github_repos/astro/ros2_ws/install/ros_time/lib/python3.10/site-packages/ros_time-2.1.5-py3.10.egg-info' (and everything under it)
+Copying ../../build/ros_time/ros_time.egg-info to /projects/github_repos/astro/ros2_ws/install/ros_time/lib/python3.10/site-packages/ros_time-2.1.5-py3.10.egg-info
+running install_scripts
+Installing ros_time script to /projects/github_repos/astro/ros2_ws/install/ros_time/lib/ros_time
+writing list of installed files to '/projects/github_repos/astro/ros2_ws/build/ros_time/install.log'

@@ -1,0 +1,30 @@
+[0.824s] Invoking command in '/projects/github_repos/astro/ros2_ws/src/astro_odometry_publisher': PYTHONPATH=/projects/github_repos/astro/ros2_ws/build/astro_odometry/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/projects/github_repos/astro/ros2_ws/install/astro_odometry/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/astro_odometry build --build-base /projects/github_repos/astro/ros2_ws/build/astro_odometry/build install --record /projects/github_repos/astro/ros2_ws/build/astro_odometry/install.log --single-version-externally-managed install_data
+[0.967s] running egg_info
+[0.967s] creating ../../build/astro_odometry/astro_odometry.egg-info
+[0.967s] writing ../../build/astro_odometry/astro_odometry.egg-info/PKG-INFO
+[0.967s] writing dependency_links to ../../build/astro_odometry/astro_odometry.egg-info/dependency_links.txt
+[0.967s] writing entry points to ../../build/astro_odometry/astro_odometry.egg-info/entry_points.txt
+[0.967s] writing requirements to ../../build/astro_odometry/astro_odometry.egg-info/requires.txt
+[0.967s] writing top-level names to ../../build/astro_odometry/astro_odometry.egg-info/top_level.txt
+[0.967s] writing manifest file '../../build/astro_odometry/astro_odometry.egg-info/SOURCES.txt'
+[0.968s] reading manifest file '../../build/astro_odometry/astro_odometry.egg-info/SOURCES.txt'
+[0.969s] writing manifest file '../../build/astro_odometry/astro_odometry.egg-info/SOURCES.txt'
+[0.969s] running build
+[0.969s] running build_py
+[0.969s] creating /projects/github_repos/astro/ros2_ws/build/astro_odometry/build
+[0.969s] creating /projects/github_repos/astro/ros2_ws/build/astro_odometry/build/lib
+[0.969s] creating /projects/github_repos/astro/ros2_ws/build/astro_odometry/build/lib/astro_odometry
+[0.969s] copying astro_odometry/__init__.py -> /projects/github_repos/astro/ros2_ws/build/astro_odometry/build/lib/astro_odometry
+[0.969s] creating /projects/github_repos/astro/ros2_ws/build/astro_odometry/build/lib/astro_odometry/script
+[0.969s] copying astro_odometry/script/astro_odometry.py -> /projects/github_repos/astro/ros2_ws/build/astro_odometry/build/lib/astro_odometry/script
+[0.970s] copying astro_odometry/script/__init__.py -> /projects/github_repos/astro/ros2_ws/build/astro_odometry/build/lib/astro_odometry/script
+[0.970s] running install
+[0.970s] running install_lib
+[0.971s] running install_data
+[0.971s] running install_egg_info
+[0.972s] removing '/projects/github_repos/astro/ros2_ws/install/astro_odometry/lib/python3.10/site-packages/astro_odometry-2.1.5-py3.10.egg-info' (and everything under it)
+[0.973s] Copying ../../build/astro_odometry/astro_odometry.egg-info to /projects/github_repos/astro/ros2_ws/install/astro_odometry/lib/python3.10/site-packages/astro_odometry-2.1.5-py3.10.egg-info
+[0.973s] running install_scripts
+[0.984s] Installing astro_odometry script to /projects/github_repos/astro/ros2_ws/install/astro_odometry/lib/astro_odometry
+[0.984s] writing list of installed files to '/projects/github_repos/astro/ros2_ws/build/astro_odometry/install.log'
+[1.007s] Invoked command in '/projects/github_repos/astro/ros2_ws/src/astro_odometry_publisher' returned '0': PYTHONPATH=/projects/github_repos/astro/ros2_ws/build/astro_odometry/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/projects/github_repos/astro/ros2_ws/install/astro_odometry/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/astro_odometry build --build-base /projects/github_repos/astro/ros2_ws/build/astro_odometry/build install --record /projects/github_repos/astro/ros2_ws/build/astro_odometry/install.log --single-version-externally-managed install_data

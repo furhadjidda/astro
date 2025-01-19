@@ -1,0 +1,18 @@
+-- Install configuration: ""
+-- Installing: /projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/share/robot_bringup/launch
+-- Installing: /projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/share/robot_bringup/launch/robot_base.launch.py
+-- Installing: /projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/share/ament_index/resource_index/package_run_dependencies/robot_bringup
+-- Installing: /projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/share/ament_index/resource_index/parent_prefix_path/robot_bringup
+-- Installing: /projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/share/robot_bringup/environment/ament_prefix_path.sh
+-- Installing: /projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/share/robot_bringup/environment/ament_prefix_path.dsv
+-- Installing: /projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/share/robot_bringup/environment/path.sh
+-- Installing: /projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/share/robot_bringup/environment/path.dsv
+-- Installing: /projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/share/robot_bringup/local_setup.bash
+-- Installing: /projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/share/robot_bringup/local_setup.sh
+-- Installing: /projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/share/robot_bringup/local_setup.zsh
+-- Installing: /projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/share/robot_bringup/local_setup.dsv
+-- Installing: /projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/share/robot_bringup/package.dsv
+-- Installing: /projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/share/ament_index/resource_index/packages/robot_bringup
+-- Installing: /projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/share/robot_bringup/cmake/robot_bringupConfig.cmake
+-- Installing: /projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/share/robot_bringup/cmake/robot_bringupConfig-version.cmake
+-- Installing: /projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/share/robot_bringup/package.xml

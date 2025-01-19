@@ -1,0 +1,528 @@
+[0.059s] DEBUG:colcon:Command line arguments: ['/usr/bin/colcon', 'build']
+[0.059s] DEBUG:colcon:Parsed command line arguments: Namespace(log_base=None, log_level=None, verb_name='build', build_base='build', install_base='install', merge_install=False, symlink_install=False, test_result_base=None, continue_on_error=False, executor='parallel', parallel_workers=24, event_handlers=None, ignore_user_meta=False, metas=['./colcon.meta'], base_paths=['.'], packages_ignore=None, packages_ignore_regex=None, paths=None, packages_up_to=None, packages_up_to_regex=None, packages_above=None, packages_above_and_dependencies=None, packages_above_depth=None, packages_select_by_dep=None, packages_skip_by_dep=None, packages_skip_up_to=None, packages_select_build_failed=False, packages_skip_build_finished=False, packages_select_test_failures=False, packages_skip_test_passed=False, packages_select=None, packages_skip=None, packages_select_regex=None, packages_skip_regex=None, packages_start=None, packages_end=None, allow_overriding=[], cmake_args=None, cmake_target=None, cmake_target_skip_unavailable=False, cmake_clean_cache=False, cmake_clean_first=False, cmake_force_configure=False, ament_cmake_args=None, catkin_cmake_args=None, catkin_skip_building_tests=False, mixin_files=None, mixin=None, verb_parser=<colcon_mixin.mixin.mixin_argument.MixinArgumentDecorator object at 0x719d1af615a0>, verb_extension=<colcon_core.verb.build.BuildVerb object at 0x719d1b056da0>, main=<bound method BuildVerb.main of <colcon_core.verb.build.BuildVerb object at 0x719d1b056da0>>, mixin_verb=('build',))
+[0.145s] Level 1:colcon.colcon_core.package_discovery:discover_packages(colcon_meta) check parameters
+[0.145s] Level 1:colcon.colcon_core.package_discovery:discover_packages(recursive) check parameters
+[0.145s] Level 1:colcon.colcon_core.package_discovery:discover_packages(ignore) check parameters
+[0.145s] Level 1:colcon.colcon_core.package_discovery:discover_packages(path) check parameters
+[0.145s] Level 1:colcon.colcon_core.package_discovery:discover_packages(colcon_meta) discover
+[0.145s] Level 1:colcon.colcon_core.package_discovery:discover_packages(recursive) discover
+[0.145s] INFO:colcon.colcon_core.package_discovery:Crawling recursively for packages in '/projects/github_repos/astro/ros2_rpi_ws'
+[0.145s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['ignore', 'ignore_ament_install']
+[0.145s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'ignore'
+[0.145s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'ignore_ament_install'
+[0.145s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['colcon_pkg']
+[0.145s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'colcon_pkg'
+[0.145s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['colcon_meta']
+[0.145s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'colcon_meta'
+[0.145s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['ros']
+[0.145s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'ros'
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['cmake', 'python']
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'cmake'
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'python'
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extensions ['python_setup_py']
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(.) by extension 'python_setup_py'
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(build) by extensions ['ignore', 'ignore_ament_install']
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(build) by extension 'ignore'
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(build) ignored
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(install) by extensions ['ignore', 'ignore_ament_install']
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(install) by extension 'ignore'
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(install) ignored
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(log) by extensions ['ignore', 'ignore_ament_install']
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(log) by extension 'ignore'
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(log) ignored
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extensions ['ignore', 'ignore_ament_install']
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'ignore'
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'ignore_ament_install'
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extensions ['colcon_pkg']
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'colcon_pkg'
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extensions ['colcon_meta']
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'colcon_meta'
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extensions ['ros']
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'ros'
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extensions ['cmake', 'python']
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'cmake'
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'python'
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extensions ['python_setup_py']
+[0.151s] Level 1:colcon.colcon_core.package_identification:_identify(src) by extension 'python_setup_py'
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_cartographer) by extensions ['ignore', 'ignore_ament_install']
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_cartographer) by extension 'ignore'
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_cartographer) by extension 'ignore_ament_install'
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_cartographer) by extensions ['colcon_pkg']
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_cartographer) by extension 'colcon_pkg'
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_cartographer) by extensions ['colcon_meta']
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_cartographer) by extension 'colcon_meta'
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_cartographer) by extensions ['ros']
+[0.152s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_cartographer) by extension 'ros'
+[0.153s] DEBUG:colcon.colcon_core.package_identification:Package 'src/astro_cartographer' with type 'ros.ament_cmake' and name 'astro_cartographer'
+[0.153s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_odometry_publisher) by extensions ['ignore', 'ignore_ament_install']
+[0.153s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_odometry_publisher) by extension 'ignore'
+[0.153s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_odometry_publisher) by extension 'ignore_ament_install'
+[0.153s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_odometry_publisher) by extensions ['colcon_pkg']
+[0.153s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_odometry_publisher) by extension 'colcon_pkg'
+[0.153s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_odometry_publisher) by extensions ['colcon_meta']
+[0.153s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_odometry_publisher) by extension 'colcon_meta'
+[0.153s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_odometry_publisher) by extensions ['ros']
+[0.153s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_odometry_publisher) by extension 'ros'
+[0.153s] DEBUG:colcon.colcon_core.package_identification:Package 'src/astro_odometry_publisher' with type 'ros.ament_python' and name 'astro_odometry'
+[0.153s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_odometry_tf_broadcaster) by extensions ['ignore', 'ignore_ament_install']
+[0.153s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_odometry_tf_broadcaster) by extension 'ignore'
+[0.153s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_odometry_tf_broadcaster) by extension 'ignore_ament_install'
+[0.154s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_odometry_tf_broadcaster) by extensions ['colcon_pkg']
+[0.154s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_odometry_tf_broadcaster) by extension 'colcon_pkg'
+[0.154s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_odometry_tf_broadcaster) by extensions ['colcon_meta']
+[0.154s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_odometry_tf_broadcaster) by extension 'colcon_meta'
+[0.154s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_odometry_tf_broadcaster) by extensions ['ros']
+[0.154s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_odometry_tf_broadcaster) by extension 'ros'
+[0.154s] DEBUG:colcon.colcon_core.package_identification:Package 'src/astro_odometry_tf_broadcaster' with type 'ros.ament_cmake' and name 'astro_odometry_tf_broadcaster'
+[0.154s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_robot_description) by extensions ['ignore', 'ignore_ament_install']
+[0.154s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_robot_description) by extension 'ignore'
+[0.154s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_robot_description) by extension 'ignore_ament_install'
+[0.154s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_robot_description) by extensions ['colcon_pkg']
+[0.154s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_robot_description) by extension 'colcon_pkg'
+[0.154s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_robot_description) by extensions ['colcon_meta']
+[0.154s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_robot_description) by extension 'colcon_meta'
+[0.154s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_robot_description) by extensions ['ros']
+[0.154s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_robot_description) by extension 'ros'
+[0.155s] DEBUG:colcon.colcon_core.package_identification:Package 'src/astro_robot_description' with type 'ros.ament_cmake' and name 'astro_robot_description'
+[0.155s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_sensor_publisher) by extensions ['ignore', 'ignore_ament_install']
+[0.155s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_sensor_publisher) by extension 'ignore'
+[0.155s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_sensor_publisher) by extension 'ignore_ament_install'
+[0.155s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_sensor_publisher) by extensions ['colcon_pkg']
+[0.155s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_sensor_publisher) by extension 'colcon_pkg'
+[0.155s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_sensor_publisher) by extensions ['colcon_meta']
+[0.155s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_sensor_publisher) by extension 'colcon_meta'
+[0.155s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_sensor_publisher) by extensions ['ros']
+[0.155s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_sensor_publisher) by extension 'ros'
+[0.155s] DEBUG:colcon.colcon_core.package_identification:Package 'src/astro_sensor_publisher' with type 'ros.ament_python' and name 'astro_sensor'
+[0.155s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_teleop_twist_joy) by extensions ['ignore', 'ignore_ament_install']
+[0.155s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_teleop_twist_joy) by extension 'ignore'
+[0.155s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_teleop_twist_joy) by extension 'ignore_ament_install'
+[0.155s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_teleop_twist_joy) by extensions ['colcon_pkg']
+[0.155s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_teleop_twist_joy) by extension 'colcon_pkg'
+[0.155s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_teleop_twist_joy) by extensions ['colcon_meta']
+[0.155s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_teleop_twist_joy) by extension 'colcon_meta'
+[0.155s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_teleop_twist_joy) by extensions ['ros']
+[0.155s] Level 1:colcon.colcon_core.package_identification:_identify(src/astro_teleop_twist_joy) by extension 'ros'
+[0.155s] DEBUG:colcon.colcon_core.package_identification:Package 'src/astro_teleop_twist_joy' with type 'ros.ament_python' and name 'astro_teleop'
+[0.155s] Level 1:colcon.colcon_core.package_identification:_identify(src/robot_bringup) by extensions ['ignore', 'ignore_ament_install']
+[0.155s] Level 1:colcon.colcon_core.package_identification:_identify(src/robot_bringup) by extension 'ignore'
+[0.155s] Level 1:colcon.colcon_core.package_identification:_identify(src/robot_bringup) by extension 'ignore_ament_install'
+[0.155s] Level 1:colcon.colcon_core.package_identification:_identify(src/robot_bringup) by extensions ['colcon_pkg']
+[0.156s] Level 1:colcon.colcon_core.package_identification:_identify(src/robot_bringup) by extension 'colcon_pkg'
+[0.156s] Level 1:colcon.colcon_core.package_identification:_identify(src/robot_bringup) by extensions ['colcon_meta']
+[0.156s] Level 1:colcon.colcon_core.package_identification:_identify(src/robot_bringup) by extension 'colcon_meta'
+[0.156s] Level 1:colcon.colcon_core.package_identification:_identify(src/robot_bringup) by extensions ['ros']
+[0.156s] Level 1:colcon.colcon_core.package_identification:_identify(src/robot_bringup) by extension 'ros'
+[0.156s] DEBUG:colcon.colcon_core.package_identification:Package 'src/robot_bringup' with type 'ros.ament_cmake' and name 'robot_bringup'
+[0.156s] Level 1:colcon.colcon_core.package_identification:_identify(src/ros_time_publisher) by extensions ['ignore', 'ignore_ament_install']
+[0.156s] Level 1:colcon.colcon_core.package_identification:_identify(src/ros_time_publisher) by extension 'ignore'
+[0.156s] Level 1:colcon.colcon_core.package_identification:_identify(src/ros_time_publisher) by extension 'ignore_ament_install'
+[0.156s] Level 1:colcon.colcon_core.package_identification:_identify(src/ros_time_publisher) by extensions ['colcon_pkg']
+[0.156s] Level 1:colcon.colcon_core.package_identification:_identify(src/ros_time_publisher) by extension 'colcon_pkg'
+[0.156s] Level 1:colcon.colcon_core.package_identification:_identify(src/ros_time_publisher) by extensions ['colcon_meta']
+[0.156s] Level 1:colcon.colcon_core.package_identification:_identify(src/ros_time_publisher) by extension 'colcon_meta'
+[0.156s] Level 1:colcon.colcon_core.package_identification:_identify(src/ros_time_publisher) by extensions ['ros']
+[0.156s] Level 1:colcon.colcon_core.package_identification:_identify(src/ros_time_publisher) by extension 'ros'
+[0.156s] DEBUG:colcon.colcon_core.package_identification:Package 'src/ros_time_publisher' with type 'ros.ament_python' and name 'ros_time'
+[0.156s] Level 1:colcon.colcon_core.package_discovery:discover_packages(recursive) using defaults
+[0.156s] Level 1:colcon.colcon_core.package_discovery:discover_packages(ignore) discover
+[0.156s] Level 1:colcon.colcon_core.package_discovery:discover_packages(ignore) using defaults
+[0.156s] Level 1:colcon.colcon_core.package_discovery:discover_packages(path) discover
+[0.156s] Level 1:colcon.colcon_core.package_discovery:discover_packages(path) using defaults
+[0.172s] Level 1:colcon.colcon_core.package_discovery:discover_packages(prefix_path) check parameters
+[0.172s] Level 1:colcon.colcon_core.package_discovery:discover_packages(prefix_path) discover
+[0.173s] DEBUG:colcon.colcon_installed_package_information.package_discovery:Found 8 installed packages in /projects/github_repos/astro/ros2_rpi_ws/install
+[0.174s] DEBUG:colcon.colcon_installed_package_information.package_discovery:Found 39 installed packages in /projects/ros/microros_ws/install
+[0.175s] DEBUG:colcon.colcon_installed_package_information.package_discovery:Found 306 installed packages in /opt/ros/humble
+[0.176s] Level 1:colcon.colcon_core.package_discovery:discover_packages(prefix_path) using defaults
+[0.194s] Level 5:colcon.colcon_core.verb:set package 'astro_cartographer' build argument 'cmake_args' from command line to 'None'
+[0.194s] Level 5:colcon.colcon_core.verb:set package 'astro_cartographer' build argument 'cmake_target' from command line to 'None'
+[0.194s] Level 5:colcon.colcon_core.verb:set package 'astro_cartographer' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[0.194s] Level 5:colcon.colcon_core.verb:set package 'astro_cartographer' build argument 'cmake_clean_cache' from command line to 'False'
+[0.194s] Level 5:colcon.colcon_core.verb:set package 'astro_cartographer' build argument 'cmake_clean_first' from command line to 'False'
+[0.194s] Level 5:colcon.colcon_core.verb:set package 'astro_cartographer' build argument 'cmake_force_configure' from command line to 'False'
+[0.194s] Level 5:colcon.colcon_core.verb:set package 'astro_cartographer' build argument 'ament_cmake_args' from command line to 'None'
+[0.194s] Level 5:colcon.colcon_core.verb:set package 'astro_cartographer' build argument 'catkin_cmake_args' from command line to 'None'
+[0.194s] Level 5:colcon.colcon_core.verb:set package 'astro_cartographer' build argument 'catkin_skip_building_tests' from command line to 'False'
+[0.194s] DEBUG:colcon.colcon_core.verb:Building package 'astro_cartographer' with the following arguments: {'ament_cmake_args': None, 'build_base': '/projects/github_repos/astro/ros2_rpi_ws/build/astro_cartographer', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': None, 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/projects/github_repos/astro/ros2_rpi_ws/install/astro_cartographer', 'merge_install': False, 'path': '/projects/github_repos/astro/ros2_rpi_ws/src/astro_cartographer', 'symlink_install': False, 'test_result_base': None}
+[0.194s] Level 5:colcon.colcon_core.verb:set package 'astro_odometry' build argument 'cmake_args' from command line to 'None'
+[0.194s] Level 5:colcon.colcon_core.verb:set package 'astro_odometry' build argument 'cmake_target' from command line to 'None'
+[0.194s] Level 5:colcon.colcon_core.verb:set package 'astro_odometry' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[0.194s] Level 5:colcon.colcon_core.verb:set package 'astro_odometry' build argument 'cmake_clean_cache' from command line to 'False'
+[0.194s] Level 5:colcon.colcon_core.verb:set package 'astro_odometry' build argument 'cmake_clean_first' from command line to 'False'
+[0.194s] Level 5:colcon.colcon_core.verb:set package 'astro_odometry' build argument 'cmake_force_configure' from command line to 'False'
+[0.194s] Level 5:colcon.colcon_core.verb:set package 'astro_odometry' build argument 'ament_cmake_args' from command line to 'None'
+[0.194s] Level 5:colcon.colcon_core.verb:set package 'astro_odometry' build argument 'catkin_cmake_args' from command line to 'None'
+[0.194s] Level 5:colcon.colcon_core.verb:set package 'astro_odometry' build argument 'catkin_skip_building_tests' from command line to 'False'
+[0.194s] DEBUG:colcon.colcon_core.verb:Building package 'astro_odometry' with the following arguments: {'ament_cmake_args': None, 'build_base': '/projects/github_repos/astro/ros2_rpi_ws/build/astro_odometry', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': None, 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry', 'merge_install': False, 'path': '/projects/github_repos/astro/ros2_rpi_ws/src/astro_odometry_publisher', 'symlink_install': False, 'test_result_base': None}
+[0.195s] Level 5:colcon.colcon_core.verb:set package 'astro_odometry_tf_broadcaster' build argument 'cmake_args' from command line to 'None'
+[0.195s] Level 5:colcon.colcon_core.verb:set package 'astro_odometry_tf_broadcaster' build argument 'cmake_target' from command line to 'None'
+[0.195s] Level 5:colcon.colcon_core.verb:set package 'astro_odometry_tf_broadcaster' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[0.195s] Level 5:colcon.colcon_core.verb:set package 'astro_odometry_tf_broadcaster' build argument 'cmake_clean_cache' from command line to 'False'
+[0.195s] Level 5:colcon.colcon_core.verb:set package 'astro_odometry_tf_broadcaster' build argument 'cmake_clean_first' from command line to 'False'
+[0.195s] Level 5:colcon.colcon_core.verb:set package 'astro_odometry_tf_broadcaster' build argument 'cmake_force_configure' from command line to 'False'
+[0.195s] Level 5:colcon.colcon_core.verb:set package 'astro_odometry_tf_broadcaster' build argument 'ament_cmake_args' from command line to 'None'
+[0.195s] Level 5:colcon.colcon_core.verb:set package 'astro_odometry_tf_broadcaster' build argument 'catkin_cmake_args' from command line to 'None'
+[0.195s] Level 5:colcon.colcon_core.verb:set package 'astro_odometry_tf_broadcaster' build argument 'catkin_skip_building_tests' from command line to 'False'
+[0.195s] DEBUG:colcon.colcon_core.verb:Building package 'astro_odometry_tf_broadcaster' with the following arguments: {'ament_cmake_args': None, 'build_base': '/projects/github_repos/astro/ros2_rpi_ws/build/astro_odometry_tf_broadcaster', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': None, 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry_tf_broadcaster', 'merge_install': False, 'path': '/projects/github_repos/astro/ros2_rpi_ws/src/astro_odometry_tf_broadcaster', 'symlink_install': False, 'test_result_base': None}
+[0.195s] Level 5:colcon.colcon_core.verb:set package 'astro_robot_description' build argument 'cmake_args' from command line to 'None'
+[0.195s] Level 5:colcon.colcon_core.verb:set package 'astro_robot_description' build argument 'cmake_target' from command line to 'None'
+[0.195s] Level 5:colcon.colcon_core.verb:set package 'astro_robot_description' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[0.195s] Level 5:colcon.colcon_core.verb:set package 'astro_robot_description' build argument 'cmake_clean_cache' from command line to 'False'
+[0.195s] Level 5:colcon.colcon_core.verb:set package 'astro_robot_description' build argument 'cmake_clean_first' from command line to 'False'
+[0.195s] Level 5:colcon.colcon_core.verb:set package 'astro_robot_description' build argument 'cmake_force_configure' from command line to 'False'
+[0.195s] Level 5:colcon.colcon_core.verb:set package 'astro_robot_description' build argument 'ament_cmake_args' from command line to 'None'
+[0.195s] Level 5:colcon.colcon_core.verb:set package 'astro_robot_description' build argument 'catkin_cmake_args' from command line to 'None'
+[0.195s] Level 5:colcon.colcon_core.verb:set package 'astro_robot_description' build argument 'catkin_skip_building_tests' from command line to 'False'
+[0.195s] DEBUG:colcon.colcon_core.verb:Building package 'astro_robot_description' with the following arguments: {'ament_cmake_args': None, 'build_base': '/projects/github_repos/astro/ros2_rpi_ws/build/astro_robot_description', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': None, 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/projects/github_repos/astro/ros2_rpi_ws/install/astro_robot_description', 'merge_install': False, 'path': '/projects/github_repos/astro/ros2_rpi_ws/src/astro_robot_description', 'symlink_install': False, 'test_result_base': None}
+[0.195s] Level 5:colcon.colcon_core.verb:set package 'astro_sensor' build argument 'cmake_args' from command line to 'None'
+[0.195s] Level 5:colcon.colcon_core.verb:set package 'astro_sensor' build argument 'cmake_target' from command line to 'None'
+[0.195s] Level 5:colcon.colcon_core.verb:set package 'astro_sensor' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[0.195s] Level 5:colcon.colcon_core.verb:set package 'astro_sensor' build argument 'cmake_clean_cache' from command line to 'False'
+[0.195s] Level 5:colcon.colcon_core.verb:set package 'astro_sensor' build argument 'cmake_clean_first' from command line to 'False'
+[0.195s] Level 5:colcon.colcon_core.verb:set package 'astro_sensor' build argument 'cmake_force_configure' from command line to 'False'
+[0.195s] Level 5:colcon.colcon_core.verb:set package 'astro_sensor' build argument 'ament_cmake_args' from command line to 'None'
+[0.195s] Level 5:colcon.colcon_core.verb:set package 'astro_sensor' build argument 'catkin_cmake_args' from command line to 'None'
+[0.195s] Level 5:colcon.colcon_core.verb:set package 'astro_sensor' build argument 'catkin_skip_building_tests' from command line to 'False'
+[0.195s] DEBUG:colcon.colcon_core.verb:Building package 'astro_sensor' with the following arguments: {'ament_cmake_args': None, 'build_base': '/projects/github_repos/astro/ros2_rpi_ws/build/astro_sensor', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': None, 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor', 'merge_install': False, 'path': '/projects/github_repos/astro/ros2_rpi_ws/src/astro_sensor_publisher', 'symlink_install': False, 'test_result_base': None}
+[0.195s] Level 5:colcon.colcon_core.verb:set package 'astro_teleop' build argument 'cmake_args' from command line to 'None'
+[0.195s] Level 5:colcon.colcon_core.verb:set package 'astro_teleop' build argument 'cmake_target' from command line to 'None'
+[0.195s] Level 5:colcon.colcon_core.verb:set package 'astro_teleop' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[0.195s] Level 5:colcon.colcon_core.verb:set package 'astro_teleop' build argument 'cmake_clean_cache' from command line to 'False'
+[0.195s] Level 5:colcon.colcon_core.verb:set package 'astro_teleop' build argument 'cmake_clean_first' from command line to 'False'
+[0.195s] Level 5:colcon.colcon_core.verb:set package 'astro_teleop' build argument 'cmake_force_configure' from command line to 'False'
+[0.195s] Level 5:colcon.colcon_core.verb:set package 'astro_teleop' build argument 'ament_cmake_args' from command line to 'None'
+[0.195s] Level 5:colcon.colcon_core.verb:set package 'astro_teleop' build argument 'catkin_cmake_args' from command line to 'None'
+[0.195s] Level 5:colcon.colcon_core.verb:set package 'astro_teleop' build argument 'catkin_skip_building_tests' from command line to 'False'
+[0.195s] DEBUG:colcon.colcon_core.verb:Building package 'astro_teleop' with the following arguments: {'ament_cmake_args': None, 'build_base': '/projects/github_repos/astro/ros2_rpi_ws/build/astro_teleop', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': None, 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop', 'merge_install': False, 'path': '/projects/github_repos/astro/ros2_rpi_ws/src/astro_teleop_twist_joy', 'symlink_install': False, 'test_result_base': None}
+[0.196s] Level 5:colcon.colcon_core.verb:set package 'robot_bringup' build argument 'cmake_args' from command line to 'None'
+[0.196s] Level 5:colcon.colcon_core.verb:set package 'robot_bringup' build argument 'cmake_target' from command line to 'None'
+[0.196s] Level 5:colcon.colcon_core.verb:set package 'robot_bringup' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[0.196s] Level 5:colcon.colcon_core.verb:set package 'robot_bringup' build argument 'cmake_clean_cache' from command line to 'False'
+[0.196s] Level 5:colcon.colcon_core.verb:set package 'robot_bringup' build argument 'cmake_clean_first' from command line to 'False'
+[0.196s] Level 5:colcon.colcon_core.verb:set package 'robot_bringup' build argument 'cmake_force_configure' from command line to 'False'
+[0.196s] Level 5:colcon.colcon_core.verb:set package 'robot_bringup' build argument 'ament_cmake_args' from command line to 'None'
+[0.196s] Level 5:colcon.colcon_core.verb:set package 'robot_bringup' build argument 'catkin_cmake_args' from command line to 'None'
+[0.196s] Level 5:colcon.colcon_core.verb:set package 'robot_bringup' build argument 'catkin_skip_building_tests' from command line to 'False'
+[0.196s] DEBUG:colcon.colcon_core.verb:Building package 'robot_bringup' with the following arguments: {'ament_cmake_args': None, 'build_base': '/projects/github_repos/astro/ros2_rpi_ws/build/robot_bringup', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': None, 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup', 'merge_install': False, 'path': '/projects/github_repos/astro/ros2_rpi_ws/src/robot_bringup', 'symlink_install': False, 'test_result_base': None}
+[0.196s] Level 5:colcon.colcon_core.verb:set package 'ros_time' build argument 'cmake_args' from command line to 'None'
+[0.196s] Level 5:colcon.colcon_core.verb:set package 'ros_time' build argument 'cmake_target' from command line to 'None'
+[0.196s] Level 5:colcon.colcon_core.verb:set package 'ros_time' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[0.196s] Level 5:colcon.colcon_core.verb:set package 'ros_time' build argument 'cmake_clean_cache' from command line to 'False'
+[0.196s] Level 5:colcon.colcon_core.verb:set package 'ros_time' build argument 'cmake_clean_first' from command line to 'False'
+[0.196s] Level 5:colcon.colcon_core.verb:set package 'ros_time' build argument 'cmake_force_configure' from command line to 'False'
+[0.196s] Level 5:colcon.colcon_core.verb:set package 'ros_time' build argument 'ament_cmake_args' from command line to 'None'
+[0.196s] Level 5:colcon.colcon_core.verb:set package 'ros_time' build argument 'catkin_cmake_args' from command line to 'None'
+[0.196s] Level 5:colcon.colcon_core.verb:set package 'ros_time' build argument 'catkin_skip_building_tests' from command line to 'False'
+[0.196s] DEBUG:colcon.colcon_core.verb:Building package 'ros_time' with the following arguments: {'ament_cmake_args': None, 'build_base': '/projects/github_repos/astro/ros2_rpi_ws/build/ros_time', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': None, 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/projects/github_repos/astro/ros2_rpi_ws/install/ros_time', 'merge_install': False, 'path': '/projects/github_repos/astro/ros2_rpi_ws/src/ros_time_publisher', 'symlink_install': False, 'test_result_base': None}
+[0.196s] INFO:colcon.colcon_core.executor:Executing jobs using 'parallel' executor
+[0.196s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:run_until_complete
+[0.197s] INFO:colcon.colcon_ros.task.ament_cmake.build:Building ROS package in '/projects/github_repos/astro/ros2_rpi_ws/src/astro_cartographer' with build type 'ament_cmake'
+[0.197s] INFO:colcon.colcon_cmake.task.cmake.build:Building CMake package in '/projects/github_repos/astro/ros2_rpi_ws/src/astro_cartographer'
+[0.198s] INFO:colcon.colcon_core.plugin_system:Skipping extension 'colcon_core.shell.bat': Not used on non-Windows systems
+[0.198s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[0.198s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[0.201s] INFO:colcon.colcon_ros.task.ament_python.build:Building ROS package in '/projects/github_repos/astro/ros2_rpi_ws/src/astro_odometry_publisher' with build type 'ament_python'
+[0.201s] Level 1:colcon.colcon_core.shell:create_environment_hook('astro_odometry', 'ament_prefix_path')
+[0.201s] INFO:colcon.colcon_core.shell:Creating environment hook '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry/share/astro_odometry/hook/ament_prefix_path.ps1'
+[0.201s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry/share/astro_odometry/hook/ament_prefix_path.dsv'
+[0.201s] INFO:colcon.colcon_core.shell:Creating environment hook '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry/share/astro_odometry/hook/ament_prefix_path.sh'
+[0.202s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[0.202s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[0.204s] INFO:colcon.colcon_ros.task.ament_cmake.build:Building ROS package in '/projects/github_repos/astro/ros2_rpi_ws/src/astro_odometry_tf_broadcaster' with build type 'ament_cmake'
+[0.204s] INFO:colcon.colcon_cmake.task.cmake.build:Building CMake package in '/projects/github_repos/astro/ros2_rpi_ws/src/astro_odometry_tf_broadcaster'
+[0.204s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[0.204s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[0.207s] INFO:colcon.colcon_ros.task.ament_cmake.build:Building ROS package in '/projects/github_repos/astro/ros2_rpi_ws/src/astro_robot_description' with build type 'ament_cmake'
+[0.207s] INFO:colcon.colcon_cmake.task.cmake.build:Building CMake package in '/projects/github_repos/astro/ros2_rpi_ws/src/astro_robot_description'
+[0.207s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[0.207s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[0.209s] INFO:colcon.colcon_ros.task.ament_python.build:Building ROS package in '/projects/github_repos/astro/ros2_rpi_ws/src/astro_sensor_publisher' with build type 'ament_python'
+[0.210s] Level 1:colcon.colcon_core.shell:create_environment_hook('astro_sensor', 'ament_prefix_path')
+[0.210s] INFO:colcon.colcon_core.shell:Creating environment hook '/projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor/share/astro_sensor/hook/ament_prefix_path.ps1'
+[0.210s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor/share/astro_sensor/hook/ament_prefix_path.dsv'
+[0.210s] INFO:colcon.colcon_core.shell:Creating environment hook '/projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor/share/astro_sensor/hook/ament_prefix_path.sh'
+[0.210s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[0.210s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[0.213s] INFO:colcon.colcon_ros.task.ament_python.build:Building ROS package in '/projects/github_repos/astro/ros2_rpi_ws/src/astro_teleop_twist_joy' with build type 'ament_python'
+[0.213s] Level 1:colcon.colcon_core.shell:create_environment_hook('astro_teleop', 'ament_prefix_path')
+[0.213s] INFO:colcon.colcon_core.shell:Creating environment hook '/projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop/share/astro_teleop/hook/ament_prefix_path.ps1'
+[0.213s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop/share/astro_teleop/hook/ament_prefix_path.dsv'
+[0.213s] INFO:colcon.colcon_core.shell:Creating environment hook '/projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop/share/astro_teleop/hook/ament_prefix_path.sh'
+[0.214s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[0.214s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[0.216s] INFO:colcon.colcon_ros.task.ament_cmake.build:Building ROS package in '/projects/github_repos/astro/ros2_rpi_ws/src/robot_bringup' with build type 'ament_cmake'
+[0.216s] INFO:colcon.colcon_cmake.task.cmake.build:Building CMake package in '/projects/github_repos/astro/ros2_rpi_ws/src/robot_bringup'
+[0.216s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[0.216s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[0.219s] INFO:colcon.colcon_ros.task.ament_python.build:Building ROS package in '/projects/github_repos/astro/ros2_rpi_ws/src/ros_time_publisher' with build type 'ament_python'
+[0.219s] Level 1:colcon.colcon_core.shell:create_environment_hook('ros_time', 'ament_prefix_path')
+[0.219s] INFO:colcon.colcon_core.shell:Creating environment hook '/projects/github_repos/astro/ros2_rpi_ws/install/ros_time/share/ros_time/hook/ament_prefix_path.ps1'
+[0.219s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/projects/github_repos/astro/ros2_rpi_ws/install/ros_time/share/ros_time/hook/ament_prefix_path.dsv'
+[0.219s] INFO:colcon.colcon_core.shell:Creating environment hook '/projects/github_repos/astro/ros2_rpi_ws/install/ros_time/share/ros_time/hook/ament_prefix_path.sh'
+[0.220s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[0.220s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[0.225s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/projects/github_repos/astro/ros2_rpi_ws/build/astro_cartographer': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/projects/github_repos/astro/ros2_rpi_ws/install/ros_time:/projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop:/projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor:/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry:/projects/ros/microros_ws/install/sensor_msgs_py:/opt/ros/humble /usr/bin/cmake --build /projects/github_repos/astro/ros2_rpi_ws/build/astro_cartographer -- -j24 -l24
+[0.367s] INFO:colcon.colcon_core.task.python.build:Building Python package in '/projects/github_repos/astro/ros2_rpi_ws/src/astro_odometry_publisher'
+[0.367s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[0.367s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[0.372s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/projects/github_repos/astro/ros2_rpi_ws/build/astro_odometry_tf_broadcaster': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/projects/github_repos/astro/ros2_rpi_ws/install/ros_time:/projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop:/projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor:/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry:/projects/ros/microros_ws/install/sensor_msgs_py:/opt/ros/humble /usr/bin/cmake --build /projects/github_repos/astro/ros2_rpi_ws/build/astro_odometry_tf_broadcaster -- -j24 -l24
+[0.373s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/projects/github_repos/astro/ros2_rpi_ws/build/astro_robot_description': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/projects/github_repos/astro/ros2_rpi_ws/install/ros_time:/projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop:/projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor:/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry:/projects/ros/microros_ws/install/sensor_msgs_py:/opt/ros/humble /usr/bin/cmake --build /projects/github_repos/astro/ros2_rpi_ws/build/astro_robot_description -- -j24 -l24
+[0.518s] INFO:colcon.colcon_core.task.python.build:Building Python package in '/projects/github_repos/astro/ros2_rpi_ws/src/astro_sensor_publisher'
+[0.518s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[0.518s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[0.665s] INFO:colcon.colcon_core.task.python.build:Building Python package in '/projects/github_repos/astro/ros2_rpi_ws/src/astro_teleop_twist_joy'
+[0.665s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[0.665s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[0.670s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/projects/github_repos/astro/ros2_rpi_ws/build/robot_bringup': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/projects/github_repos/astro/ros2_rpi_ws/install/ros_time:/projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop:/projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor:/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry:/projects/ros/microros_ws/install/sensor_msgs_py:/opt/ros/humble /usr/bin/cmake --build /projects/github_repos/astro/ros2_rpi_ws/build/robot_bringup -- -j24 -l24
+[0.672s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/projects/github_repos/astro/ros2_rpi_ws/build/astro_cartographer' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/projects/github_repos/astro/ros2_rpi_ws/install/ros_time:/projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop:/projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor:/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry:/projects/ros/microros_ws/install/sensor_msgs_py:/opt/ros/humble /usr/bin/cmake --build /projects/github_repos/astro/ros2_rpi_ws/build/astro_cartographer -- -j24 -l24
+[0.681s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/projects/github_repos/astro/ros2_rpi_ws/build/astro_cartographer': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/projects/github_repos/astro/ros2_rpi_ws/install/ros_time:/projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop:/projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor:/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry:/projects/ros/microros_ws/install/sensor_msgs_py:/opt/ros/humble /usr/bin/cmake --install /projects/github_repos/astro/ros2_rpi_ws/build/astro_cartographer
+[0.681s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/projects/github_repos/astro/ros2_rpi_ws/build/astro_odometry_tf_broadcaster' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/projects/github_repos/astro/ros2_rpi_ws/install/ros_time:/projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop:/projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor:/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry:/projects/ros/microros_ws/install/sensor_msgs_py:/opt/ros/humble /usr/bin/cmake --build /projects/github_repos/astro/ros2_rpi_ws/build/astro_odometry_tf_broadcaster -- -j24 -l24
+[0.682s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/projects/github_repos/astro/ros2_rpi_ws/build/astro_odometry_tf_broadcaster': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/projects/github_repos/astro/ros2_rpi_ws/install/ros_time:/projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop:/projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor:/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry:/projects/ros/microros_ws/install/sensor_msgs_py:/opt/ros/humble /usr/bin/cmake --install /projects/github_repos/astro/ros2_rpi_ws/build/astro_odometry_tf_broadcaster
+[0.683s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/projects/github_repos/astro/ros2_rpi_ws/build/astro_robot_description' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/projects/github_repos/astro/ros2_rpi_ws/install/ros_time:/projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop:/projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor:/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry:/projects/ros/microros_ws/install/sensor_msgs_py:/opt/ros/humble /usr/bin/cmake --build /projects/github_repos/astro/ros2_rpi_ws/build/astro_robot_description -- -j24 -l24
+[0.683s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/projects/github_repos/astro/ros2_rpi_ws/build/astro_robot_description': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/projects/github_repos/astro/ros2_rpi_ws/install/ros_time:/projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop:/projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor:/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry:/projects/ros/microros_ws/install/sensor_msgs_py:/opt/ros/humble /usr/bin/cmake --install /projects/github_repos/astro/ros2_rpi_ws/build/astro_robot_description
+[0.827s] INFO:colcon.colcon_core.task.python.build:Building Python package in '/projects/github_repos/astro/ros2_rpi_ws/src/ros_time_publisher'
+[0.827s] INFO:colcon.colcon_core.shell:Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[0.827s] DEBUG:colcon.colcon_core.shell:Skip shell extension 'dsv' for command environment
+[0.836s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(astro_cartographer)
+[0.839s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_cartographer' for CMake module files
+[0.840s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_cartographer' for CMake config files
+[0.840s] Level 1:colcon.colcon_core.shell:create_environment_hook('astro_cartographer', 'cmake_prefix_path')
+[0.840s] INFO:colcon.colcon_core.shell:Creating environment hook '/projects/github_repos/astro/ros2_rpi_ws/install/astro_cartographer/share/astro_cartographer/hook/cmake_prefix_path.ps1'
+[0.841s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/projects/github_repos/astro/ros2_rpi_ws/install/astro_cartographer/share/astro_cartographer/hook/cmake_prefix_path.dsv'
+[0.842s] INFO:colcon.colcon_core.shell:Creating environment hook '/projects/github_repos/astro/ros2_rpi_ws/install/astro_cartographer/share/astro_cartographer/hook/cmake_prefix_path.sh'
+[0.843s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_cartographer/bin'
+[0.843s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_cartographer/lib/pkgconfig/astro_cartographer.pc'
+[0.843s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_cartographer/lib/python3.10/site-packages'
+[0.843s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_cartographer/bin'
+[0.843s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/astro_cartographer/share/astro_cartographer/package.ps1'
+[0.844s] INFO:colcon.colcon_core.shell:Creating package descriptor '/projects/github_repos/astro/ros2_rpi_ws/install/astro_cartographer/share/astro_cartographer/package.dsv'
+[0.844s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/astro_cartographer/share/astro_cartographer/package.sh'
+[0.845s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/astro_cartographer/share/astro_cartographer/package.bash'
+[0.846s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/astro_cartographer/share/astro_cartographer/package.zsh'
+[0.846s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/projects/github_repos/astro/ros2_rpi_ws/install/astro_cartographer/share/colcon-core/packages/astro_cartographer)
+[0.846s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(astro_cartographer)
+[0.847s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_cartographer' for CMake module files
+[0.847s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_cartographer' for CMake config files
+[0.848s] Level 1:colcon.colcon_core.shell:create_environment_hook('astro_cartographer', 'cmake_prefix_path')
+[0.848s] INFO:colcon.colcon_core.shell:Creating environment hook '/projects/github_repos/astro/ros2_rpi_ws/install/astro_cartographer/share/astro_cartographer/hook/cmake_prefix_path.ps1'
+[0.848s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/projects/github_repos/astro/ros2_rpi_ws/install/astro_cartographer/share/astro_cartographer/hook/cmake_prefix_path.dsv'
+[0.848s] INFO:colcon.colcon_core.shell:Creating environment hook '/projects/github_repos/astro/ros2_rpi_ws/install/astro_cartographer/share/astro_cartographer/hook/cmake_prefix_path.sh'
+[0.849s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/projects/github_repos/astro/ros2_rpi_ws/build/astro_cartographer' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/projects/github_repos/astro/ros2_rpi_ws/install/ros_time:/projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop:/projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor:/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry:/projects/ros/microros_ws/install/sensor_msgs_py:/opt/ros/humble /usr/bin/cmake --install /projects/github_repos/astro/ros2_rpi_ws/build/astro_cartographer
+[0.849s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_cartographer/bin'
+[0.849s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_cartographer/lib/pkgconfig/astro_cartographer.pc'
+[0.849s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_cartographer/lib/python3.10/site-packages'
+[0.849s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_cartographer/bin'
+[0.849s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/astro_cartographer/share/astro_cartographer/package.ps1'
+[0.849s] INFO:colcon.colcon_core.shell:Creating package descriptor '/projects/github_repos/astro/ros2_rpi_ws/install/astro_cartographer/share/astro_cartographer/package.dsv'
+[0.850s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/astro_cartographer/share/astro_cartographer/package.sh'
+[0.850s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/astro_cartographer/share/astro_cartographer/package.bash'
+[0.850s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/astro_cartographer/share/astro_cartographer/package.zsh'
+[0.850s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/projects/github_repos/astro/ros2_rpi_ws/install/astro_cartographer/share/colcon-core/packages/astro_cartographer)
+[0.850s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(astro_robot_description)
+[0.850s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_robot_description' for CMake module files
+[0.851s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_robot_description' for CMake config files
+[0.851s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/projects/github_repos/astro/ros2_rpi_ws/build/astro_robot_description' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/projects/github_repos/astro/ros2_rpi_ws/install/ros_time:/projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop:/projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor:/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry:/projects/ros/microros_ws/install/sensor_msgs_py:/opt/ros/humble /usr/bin/cmake --install /projects/github_repos/astro/ros2_rpi_ws/build/astro_robot_description
+[0.851s] Level 1:colcon.colcon_core.shell:create_environment_hook('astro_robot_description', 'cmake_prefix_path')
+[0.851s] INFO:colcon.colcon_core.shell:Creating environment hook '/projects/github_repos/astro/ros2_rpi_ws/install/astro_robot_description/share/astro_robot_description/hook/cmake_prefix_path.ps1'
+[0.852s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/projects/github_repos/astro/ros2_rpi_ws/install/astro_robot_description/share/astro_robot_description/hook/cmake_prefix_path.dsv'
+[0.852s] INFO:colcon.colcon_core.shell:Creating environment hook '/projects/github_repos/astro/ros2_rpi_ws/install/astro_robot_description/share/astro_robot_description/hook/cmake_prefix_path.sh'
+[0.852s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_robot_description/bin'
+[0.852s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_robot_description/lib/pkgconfig/astro_robot_description.pc'
+[0.852s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_robot_description/lib/python3.10/site-packages'
+[0.852s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_robot_description/bin'
+[0.852s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/astro_robot_description/share/astro_robot_description/package.ps1'
+[0.853s] INFO:colcon.colcon_core.shell:Creating package descriptor '/projects/github_repos/astro/ros2_rpi_ws/install/astro_robot_description/share/astro_robot_description/package.dsv'
+[0.853s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/astro_robot_description/share/astro_robot_description/package.sh'
+[0.853s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/astro_robot_description/share/astro_robot_description/package.bash'
+[0.853s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/astro_robot_description/share/astro_robot_description/package.zsh'
+[0.853s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/projects/github_repos/astro/ros2_rpi_ws/install/astro_robot_description/share/colcon-core/packages/astro_robot_description)
+[0.853s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(astro_robot_description)
+[0.854s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_robot_description' for CMake module files
+[0.854s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_robot_description' for CMake config files
+[0.854s] Level 1:colcon.colcon_core.shell:create_environment_hook('astro_robot_description', 'cmake_prefix_path')
+[0.854s] INFO:colcon.colcon_core.shell:Creating environment hook '/projects/github_repos/astro/ros2_rpi_ws/install/astro_robot_description/share/astro_robot_description/hook/cmake_prefix_path.ps1'
+[0.854s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/projects/github_repos/astro/ros2_rpi_ws/install/astro_robot_description/share/astro_robot_description/hook/cmake_prefix_path.dsv'
+[0.854s] INFO:colcon.colcon_core.shell:Creating environment hook '/projects/github_repos/astro/ros2_rpi_ws/install/astro_robot_description/share/astro_robot_description/hook/cmake_prefix_path.sh'
+[0.854s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_robot_description/bin'
+[0.854s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_robot_description/lib/pkgconfig/astro_robot_description.pc'
+[0.855s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_robot_description/lib/python3.10/site-packages'
+[0.855s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_robot_description/bin'
+[0.855s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/astro_robot_description/share/astro_robot_description/package.ps1'
+[0.855s] INFO:colcon.colcon_core.shell:Creating package descriptor '/projects/github_repos/astro/ros2_rpi_ws/install/astro_robot_description/share/astro_robot_description/package.dsv'
+[0.855s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/astro_robot_description/share/astro_robot_description/package.sh'
+[0.855s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/astro_robot_description/share/astro_robot_description/package.bash'
+[0.856s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/astro_robot_description/share/astro_robot_description/package.zsh'
+[0.856s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/projects/github_repos/astro/ros2_rpi_ws/install/astro_robot_description/share/colcon-core/packages/astro_robot_description)
+[0.856s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(astro_odometry_tf_broadcaster)
+[0.856s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry_tf_broadcaster' for CMake module files
+[0.857s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry_tf_broadcaster' for CMake config files
+[0.857s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/projects/github_repos/astro/ros2_rpi_ws/build/astro_odometry_tf_broadcaster' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/projects/github_repos/astro/ros2_rpi_ws/install/ros_time:/projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop:/projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor:/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry:/projects/ros/microros_ws/install/sensor_msgs_py:/opt/ros/humble /usr/bin/cmake --install /projects/github_repos/astro/ros2_rpi_ws/build/astro_odometry_tf_broadcaster
+[0.857s] Level 1:colcon.colcon_core.shell:create_environment_hook('astro_odometry_tf_broadcaster', 'cmake_prefix_path')
+[0.857s] INFO:colcon.colcon_core.shell:Creating environment hook '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry_tf_broadcaster/share/astro_odometry_tf_broadcaster/hook/cmake_prefix_path.ps1'
+[0.857s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry_tf_broadcaster/share/astro_odometry_tf_broadcaster/hook/cmake_prefix_path.dsv'
+[0.858s] INFO:colcon.colcon_core.shell:Creating environment hook '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry_tf_broadcaster/share/astro_odometry_tf_broadcaster/hook/cmake_prefix_path.sh'
+[0.858s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry_tf_broadcaster/lib'
+[0.858s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry_tf_broadcaster/bin'
+[0.858s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry_tf_broadcaster/lib/pkgconfig/astro_odometry_tf_broadcaster.pc'
+[0.859s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry_tf_broadcaster/lib/python3.10/site-packages'
+[0.859s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry_tf_broadcaster/bin'
+[0.859s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry_tf_broadcaster/share/astro_odometry_tf_broadcaster/package.ps1'
+[0.860s] INFO:colcon.colcon_core.shell:Creating package descriptor '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry_tf_broadcaster/share/astro_odometry_tf_broadcaster/package.dsv'
+[0.860s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry_tf_broadcaster/share/astro_odometry_tf_broadcaster/package.sh'
+[0.860s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry_tf_broadcaster/share/astro_odometry_tf_broadcaster/package.bash'
+[0.861s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry_tf_broadcaster/share/astro_odometry_tf_broadcaster/package.zsh'
+[0.861s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry_tf_broadcaster/share/colcon-core/packages/astro_odometry_tf_broadcaster)
+[0.861s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(astro_odometry_tf_broadcaster)
+[0.862s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry_tf_broadcaster' for CMake module files
+[0.862s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry_tf_broadcaster' for CMake config files
+[0.862s] Level 1:colcon.colcon_core.shell:create_environment_hook('astro_odometry_tf_broadcaster', 'cmake_prefix_path')
+[0.862s] INFO:colcon.colcon_core.shell:Creating environment hook '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry_tf_broadcaster/share/astro_odometry_tf_broadcaster/hook/cmake_prefix_path.ps1'
+[0.863s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry_tf_broadcaster/share/astro_odometry_tf_broadcaster/hook/cmake_prefix_path.dsv'
+[0.863s] INFO:colcon.colcon_core.shell:Creating environment hook '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry_tf_broadcaster/share/astro_odometry_tf_broadcaster/hook/cmake_prefix_path.sh'
+[0.863s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry_tf_broadcaster/lib'
+[0.864s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry_tf_broadcaster/bin'
+[0.864s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry_tf_broadcaster/lib/pkgconfig/astro_odometry_tf_broadcaster.pc'
+[0.864s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry_tf_broadcaster/lib/python3.10/site-packages'
+[0.864s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry_tf_broadcaster/bin'
+[0.864s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry_tf_broadcaster/share/astro_odometry_tf_broadcaster/package.ps1'
+[0.865s] INFO:colcon.colcon_core.shell:Creating package descriptor '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry_tf_broadcaster/share/astro_odometry_tf_broadcaster/package.dsv'
+[0.865s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry_tf_broadcaster/share/astro_odometry_tf_broadcaster/package.sh'
+[0.865s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry_tf_broadcaster/share/astro_odometry_tf_broadcaster/package.bash'
+[0.866s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry_tf_broadcaster/share/astro_odometry_tf_broadcaster/package.zsh'
+[0.866s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry_tf_broadcaster/share/colcon-core/packages/astro_odometry_tf_broadcaster)
+[0.867s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/projects/github_repos/astro/ros2_rpi_ws/build/robot_bringup' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/projects/github_repos/astro/ros2_rpi_ws/install/ros_time:/projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop:/projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor:/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry:/projects/ros/microros_ws/install/sensor_msgs_py:/opt/ros/humble /usr/bin/cmake --build /projects/github_repos/astro/ros2_rpi_ws/build/robot_bringup -- -j24 -l24
+[0.869s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/projects/github_repos/astro/ros2_rpi_ws/build/robot_bringup': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/projects/github_repos/astro/ros2_rpi_ws/install/ros_time:/projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop:/projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor:/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry:/projects/ros/microros_ws/install/sensor_msgs_py:/opt/ros/humble /usr/bin/cmake --install /projects/github_repos/astro/ros2_rpi_ws/build/robot_bringup
+[0.874s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(robot_bringup)
+[0.875s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup' for CMake module files
+[0.875s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/projects/github_repos/astro/ros2_rpi_ws/build/robot_bringup' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/projects/github_repos/astro/ros2_rpi_ws/install/ros_time:/projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop:/projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor:/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry:/projects/ros/microros_ws/install/sensor_msgs_py:/opt/ros/humble /usr/bin/cmake --install /projects/github_repos/astro/ros2_rpi_ws/build/robot_bringup
+[0.875s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup' for CMake config files
+[0.875s] Level 1:colcon.colcon_core.shell:create_environment_hook('robot_bringup', 'cmake_prefix_path')
+[0.875s] INFO:colcon.colcon_core.shell:Creating environment hook '/projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/share/robot_bringup/hook/cmake_prefix_path.ps1'
+[0.875s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/share/robot_bringup/hook/cmake_prefix_path.dsv'
+[0.875s] INFO:colcon.colcon_core.shell:Creating environment hook '/projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/share/robot_bringup/hook/cmake_prefix_path.sh'
+[0.876s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/bin'
+[0.876s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/lib/pkgconfig/robot_bringup.pc'
+[0.876s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/lib/python3.10/site-packages'
+[0.876s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/bin'
+[0.876s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/share/robot_bringup/package.ps1'
+[0.876s] INFO:colcon.colcon_core.shell:Creating package descriptor '/projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/share/robot_bringup/package.dsv'
+[0.876s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/share/robot_bringup/package.sh'
+[0.877s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/share/robot_bringup/package.bash'
+[0.877s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/share/robot_bringup/package.zsh'
+[0.877s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/share/colcon-core/packages/robot_bringup)
+[0.877s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(robot_bringup)
+[0.877s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup' for CMake module files
+[0.877s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup' for CMake config files
+[0.878s] Level 1:colcon.colcon_core.shell:create_environment_hook('robot_bringup', 'cmake_prefix_path')
+[0.878s] INFO:colcon.colcon_core.shell:Creating environment hook '/projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/share/robot_bringup/hook/cmake_prefix_path.ps1'
+[0.878s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/share/robot_bringup/hook/cmake_prefix_path.dsv'
+[0.878s] INFO:colcon.colcon_core.shell:Creating environment hook '/projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/share/robot_bringup/hook/cmake_prefix_path.sh'
+[0.878s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/bin'
+[0.878s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/lib/pkgconfig/robot_bringup.pc'
+[0.878s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/lib/python3.10/site-packages'
+[0.878s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/bin'
+[0.879s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/share/robot_bringup/package.ps1'
+[0.879s] INFO:colcon.colcon_core.shell:Creating package descriptor '/projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/share/robot_bringup/package.dsv'
+[0.879s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/share/robot_bringup/package.sh'
+[0.879s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/share/robot_bringup/package.bash'
+[0.879s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/share/robot_bringup/package.zsh'
+[0.879s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/projects/github_repos/astro/ros2_rpi_ws/install/robot_bringup/share/colcon-core/packages/robot_bringup)
+[1.017s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/projects/github_repos/astro/ros2_rpi_ws/src/astro_teleop_twist_joy': PYTHONPATH=/projects/github_repos/astro/ros2_rpi_ws/build/astro_teleop/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/astro_teleop build --build-base /projects/github_repos/astro/ros2_rpi_ws/build/astro_teleop/build install --record /projects/github_repos/astro/ros2_rpi_ws/build/astro_teleop/install.log --single-version-externally-managed install_data
+[1.020s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/projects/github_repos/astro/ros2_rpi_ws/src/astro_odometry_publisher': PYTHONPATH=/projects/github_repos/astro/ros2_rpi_ws/build/astro_odometry/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/astro_odometry build --build-base /projects/github_repos/astro/ros2_rpi_ws/build/astro_odometry/build install --record /projects/github_repos/astro/ros2_rpi_ws/build/astro_odometry/install.log --single-version-externally-managed install_data
+[1.021s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/projects/github_repos/astro/ros2_rpi_ws/src/astro_sensor_publisher': PYTHONPATH=/projects/github_repos/astro/ros2_rpi_ws/build/astro_sensor/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/astro_sensor build --build-base /projects/github_repos/astro/ros2_rpi_ws/build/astro_sensor/build install --record /projects/github_repos/astro/ros2_rpi_ws/build/astro_sensor/install.log --single-version-externally-managed install_data
+[1.057s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoking command in '/projects/github_repos/astro/ros2_rpi_ws/src/ros_time_publisher': PYTHONPATH=/projects/github_repos/astro/ros2_rpi_ws/build/ros_time/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/projects/github_repos/astro/ros2_rpi_ws/install/ros_time/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/ros_time build --build-base /projects/github_repos/astro/ros2_rpi_ws/build/ros_time/build install --record /projects/github_repos/astro/ros2_rpi_ws/build/ros_time/install.log --single-version-externally-managed install_data
+[1.179s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop' for CMake module files
+[1.179s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/projects/github_repos/astro/ros2_rpi_ws/src/astro_teleop_twist_joy' returned '0': PYTHONPATH=/projects/github_repos/astro/ros2_rpi_ws/build/astro_teleop/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/astro_teleop build --build-base /projects/github_repos/astro/ros2_rpi_ws/build/astro_teleop/build install --record /projects/github_repos/astro/ros2_rpi_ws/build/astro_teleop/install.log --single-version-externally-managed install_data
+[1.179s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop' for CMake config files
+[1.180s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop/lib'
+[1.180s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop/bin'
+[1.180s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop/lib/pkgconfig/astro_teleop.pc'
+[1.180s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop/lib/python3.10/site-packages'
+[1.180s] Level 1:colcon.colcon_core.shell:create_environment_hook('astro_teleop', 'pythonpath')
+[1.180s] INFO:colcon.colcon_core.shell:Creating environment hook '/projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop/share/astro_teleop/hook/pythonpath.ps1'
+[1.180s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop/share/astro_teleop/hook/pythonpath.dsv'
+[1.180s] INFO:colcon.colcon_core.shell:Creating environment hook '/projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop/share/astro_teleop/hook/pythonpath.sh'
+[1.181s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop/bin'
+[1.181s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(astro_teleop)
+[1.181s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop/share/astro_teleop/package.ps1'
+[1.181s] INFO:colcon.colcon_core.shell:Creating package descriptor '/projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop/share/astro_teleop/package.dsv'
+[1.182s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop/share/astro_teleop/package.sh'
+[1.182s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop/share/astro_teleop/package.bash'
+[1.182s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop/share/astro_teleop/package.zsh'
+[1.182s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop/share/colcon-core/packages/astro_teleop)
+[1.183s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor' for CMake module files
+[1.183s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor' for CMake config files
+[1.184s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/projects/github_repos/astro/ros2_rpi_ws/src/astro_sensor_publisher' returned '0': PYTHONPATH=/projects/github_repos/astro/ros2_rpi_ws/build/astro_sensor/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/astro_sensor build --build-base /projects/github_repos/astro/ros2_rpi_ws/build/astro_sensor/build install --record /projects/github_repos/astro/ros2_rpi_ws/build/astro_sensor/install.log --single-version-externally-managed install_data
+[1.184s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor/lib'
+[1.184s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor/bin'
+[1.184s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor/lib/pkgconfig/astro_sensor.pc'
+[1.184s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor/lib/python3.10/site-packages'
+[1.184s] Level 1:colcon.colcon_core.shell:create_environment_hook('astro_sensor', 'pythonpath')
+[1.184s] INFO:colcon.colcon_core.shell:Creating environment hook '/projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor/share/astro_sensor/hook/pythonpath.ps1'
+[1.184s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor/share/astro_sensor/hook/pythonpath.dsv'
+[1.184s] INFO:colcon.colcon_core.shell:Creating environment hook '/projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor/share/astro_sensor/hook/pythonpath.sh'
+[1.185s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor/bin'
+[1.185s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(astro_sensor)
+[1.185s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor/share/astro_sensor/package.ps1'
+[1.185s] INFO:colcon.colcon_core.shell:Creating package descriptor '/projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor/share/astro_sensor/package.dsv'
+[1.185s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor/share/astro_sensor/package.sh'
+[1.185s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor/share/astro_sensor/package.bash'
+[1.186s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor/share/astro_sensor/package.zsh'
+[1.186s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor/share/colcon-core/packages/astro_sensor)
+[1.186s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry' for CMake module files
+[1.186s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry' for CMake config files
+[1.187s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/projects/github_repos/astro/ros2_rpi_ws/src/astro_odometry_publisher' returned '0': PYTHONPATH=/projects/github_repos/astro/ros2_rpi_ws/build/astro_odometry/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/astro_odometry build --build-base /projects/github_repos/astro/ros2_rpi_ws/build/astro_odometry/build install --record /projects/github_repos/astro/ros2_rpi_ws/build/astro_odometry/install.log --single-version-externally-managed install_data
+[1.187s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry/lib'
+[1.187s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry/bin'
+[1.187s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry/lib/pkgconfig/astro_odometry.pc'
+[1.187s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry/lib/python3.10/site-packages'
+[1.187s] Level 1:colcon.colcon_core.shell:create_environment_hook('astro_odometry', 'pythonpath')
+[1.187s] INFO:colcon.colcon_core.shell:Creating environment hook '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry/share/astro_odometry/hook/pythonpath.ps1'
+[1.187s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry/share/astro_odometry/hook/pythonpath.dsv'
+[1.188s] INFO:colcon.colcon_core.shell:Creating environment hook '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry/share/astro_odometry/hook/pythonpath.sh'
+[1.188s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry/bin'
+[1.188s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(astro_odometry)
+[1.188s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry/share/astro_odometry/package.ps1'
+[1.188s] INFO:colcon.colcon_core.shell:Creating package descriptor '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry/share/astro_odometry/package.dsv'
+[1.188s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry/share/astro_odometry/package.sh'
+[1.189s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry/share/astro_odometry/package.bash'
+[1.189s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry/share/astro_odometry/package.zsh'
+[1.189s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/projects/github_repos/astro/ros2_rpi_ws/install/astro_odometry/share/colcon-core/packages/astro_odometry)
+[1.221s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/ros_time' for CMake module files
+[1.221s] DEBUG:colcon.colcon_core.event_handler.log_command:Invoked command in '/projects/github_repos/astro/ros2_rpi_ws/src/ros_time_publisher' returned '0': PYTHONPATH=/projects/github_repos/astro/ros2_rpi_ws/build/ros_time/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/projects/github_repos/astro/ros2_rpi_ws/install/ros_time/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/ros_time build --build-base /projects/github_repos/astro/ros2_rpi_ws/build/ros_time/build install --record /projects/github_repos/astro/ros2_rpi_ws/build/ros_time/install.log --single-version-externally-managed install_data
+[1.221s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/ros_time' for CMake config files
+[1.222s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/ros_time/lib'
+[1.222s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/ros_time/bin'
+[1.222s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/ros_time/lib/pkgconfig/ros_time.pc'
+[1.222s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/ros_time/lib/python3.10/site-packages'
+[1.222s] Level 1:colcon.colcon_core.shell:create_environment_hook('ros_time', 'pythonpath')
+[1.222s] INFO:colcon.colcon_core.shell:Creating environment hook '/projects/github_repos/astro/ros2_rpi_ws/install/ros_time/share/ros_time/hook/pythonpath.ps1'
+[1.222s] INFO:colcon.colcon_core.shell:Creating environment descriptor '/projects/github_repos/astro/ros2_rpi_ws/install/ros_time/share/ros_time/hook/pythonpath.dsv'
+[1.222s] INFO:colcon.colcon_core.shell:Creating environment hook '/projects/github_repos/astro/ros2_rpi_ws/install/ros_time/share/ros_time/hook/pythonpath.sh'
+[1.223s] Level 1:colcon.colcon_core.environment:checking '/projects/github_repos/astro/ros2_rpi_ws/install/ros_time/bin'
+[1.223s] Level 1:colcon.colcon_core.environment:create_environment_scripts_only(ros_time)
+[1.223s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/ros_time/share/ros_time/package.ps1'
+[1.223s] INFO:colcon.colcon_core.shell:Creating package descriptor '/projects/github_repos/astro/ros2_rpi_ws/install/ros_time/share/ros_time/package.dsv'
+[1.223s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/ros_time/share/ros_time/package.sh'
+[1.223s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/ros_time/share/ros_time/package.bash'
+[1.224s] INFO:colcon.colcon_core.shell:Creating package script '/projects/github_repos/astro/ros2_rpi_ws/install/ros_time/share/ros_time/package.zsh'
+[1.224s] Level 1:colcon.colcon_core.environment:create_file_with_runtime_dependencies(/projects/github_repos/astro/ros2_rpi_ws/install/ros_time/share/colcon-core/packages/ros_time)
+[1.224s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:closing loop
+[1.224s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:loop closed
+[1.224s] DEBUG:colcon.colcon_parallel_executor.executor.parallel:run_until_complete finished with '0'
+[1.224s] DEBUG:colcon.colcon_core.event_reactor:joining thread
+[1.228s] INFO:colcon.colcon_core.plugin_system:Skipping extension 'colcon_notification.desktop_notification.terminal_notifier': Not used on non-Darwin systems
+[1.228s] INFO:colcon.colcon_core.plugin_system:Skipping extension 'colcon_notification.desktop_notification.win32': Not used on non-Windows systems
+[1.228s] INFO:colcon.colcon_notification.desktop_notification:Sending desktop notification using 'notify2'
+[1.233s] DEBUG:colcon.colcon_core.event_reactor:joined thread
+[1.233s] INFO:colcon.colcon_core.shell:Creating prefix script '/projects/github_repos/astro/ros2_rpi_ws/install/local_setup.ps1'
+[1.233s] INFO:colcon.colcon_core.shell:Creating prefix util module '/projects/github_repos/astro/ros2_rpi_ws/install/_local_setup_util_ps1.py'
+[1.234s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/projects/github_repos/astro/ros2_rpi_ws/install/setup.ps1'
+[1.236s] INFO:colcon.colcon_core.shell:Creating prefix script '/projects/github_repos/astro/ros2_rpi_ws/install/local_setup.sh'
+[1.236s] INFO:colcon.colcon_core.shell:Creating prefix util module '/projects/github_repos/astro/ros2_rpi_ws/install/_local_setup_util_sh.py'
+[1.237s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/projects/github_repos/astro/ros2_rpi_ws/install/setup.sh'
+[1.238s] INFO:colcon.colcon_core.shell:Creating prefix script '/projects/github_repos/astro/ros2_rpi_ws/install/local_setup.bash'
+[1.239s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/projects/github_repos/astro/ros2_rpi_ws/install/setup.bash'
+[1.240s] INFO:colcon.colcon_core.shell:Creating prefix script '/projects/github_repos/astro/ros2_rpi_ws/install/local_setup.zsh'
+[1.240s] INFO:colcon.colcon_core.shell:Creating prefix chain script '/projects/github_repos/astro/ros2_rpi_ws/install/setup.zsh'

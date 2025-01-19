@@ -1,5 +1,0 @@
-<launch>
-  <!-- astro_teleop_key already has its own built in velocity smoother -->
-  <node pkg="astro_teleop" type="astro_teleop_key" name="astro_teleop_keyboard"  output="screen">
-  </node>
-</launch>

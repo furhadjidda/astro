@@ -1,0 +1,40 @@
+running egg_info
+creating ../../build/astro_teleop/astro_teleop.egg-info
+writing ../../build/astro_teleop/astro_teleop.egg-info/PKG-INFO
+writing dependency_links to ../../build/astro_teleop/astro_teleop.egg-info/dependency_links.txt
+writing entry points to ../../build/astro_teleop/astro_teleop.egg-info/entry_points.txt
+writing requirements to ../../build/astro_teleop/astro_teleop.egg-info/requires.txt
+writing top-level names to ../../build/astro_teleop/astro_teleop.egg-info/top_level.txt
+writing manifest file '../../build/astro_teleop/astro_teleop.egg-info/SOURCES.txt'
+reading manifest file '../../build/astro_teleop/astro_teleop.egg-info/SOURCES.txt'
+writing manifest file '../../build/astro_teleop/astro_teleop.egg-info/SOURCES.txt'
+running build
+running build_py
+creating /projects/github_repos/astro/ros2_rpi_ws/build/astro_teleop/build
+creating /projects/github_repos/astro/ros2_rpi_ws/build/astro_teleop/build/lib
+creating /projects/github_repos/astro/ros2_rpi_ws/build/astro_teleop/build/lib/astro_teleop
+copying astro_teleop/__init__.py -> /projects/github_repos/astro/ros2_rpi_ws/build/astro_teleop/build/lib/astro_teleop
+creating /projects/github_repos/astro/ros2_rpi_ws/build/astro_teleop/build/lib/astro_teleop/script
+copying astro_teleop/script/teleop_keyboard.py -> /projects/github_repos/astro/ros2_rpi_ws/build/astro_teleop/build/lib/astro_teleop/script
+copying astro_teleop/script/__init__.py -> /projects/github_repos/astro/ros2_rpi_ws/build/astro_teleop/build/lib/astro_teleop/script
+running install
+running install_lib
+creating /projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop/lib/python3.10/site-packages/astro_teleop
+creating /projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop/lib/python3.10/site-packages/astro_teleop/script
+copying /projects/github_repos/astro/ros2_rpi_ws/build/astro_teleop/build/lib/astro_teleop/script/teleop_keyboard.py -> /projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop/lib/python3.10/site-packages/astro_teleop/script
+copying /projects/github_repos/astro/ros2_rpi_ws/build/astro_teleop/build/lib/astro_teleop/script/__init__.py -> /projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop/lib/python3.10/site-packages/astro_teleop/script
+copying /projects/github_repos/astro/ros2_rpi_ws/build/astro_teleop/build/lib/astro_teleop/__init__.py -> /projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop/lib/python3.10/site-packages/astro_teleop
+byte-compiling /projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop/lib/python3.10/site-packages/astro_teleop/script/teleop_keyboard.py to teleop_keyboard.cpython-310.pyc
+byte-compiling /projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop/lib/python3.10/site-packages/astro_teleop/script/__init__.py to __init__.cpython-310.pyc
+byte-compiling /projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop/lib/python3.10/site-packages/astro_teleop/__init__.py to __init__.cpython-310.pyc
+running install_data
+creating /projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop/share/ament_index
+creating /projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop/share/ament_index/resource_index
+creating /projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop/share/ament_index/resource_index/packages
+copying resource/astro_teleop -> /projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop/share/ament_index/resource_index/packages
+copying package.xml -> /projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop/share/astro_teleop
+running install_egg_info
+Copying ../../build/astro_teleop/astro_teleop.egg-info to /projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop/lib/python3.10/site-packages/astro_teleop-2.1.5-py3.10.egg-info
+running install_scripts
+Installing teleop_keyboard script to /projects/github_repos/astro/ros2_rpi_ws/install/astro_teleop/lib/astro_teleop
+writing list of installed files to '/projects/github_repos/astro/ros2_rpi_ws/build/astro_teleop/install.log'

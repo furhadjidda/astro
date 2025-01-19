@@ -1,0 +1,40 @@
+running egg_info
+creating ../../build/astro_sensor/astro_sensor.egg-info
+writing ../../build/astro_sensor/astro_sensor.egg-info/PKG-INFO
+writing dependency_links to ../../build/astro_sensor/astro_sensor.egg-info/dependency_links.txt
+writing entry points to ../../build/astro_sensor/astro_sensor.egg-info/entry_points.txt
+writing requirements to ../../build/astro_sensor/astro_sensor.egg-info/requires.txt
+writing top-level names to ../../build/astro_sensor/astro_sensor.egg-info/top_level.txt
+writing manifest file '../../build/astro_sensor/astro_sensor.egg-info/SOURCES.txt'
+reading manifest file '../../build/astro_sensor/astro_sensor.egg-info/SOURCES.txt'
+writing manifest file '../../build/astro_sensor/astro_sensor.egg-info/SOURCES.txt'
+running build
+running build_py
+creating /projects/github_repos/astro/ros2_rpi_ws/build/astro_sensor/build
+creating /projects/github_repos/astro/ros2_rpi_ws/build/astro_sensor/build/lib
+creating /projects/github_repos/astro/ros2_rpi_ws/build/astro_sensor/build/lib/astro_sensor
+copying astro_sensor/__init__.py -> /projects/github_repos/astro/ros2_rpi_ws/build/astro_sensor/build/lib/astro_sensor
+creating /projects/github_repos/astro/ros2_rpi_ws/build/astro_sensor/build/lib/astro_sensor/script
+copying astro_sensor/script/astro_sensor.py -> /projects/github_repos/astro/ros2_rpi_ws/build/astro_sensor/build/lib/astro_sensor/script
+copying astro_sensor/script/__init__.py -> /projects/github_repos/astro/ros2_rpi_ws/build/astro_sensor/build/lib/astro_sensor/script
+running install
+running install_lib
+creating /projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor/lib/python3.10/site-packages/astro_sensor
+creating /projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor/lib/python3.10/site-packages/astro_sensor/script
+copying /projects/github_repos/astro/ros2_rpi_ws/build/astro_sensor/build/lib/astro_sensor/script/astro_sensor.py -> /projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor/lib/python3.10/site-packages/astro_sensor/script
+copying /projects/github_repos/astro/ros2_rpi_ws/build/astro_sensor/build/lib/astro_sensor/script/__init__.py -> /projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor/lib/python3.10/site-packages/astro_sensor/script
+copying /projects/github_repos/astro/ros2_rpi_ws/build/astro_sensor/build/lib/astro_sensor/__init__.py -> /projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor/lib/python3.10/site-packages/astro_sensor
+byte-compiling /projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor/lib/python3.10/site-packages/astro_sensor/script/astro_sensor.py to astro_sensor.cpython-310.pyc
+byte-compiling /projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor/lib/python3.10/site-packages/astro_sensor/script/__init__.py to __init__.cpython-310.pyc
+byte-compiling /projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor/lib/python3.10/site-packages/astro_sensor/__init__.py to __init__.cpython-310.pyc
+running install_data
+creating /projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor/share/ament_index
+creating /projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor/share/ament_index/resource_index
+creating /projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor/share/ament_index/resource_index/packages
+copying resource/astro_sensor -> /projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor/share/ament_index/resource_index/packages
+copying package.xml -> /projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor/share/astro_sensor
+running install_egg_info
+Copying ../../build/astro_sensor/astro_sensor.egg-info to /projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor/lib/python3.10/site-packages/astro_sensor-2.1.5-py3.10.egg-info
+running install_scripts
+Installing astro_sensor script to /projects/github_repos/astro/ros2_rpi_ws/install/astro_sensor/lib/astro_sensor
+writing list of installed files to '/projects/github_repos/astro/ros2_rpi_ws/build/astro_sensor/install.log'
