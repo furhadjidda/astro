@@ -1,10 +1,88 @@
-# Astro ( A Turtlebot based ROS Robot )
+# Astro ( A Turtlebot3 based ROS Robot )
+![Important](https://img.shields.io/badge/Caution-Read-orange)
+<div style="border: 2px solid orange ; padding: 10px; color: orange; font-weight: bold;">
+⚠️ **Warning** : This is a work in progress and there will be frequent updates to this repository.
+</div>
+
+
+
+<img src="images/atro.jpeg" alt="Example Image" width="250">  <img src="images/ROS2_Humble_Hawksbill.png" alt="Example Image" width="205">
 ![Raspberry pi](images/Powered-by-Pi-Logo-White.png)
+
+## System Configuration
+
+<table>
+    <tr>
+        <th style="background-color:rgb(247, 173, 15); padding: 10px; color: black;">Version of ROS used</th>
+        <td style="background-color:rgb(64, 131, 233); padding: 10px; color: black;">ROS Humble</td>
+    </tr>
+    <tr>
+        <th style="background-color:rgb(247, 173, 15); padding: 10px; color: black;">Version of OS on host and target</th>
+        <td style="background-color:rgb(64, 131, 233); padding: 10px; color: black;">Ubuntu 22.04</td>
+    </tr>
+</table>
+
+### Sensors
+
+<table>
+    <tr>
+        <th style="background-color:rgb(212, 159, 210); padding: 10px; color: black;"><strong>IMU</strong></th>
+        <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;">BNO055</td>
+    </tr>
+    <tr>
+        <th style="background-color:rgb(212, 159, 210); padding: 10px; color: black;"><strong>Lidar</strong></th>
+        <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;">RPLIDAR A1M8</td>
+    </tr>
+    <tr>
+        <th style="background-color:rgb(212, 159, 210); padding: 10px; color: black;"><strong>Microcontroler</strong></th>
+        <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;">Raspberry pi pico</td>
+    </tr>
+    <tr>
+        <th style="background-color:rgb(212, 159, 210); padding: 10px; color: black;"><strong>Time of Flight Sensor</strong></th>
+        <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;">VL53L0X</td>
+    </tr>
+</table>
+
+### Odomtery
+
+#### DC Motors with Encoder
+<table>
+    <tr>
+        <th style="background-color:rgb(235, 177, 111); padding: 10px; color: black;"><strong>DC Motor with encoder</strong></th>
+        <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;">Encoder Metal Gearmotor 12V DC Low Speed 60 RPM Gear Motor</td>
+    </tr>
+    <tr>
+        <th style="background-color:rgb(235, 177, 111); padding: 10px; color: black;"><strong>Motor Controller</strong></th>
+        <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;">Waveshare DC Motor Driver for raspberry pi pico</td>
+    </tr>
+    <tr>
+        <th style="background-color:rgb(235, 177, 111); padding: 10px; color: black;"><strong>Wheels</strong></th>
+        <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;">4 Pieces RC 1:16 Paddles Buggy Tires Hex 12mm Wheels </td>
+    </tr>
+</table>
+
+#### Dynamixel System
+<table>
+    <tr>
+        <th style="background-color:rgb(235, 177, 111); padding: 10px; color: black;"><strong>Servo Motor</strong></th>
+        <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;">DYNAMIXEL XL430-W250-T</td>
+    </tr>
+    <tr>
+        <th style="background-color:rgb(235, 177, 111); padding: 10px; color: black;"><strong>Controller</strong></th>
+        <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;">U2D2 Power Hub Board Set with U2D2</td>
+    </tr>
+    <tr>
+        <th style="background-color:rgb(235, 177, 111); padding: 10px; color: black;"><strong>Wheels</strong></th>
+        <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;">TB3 Wheel Tire Set</td>
+    </tr>
+</table>
+
+### Turtlebot 3 Styles Working on
 ![astro_burger](images/astro_urdf_burger.png)
 ![astro_waffle](images/astro_urdf_waffle.png)
-## Note : This is a work in progress and there will be frequent updates to this repository.
-###  Version of ROS used : ROS Noetic
-###  Raspberry pi OS : buster
+
+
+## Description
 
 This project was started to create a turtlebot burger based ROS robot. I did not just went and buy the whole kit for turtle bot because of the things that interested me is using arduino and motors and recreate odometry algorithms,even if it is very basic. The kit does not fully allows me to do that. Not to my knowledge anyway.
 Below are my goals with the project
@@ -12,119 +90,6 @@ Below are my goals with the project
 * Learn how to work with different sensors like IMU and ToF sensors.
 * Learn how to fuse the odometry and the sensors for better localization and path planning
 * Work with electronics and interactions of modules
-* Eventually migrate to ROS2
-
-# Bill of Materials
-1. Raspberry pi 4 4 GB[https://shop.pimoroni.com/products/raspberry-pi-4?variant=31856486416467]
-
-2. Arduino Mkr zero
-
-3. Arduino Mkr Motor Carrier
-
-4. RPLIDAR(Slam Tech) [https://www.slamtec.com/en/Lidar/A1]
-
-5. Robot Motors with encoders [https://www.amazon.com/gp/product/B078HYX7YH/ref=ppx_yo_dt_b_asin_title_o04_s00?ie=UTF8&psc=1]
-
-6. Chassis and Parts
-   * 2 X TB3 Waffle Plate-IPL-01 - [https://www.robotis.us/tb3-waffle-plate-ipl-01-8ea/]
-   * 1 X  Pololu Ball Caster with 3/4" Metal Ball  - [https://www.robotshop.com/products/pololu-ball-caster-3-4-in-metal-ball]
-   * 2 X TB3 PCB Support-IBB-01 - [https://www.robotis.us/tb3-pcb-support-ibb-01-12ea/]
-   * 5 X Bracket-Dual-L (SPL-2b3(K)) - [https://www.robotis.us/bracket-dual-l-spl-2b3-k-5pcs/]
-   * 2 x  78mm Tires - [https://www.amazon.com/dp/B09YXPF1K4?psc=1&ref=ppx_yo2ov_dt_b_product_details]
-
-7. 3S Lipo Battery 50C 2200mAh 11.1V [https://www.amazon.com/dp/B08CZF373Y?psc=1&ref=ppx_yo2ov_dt_b_product_details]
-
-8. IMU BNO055 - [https://www.adafruit.com/product/4646]
-
-9. 5-pin (Arduino MKR) to 4-pin JST SH STEMMA QT / Qwiic Cable - 100mm long [https://www.adafruit.com/product/4483]
-
-10. Adafruit VL53L0X Time of Flight Distance Sensor [https://www.adafruit.com/product/3317]
-
-
-# ROS Instructions
-<img src="images/ros_noetic_logo1-1024x601-1.webp" alt="Example Image" width="600">
-
-# Setting Up Raspberry Pi 4
-* Setting up ROS Noetic on Raspberry pi 4 and Lidar Integration.
-  * [https://www.hackster.io/shahizat005/lidar-integration-with-ros-noetic-on-raspberry-pi-os-8ea140]
-  * [http://wiki.ros.org/ROSberryPi/Installing%20ROS%20Melodic%20on%20the%20Raspberry%20Pi#Maintaining_a_Source_Checkout]
-
-* To add more released packages refer this [http://wiki.ros.org/ROSberryPi/Installing%20ROS%20Melodic%20on%20the%20Raspberry%20Pi#Adding_Released_Packages]
-Packages used for this projects are as below.
-  * hector_slam - [http://wiki.ros.org/hector_slam]
-  * navigation - [http://wiki.ros.org/navigation]
-  * gmapping - [http://wiki.ros.org/gmapping]
-  * rplidar - [http://wiki.ros.org/rplidar]
-  * teleop_twist_joy - [http://wiki.ros.org/teleop_twist_joy]
-  * teleop_twist_keyboard - [http://wiki.ros.org/teleop_twist_keyboard]
-  * rosserial [https://github.com/ros-drivers/rosserial]
-
-* Setting up rosserial on Raspberry pi 4(Adapted , see setup instructions)[https://www.intorobotics.com/how-to-install-ros-melodic-rosserial-and-more-on-raspberry-pi-4-raspbian-buster/]
-
-* Setting up Intel Real sense librarry for raspberry pi[https://github.com/IntelRealSense/librealsense/blob/master/doc/installation_raspbian.md]
-
-* Make sure that the rosserial is installed via this link[https://github.com/ros-drivers/rosserial] . I have seen issues with using the package available with the package manager.
-NOTE : You make also need to add these changes to your arduino rosserial libraries to increate the buffer size or to add support for arduino mkr wifi boards.
-
-
-# Build and Launch
-1. Clone project and initialize a catkin workspace
-```
-$ mkdir catkin_ws && cd catkin_ws
-$ cd src
-$ git clone https://github.com/furhadjidda/astro
-$ catkin_init_workspace
-```
-
-2. Within the `catkin_ws/src` folder, clone the `teleop` project
-```
-$ git clone https://github.com/ros-teleop/teleop_twist_keyboard
-```
-
-3. Move back to `catkin_ws\` and build
-```
-$ cd ..
-$ catkin_make
-```
-
-4. Launch the world and robot
-```
-$ source devel/setup.bash
-$ roslaunch astro_bringup astro_core.launch
-```
-
-5. Open another terminal, and run the `teleop` node.
-```
-$ source devel/setup.bash
-$ rosrun teleop_twist_keyboard teleop_twist_keyboard.py
-```
-6. Open another terminal, and run the `RpiLIDAR` node
-```
-$ source devel/setup.bash
-$ roslaunch astro_bringup astro_lidar.launch
-```
-
-7. Alternatively you could also launch the "launch_rover.py" script
-by logging into the VNC desktop connection. This will automatically
-launch different nodes on different terminals in some cases the script
-will even detect if the device is connected before launching the nodes.
-
-Scripts are described as below:
-1. For just testing core functionalities - sensors and motors.
-```
-python astro_core_launch.py
-```
-2. For Mapping use below
-```
-python astro_gmapping.py
-```
-3. For Navigation use below
-```
-python astro_navigation.py
-```
-
-# ROS 2 Instructions
-<img src="images/ROS2_Humble_Hawksbill.png" alt="Example Image" width="500">
 
 ## How to install and use micro-ros
 
@@ -169,20 +134,7 @@ NOTE: After making the changes in the ~/.bashrc file please make sure that the n
 so basically make sure that the if your environment has domain id as 10 the nodes you are trying to list or echo also has the same domain id.
 
 
-## How to compile and install pico firmware
-### host build( for running tests )
-1. After cloning the astro repo make sure to run `git submodule update --init --recursive`.
-2. Configure cmake `cmake -S . -B host_build/ -DBUILD_FOR_HOST=ON`.
-3. Build the firmware `cmake --build host_build`.
-4. You can now run tests
-
-### target build( Firmware image)
-1. After cloning the astro repo make sure to run `git submodule update --init --recursive`.
-2. Configure cmake `cmake -S . -B target_build/`.
-3. Build the firmware `cmake --build target_build`.
-4. Connect your device so it’s ready for file transfer.
-
-## VNC Server
+## Accessing Raspberry pi via VNC Server
 These are commands you will need to run everytime you need to access raspberry pi through VNC
 
 `vncserver :1 -localhost no -geometry 1920x1080`
@@ -199,6 +151,21 @@ From the host side you will need to use this in place of the ip address
 * execute `colcon build`
 * execute `source install\setup.bash`
 
+
+# Pico Firmware
+
+## How to compile and install pico firmware
+### host build( for running tests )
+1. After cloning the astro repo make sure to run `git submodule update --init --recursive`.
+2. Configure cmake `cmake -S . -B host_build/ -DBUILD_FOR_HOST=ON`.
+3. Build the firmware `cmake --build host_build`.
+4. You can now run tests
+
+### target build( Firmware image)
+1. After cloning the astro repo make sure to run `git submodule update --init --recursive`.
+2. Configure cmake `cmake -S . -B target_build/`.
+3. Build the firmware `cmake --build target_build`.
+4. Connect your device so it’s ready for file transfer.
 
 # Gratitude and References:
 * A big thanks to Matthieu M  whose work on Fox bot not only helped me building my odometry but with his 3D printed stl files and ideas he presented in his project helped out a lot.
