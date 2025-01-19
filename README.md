@@ -191,6 +191,15 @@ From the host side you will need to use this in place of the ip address
 
 `<ip-address>:1`
 
+
+## Build and Launch
+* Clone git@github.com:furhadjidda/astro.git
+* Navigate to ros2_rpi_ws
+* Clone the needed repos using `vcs import .  < astro.repos`
+* execute `colcon build`
+* execute `source install\setup.bash`
+
+
 # Gratitude and References:
 * A big thanks to Matthieu M  whose work on Fox bot not only helped me building my odometry but with his 3D printed stl files and ideas he presented in his project helped out a lot.
   * His project page - https://www.instructables.com/Build-Your-Own-Turtblebot-Robot/ and https://hackaday.io/project/167074-build-your-own-turtlebot-3-backbone
