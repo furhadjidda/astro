@@ -1,1 +1,0 @@
-Invoking command in '/projects/github_repos/astro/ros2_ws/build/robot_bringup': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/projects/ros/microros_ws/install/sensor_msgs_py:/opt/ros/humble /usr/bin/cmake --build /projects/github_repos/astro/ros2_ws/build/robot_bringup -- -j24 -l24

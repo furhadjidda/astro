@@ -1,6 +1,0 @@
-[0.189s] Invoking command in '/projects/github_repos/astro/ros2_ws/build/astro_odometry_tf_broadcaster': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/projects/ros/microros_ws/install/sensor_msgs_py:/opt/ros/humble /usr/bin/cmake --build /projects/github_repos/astro/ros2_ws/build/astro_odometry_tf_broadcaster -- -j24 -l24
-[0.519s] [0mCMake Error: The current CMakeCache.txt directory /projects/github_repos/astro/ros2_ws/build/astro_odometry_tf_broadcaster/CMakeCache.txt is different than the directory /projects/github_repos/astro/ros2_rpi_ws/build/astro_odometry_tf_broadcaster where CMakeCache.txt was created. This may result in binaries being created in the wrong place. If you are not sure, reedit the CMakeCache.txt[0m
-[0.519s] [0mCMake Error: The source directory "/projects/github_repos/astro/ros2_rpi_ws/src/astro_odometry_tf_broadcaster" does not exist.
-[0.519s] Specify --help for usage, or press the help button on the CMake GUI.[0m
-[0.519s] gmake: *** [Makefile:267: cmake_check_build_system] Error 1
-[0.521s] Invoked command in '/projects/github_repos/astro/ros2_ws/build/astro_odometry_tf_broadcaster' returned '2': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/projects/ros/microros_ws/install/sensor_msgs_py:/opt/ros/humble /usr/bin/cmake --build /projects/github_repos/astro/ros2_ws/build/astro_odometry_tf_broadcaster -- -j24 -l24
