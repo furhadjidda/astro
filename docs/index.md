@@ -29,7 +29,7 @@ layout: default
 
 <table>
     <tr>
-        <th style="background-color:rgb(212, 159, 210); padding: 10px; color: black;"><strong>IMU</a></strong></th>
+        <th style="background-color:rgb(212, 159, 210); padding: 10px; color: black;"><strong>IMU</strong></th>
         <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;"><a href="https://cdn-learn.adafruit.com/assets/assets/000/125/776/original/bst-bno055-ds000.pdf?1698865246">BNO055</td>
     </tr>
     <tr>
@@ -83,6 +83,8 @@ layout: default
         <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;">TB3 Wheel Tire Set</td>
     </tr>
 </table>
+
+
 
 ### Turtlebot 3 Styles Working on
 ![astro_burger](../images/astro_urdf_burger.png)
