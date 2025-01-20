@@ -30,23 +30,23 @@ layout: default
 <table>
     <tr>
         <th style="background-color:rgb(212, 159, 210); padding: 10px; color: black;"><strong>IMU</strong></th>
-        <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;"><a href="https://cdn-learn.adafruit.com/assets/assets/000/125/776/original/bst-bno055-ds000.pdf?1698865246">BNO055</td>
+        <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;"><a href="https://cdn-learn.adafruit.com/assets/assets/000/125/776/original/bst-bno055-ds000.pdf?1698865246">BNO055</a></td>
     </tr>
     <tr>
         <th style="background-color:rgb(212, 159, 210); padding: 10px; color: black;"><strong>Lidar</strong></th>
-        <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;"><a href="https://bucket-download.slamtec.com/d1e428e7efbdcd65a8ea111061794fb8d4ccd3a0/LD108_SLAMTEC_rplidar_datasheet_A1M8_v3.0_en.pdf">RPLIDAR A1M8</td>
+        <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;"><a href="https://bucket-download.slamtec.com/d1e428e7efbdcd65a8ea111061794fb8d4ccd3a0/LD108_SLAMTEC_rplidar_datasheet_A1M8_v3.0_en.pdf">RPLIDAR A1M8</a></td>
     </tr>
     <tr>
         <th style="background-color:rgb(212, 159, 210); padding: 10px; color: black;"><strong>Microcontroler</strong></th>
-        <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;"><a href="https://datasheets.raspberrypi.com/pico/pico-datasheet.pdf">Raspberry pi pico</td>
+        <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;"><a href="https://datasheets.raspberrypi.com/pico/pico-datasheet.pdf">Raspberry pi pico</a></td>
     </tr>
     <tr>
         <th style="background-color:rgb(212, 159, 210); padding: 10px; color: black;"><strong>Time of Flight Sensor</strong></th>
-        <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;"><a href="https://www.adafruit.com/product/3317">VL53L0X</td>
+        <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;"><a href="https://www.adafruit.com/product/3317">VL53L0X</a></td>
     </tr>
     <tr>
         <th style="background-color:rgb(212, 159, 210); padding: 10px; color: black;"><strong>RGB Depth Camera with 6 DOF IMU</strong></th>
-        <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;"><a href="https://www.intelrealsense.com/download/21345/?tmstv=1697035582">Intel realsense D455</td>
+        <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;"><a href="https://www.intelrealsense.com/download/21345/?tmstv=1697035582">Intel realsense D455</a></td>
     </tr>
 </table>
 
