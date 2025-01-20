@@ -26,20 +26,24 @@
 
 <table>
     <tr>
-        <th style="background-color:rgb(212, 159, 210); padding: 10px; color: black;"><strong>IMU</strong></th>
-        <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;">BNO055</td>
+        <th style="background-color:rgb(212, 159, 210); padding: 10px; color: black;"><strong>IMU</a></strong></th>
+        <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;"><a href="https://cdn-learn.adafruit.com/assets/assets/000/125/776/original/bst-bno055-ds000.pdf?1698865246">BNO055</td>
     </tr>
     <tr>
         <th style="background-color:rgb(212, 159, 210); padding: 10px; color: black;"><strong>Lidar</strong></th>
-        <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;">RPLIDAR A1M8</td>
+        <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;"><a href="https://bucket-download.slamtec.com/d1e428e7efbdcd65a8ea111061794fb8d4ccd3a0/LD108_SLAMTEC_rplidar_datasheet_A1M8_v3.0_en.pdf">RPLIDAR A1M8</td>
     </tr>
     <tr>
         <th style="background-color:rgb(212, 159, 210); padding: 10px; color: black;"><strong>Microcontroler</strong></th>
-        <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;">Raspberry pi pico</td>
+        <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;"><a href="https://datasheets.raspberrypi.com/pico/pico-datasheet.pdf">Raspberry pi pico</td>
     </tr>
     <tr>
         <th style="background-color:rgb(212, 159, 210); padding: 10px; color: black;"><strong>Time of Flight Sensor</strong></th>
-        <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;">VL53L0X</td>
+        <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;"><a href="https://www.adafruit.com/product/3317">VL53L0X</td>
+    </tr>
+    <tr>
+        <th style="background-color:rgb(212, 159, 210); padding: 10px; color: black;"><strong>RGB Depth Camera with 6 DOF IMU</strong></th>
+        <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;"><a href="https://www.intelrealsense.com/download/21345/?tmstv=1697035582">Intel realsense D455</td>
     </tr>
 </table>
 
@@ -83,27 +87,35 @@
 
 
 ## Description
+The purpose of this project is to understand ROS2 but also learn about different sensors used in robotics along the way.
 
-This project was started to create a turtlebot burger based ROS robot. I did not just went and buy the whole kit for turtle bot because of the things that interested me is using arduino and motors and recreate odometry algorithms,even if it is very basic. The kit does not fully allows me to do that. Not to my knowledge anyway.
-Below are my goals with the project
-* Learn more about odometry in ROS and be able to write a smooth algorithm that could work with the motor shields out there.
-* Learn how to work with different sensors like IMU and ToF sensors.
-* Learn how to fuse the odometry and the sensors for better localization and path planning
-* Work with electronics and interactions of modules
+## Pre-requisite Installations
 
-## How to install and use micro-ros
-
-* Reference - https://micro.ros.org/docs/tutorials/core/first_application_linux/
-
-## Static transformations
-### For odomtery
-ros2 run tf2_ros static_transform_publisher 0 0 0 0 0 0 1 odom base_link
-### For imu
-ros2 run tf2_ros static_transform_publisher 0 0 0 0 0 0 map imu_frame
+| Package       | Instructions                                                         |          |
+|---------------|----------------------------------------------------------------------|----------|
+| ROS humble    | https://micro.ros.org/docs/tutorials/core/first_application_linux/   | ROS Framework |
+| Micro ROS     | https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debs.html | Needed ROS communication between Raspberry pi pico and Raspberry pi 4 |
 
 
-## Lidar
-ros2 launch sllidar_ros2 view_sllidar_a1_launch.py scan_mode:=Standard
+## Other Modules used
+<div style="border: 2px solid green ; padding: 10px; color: green; font-weight: bold;">
+⚠️ **Note** : These are already added to the astro.repos so no need to clone and install them separately.
+This will get build when you build the project.
+</div>
+
+| Sensor Package| Package Link                                                 |   Sensor Model          |
+|---------------|--------------------------------------------------------------|-------------------------|
+| RPI Lidar     | https://github.com/Slamtec/rplidar_ros/tree/ros2             |  RPLIDAR A1M8           |
+| Realsense     | https://github.com/IntelRealSense/realsense-ros              |  Realsense D455         |
+| Dynamixel     | https://github.com/ROBOTIS-GIT/DynamixelSDK                  |  DYNAMIXEL XL430-W250-T |
+
+
+## Build and Launch
+* Clone git@github.com:furhadjidda/astro.git
+* Navigate to ros2_rpi_ws
+* Clone the needed repos using `vcs import .  < astro.repos`
+* execute `colcon build`
+* execute `source install\setup.bash`
 
 
 # Raspberry pi configurations and access
@@ -144,16 +156,8 @@ From the host side you will need to use this in place of the ip address
 `<ip-address>:1`
 
 
-## Build and Launch
-* Clone git@github.com:furhadjidda/astro.git
-* Navigate to ros2_rpi_ws
-* Clone the needed repos using `vcs import .  < astro.repos`
-* execute `colcon build`
-* execute `source install\setup.bash`
-
 
 # Pico Firmware
-
 ## How to compile and install pico firmware
 ### host build( for running tests )
 1. After cloning the astro repo make sure to run `git submodule update --init --recursive`.
@@ -166,6 +170,17 @@ From the host side you will need to use this in place of the ip address
 2. Configure cmake `cmake -S . -B target_build/`.
 3. Build the firmware `cmake --build target_build`.
 4. Connect your device so it’s ready for file transfer.
+
+
+## Other Imporatant Commands when needed
+### Static transformations
+#### For Odomtery
+ros2 run tf2_ros static_transform_publisher 0 0 0 0 0 0 1 odom base_link
+#### For IMU
+ros2 run tf2_ros static_transform_publisher 0 0 0 0 0 0 map imu_frame
+
+### Launching Lidar
+ros2 launch sllidar_ros2 view_sllidar_a1_launch.py scan_mode:=Standard
 
 # Gratitude and References:
 * A big thanks to Matthieu M  whose work on Fox bot not only helped me building my odometry but with his 3D printed stl files and ideas he presented in his project helped out a lot.
