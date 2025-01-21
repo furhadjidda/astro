@@ -9,8 +9,8 @@ layout: default
 
 
 
-<img src="../images/atro.jpeg" alt="Example Image" width="250">  <img src="../images/ROS2_Humble_Hawksbill.png" alt="Example Image" width="205">
-![Raspberry pi](../images/Powered-by-Pi-Logo-White.png)
+<img src="images/atro.jpeg" alt="Example Image" width="250">  <img src="images/ROS2_Humble_Hawksbill.png" alt="Example Image" width="205">
+![Raspberry pi](images/Powered-by-Raspberry-Pi-Logo_Outline-Colour-Screen-500x153.png)
 
 ## System Configuration
 
@@ -87,8 +87,8 @@ layout: default
 
 
 ### Turtlebot 3 Styles Working on
-![astro_burger](../images/astro_urdf_burger.png)
-![astro_waffle](../images/astro_urdf_waffle.png)
+![astro_burger](images/astro_urdf_burger.png)
+![astro_waffle](images/astro_urdf_waffle.png)
 
 
 ## Description
