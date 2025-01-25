@@ -70,7 +70,9 @@
         "streambuf": "cpp",
         "cinttypes": "cpp",
         "typeindex": "cpp",
-        "typeinfo": "cpp"
+        "typeinfo": "cpp",
+        "regex": "cpp",
+        "*.ipp": "cpp"
     },
     "editor.formatOnSave": true,
     "clang-format.fallbackStyle": "None",
