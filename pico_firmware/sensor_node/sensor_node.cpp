@@ -7,12 +7,14 @@
 #include <sensor_msgs/msg/imu.h>
 #include <sensor_msgs/msg/nav_sat_fix.h>
 #include <sensor_msgs/msg/nav_sat_status.h>
+#include <sensor_msgs/msg/range.h>
 #include <std_msgs/msg/string.h>
 
 #include <Adafruit_GPS.hpp>
 #include <memory>
 #include <string>
 
+#include "Adafruit_VL53L0X.h"
 #include "bno055.hpp"
 #include "gnss_parser.hpp"
 #include "hardware/i2c.h"
@@ -30,6 +32,7 @@
 // GPS parser and device
 std::unique_ptr<gnss_parser> parser = std::make_unique<gnss_parser>();
 std::unique_ptr<Adafruit_GPS> GPS = std::make_unique<Adafruit_GPS>(i2c0);
+std::unique_ptr<Adafruit_VL53L0X> tofSensor = std::make_unique<Adafruit_VL53L0X>();
 // GNSS Message
 sensor_msgs__msg__NavSatFix nav_sat_fix_msg;
 // Debug Message
@@ -41,14 +44,17 @@ rcl_publisher_t gnss_publisher;
 bno055_sensor::Bno055 imu;
 // IMU message
 sensor_msgs__msg__Imu imu_msg;
+sensor_msgs__msg__Range tof_range_msg;
 
 // ROS Publishers
 rcl_publisher_t imu_publisher;
 rcl_publisher_t dbg_publisher;
+rcl_publisher_t tof_publisher;
 
 // Timer
 uint32_t timer = millis();
 char json_buffer[1024];
+
 // Initialize IMU
 bool init_bno055() {
     if (!imu.initialization()) {
@@ -56,6 +62,16 @@ bool init_bno055() {
         return false;
     }
     printf("BNO055 initialized successfully.\n");
+    return true;
+}
+
+// Initialize IMU
+bool init_range_sensor() {
+    if (!tofSensor->begin()) {
+        printf("TOF initialization failed!\n");
+        return false;
+    }
+    printf("TOF initialized successfully.\n");
     return true;
 }
 
@@ -88,6 +104,27 @@ void setup_gps() {
     sleep_ms(1000);
 }
 
+void populate_range_msg(sensor_msgs__msg__Range &msg) {
+    tofSensor->startRangeContinuous();
+    if (tofSensor->isRangeComplete()) {
+        uint16_t measure = tofSensor->readRange();
+
+        // Set the radiation type (INFRARED for ToF sensors)
+        msg.radiation_type = sensor_msgs__msg__Range__INFRARED;
+
+        // Properly assign the frame_id string
+        rosidl_runtime_c__String__assign(&msg.header.frame_id, "tof_frame");
+
+        // Set the field of view, min range, and max range
+        msg.field_of_view = 0.44;  // 25 degrees in radians
+        msg.min_range = 0.03;      // Minimum measurable distance (meters)
+        msg.max_range = 1.3;       // Maximum measurable distance (meters)
+
+        // Convert the sensor reading to meters and assign to msg.range
+        msg.range = measure / 1000.0;
+    }
+}
+
 // populate IMU message
 void populate_imu_msg(sensor_msgs__msg__Imu &msg) {
     double accel[3] = {0.0, 0.0, 0.0};
@@ -105,7 +142,7 @@ void populate_imu_msg(sensor_msgs__msg__Imu &msg) {
     imu.get_vector(VECTOR_EULER, euler);
     imu.get_quaternion(q);
 
-    msg.header.frame_id.data = "imu_frame";
+    rosidl_runtime_c__String__assign(&msg.header.frame_id, "imu_frame");
     rcl_time_point_value_t now;
     rcutils_time_point_value_t time_now;
     rcutils_system_time_now(&time_now);
@@ -192,6 +229,7 @@ int main() {
     // Initialize GPS
     setup_gps();
 
+    init_range_sensor();
     // This is for LED on pico
     cyw43_arch_init();
     cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
@@ -212,6 +250,8 @@ int main() {
     rclc_node_init_default(&node, "imu_gnss_publisher", "", &support);
     // initialize publishers
     rclc_publisher_init_default(&imu_publisher, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, Imu), "imu/data");
+    rclc_publisher_init_default(&tof_publisher, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, Range),
+                                "tof_data");
     rclc_publisher_init_default(&gnss_publisher, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, NavSatFix),
                                 "gnss_data");
     rclc_publisher_init_default(&dbg_publisher, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, String), "dbg_msg");
@@ -222,6 +262,8 @@ int main() {
                             [](rcl_timer_t *timer, int64_t last_call_time) {
                                 populate_imu_msg(imu_msg);
                                 rcl_publish(&imu_publisher, &imu_msg, NULL);
+                                populate_range_msg(tof_range_msg);
+                                rcl_publish(&tof_publisher, &tof_range_msg, NULL);
                                 cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, !cyw43_arch_gpio_get(CYW43_WL_GPIO_LED_PIN));
                             });
 
@@ -243,6 +285,7 @@ int main() {
     rclc_support_fini(&support);
     rcl_publisher_fini(&gnss_publisher, &node);
     rcl_publisher_fini(&dbg_publisher, &node);
+    rcl_publisher_fini(&tof_publisher, &node);
     rcl_node_fini(&node);
     rclc_support_fini(&support);
     rclc_executor_fini(&executor);
