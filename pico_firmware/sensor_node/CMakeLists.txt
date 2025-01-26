@@ -9,12 +9,20 @@ set(CMAKE_CXX_STANDARD 17)
 pico_sdk_init()
 
 include_directories("${ROOT_DIR_FIRMWARE}/gnss_node_firmware/gnss_parser")
+include_directories("${CMAKE_SOURCE_DIR}/sensor_node/imu")
+include_directories("${CMAKE_SOURCE_DIR}/sensor_node/gnss")
+include_directories("${CMAKE_SOURCE_DIR}/sensor_node/tof")
+include_directories("${CMAKE_SOURCE_DIR}/sensor_node")
 
 link_directories(${MICROROS_ROOT}/libmicroros)
 
 add_executable(sensor_node
     sensor_node.cpp
     pico_uart_transport.c
+    sensorFactory.cpp
+    imu/imu.cpp
+    gnss/gnss.cpp
+    tof/tof.cpp
 )
 target_link_libraries(sensor_node
     pico_stdlib

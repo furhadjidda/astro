@@ -23,12 +23,12 @@ sensor_msgs__msg__NavSatFix gnss_parser::parseGGA(const std::vector<std::string>
     // Check if there are enough tokens
     if (tokens.size() < 15) {
         // std::cerr << "Invalid GGA sentence: insufficient tokens" << std::endl;
-        return msg;  // Return an empty message if the sentence is invalid
+        return msg; // Return an empty message if the sentence is invalid
     }
 
     // Latitude
     double lat = 0.0;
-    lat = std::stod(tokens[2]);  // Parse the latitude
+    lat = std::stod(tokens[2]); // Parse the latitude
     if (lat == 0.0) {
         return msg;
     }
@@ -42,7 +42,7 @@ sensor_msgs__msg__NavSatFix gnss_parser::parseGGA(const std::vector<std::string>
 
     // Longitude
     double lon = 0.0;
-    lon = std::stod(tokens[4]);  // Parse the longitude
+    lon = std::stod(tokens[4]); // Parse the longitude
     if (lon == 0.0) {
         return msg;
     }
@@ -62,7 +62,7 @@ sensor_msgs__msg__NavSatFix gnss_parser::parseGGA(const std::vector<std::string>
 
     // Status
     int status = 0;
-    status = std::stoi(tokens[6]);  // Convert the status to integer
+    status = std::stoi(tokens[6]); // Convert the status to integer
     if (status == 0) {
         return msg;
     }
