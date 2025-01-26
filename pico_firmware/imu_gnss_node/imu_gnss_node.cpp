@@ -38,15 +38,6 @@ std_msgs__msg__String dbg_msg;
 // ROS Publishers
 rcl_publisher_t gnss_publisher;
 
-// IMU portion
-// Structure for quaternion
-struct Quaternion {
-    float x;
-    float y;
-    float z;
-    float w;
-};
-
 bno055_sensor::Bno055 imu;
 // IMU message
 sensor_msgs__msg__Imu imu_msg;
@@ -57,7 +48,7 @@ rcl_publisher_t dbg_publisher;
 
 // Timer
 uint32_t timer = millis();
-
+char json_buffer[1024];
 // Initialize IMU
 bool init_bno055() {
     if (!imu.initialization()) {
@@ -133,8 +124,7 @@ void populate_imu_msg(sensor_msgs__msg__Imu &msg) {
     msg.angular_velocity.y = gyro[1];
     msg.angular_velocity.z = gyro[2];
 
-    // Fill orientation (optional: needs quaternion calculation)
-    // Quaternion q = eulerToQuaternion(euler[0], euler[1], euler[2]);
+    // Fill orientation
     msg.orientation.x = q.x;
     msg.orientation.y = q.y;
     msg.orientation.z = q.z;
@@ -147,6 +137,17 @@ void populate_imu_msg(sensor_msgs__msg__Imu &msg) {
         msg.angular_velocity_covariance[i] = 0.0;
         msg.orientation_covariance[i] = 0.0;
     }
+
+    std::snprintf(json_buffer, sizeof(json_buffer),
+                  "{\"accelerometer\":{\"x\":%.2f,\"y\":%.2f,\"z\":%.2f},"
+                  "\"gyroscope\":{\"x\":%.2f,\"y\":%.2f,\"z\":%.2f},"
+                  "\"magnetometer\":{\"x\":%.2f,\"y\":%.2f,\"z\":%.2f},"
+                  "\"euler\":{\"roll\":%.2f,\"pitch\":%.2f,\"yaw\":%.2f},"
+                  "\"quaternion\":{\"w\":%.2f,\"x\":%.2f,\"y\":%.2f,\"z\":%.2f},"
+                  "\"calibration\":{\"sys\":%d,\"gyro\":%d,\"accel\":%d,\"mag\":%d}}",
+                  accel[0], accel[1], accel[2], gyro[0], gyro[1], gyro[2], mag[0], mag[1], mag[2], euler[0], euler[1],
+                  euler[2], q.w, q.x, q.y, q.z, calibration[0], calibration[1], calibration[2], calibration[3]);
+    publish_debug_message(std::string(json_buffer));
 }
 
 // process GNSS data and populate GNSS message
@@ -232,7 +233,6 @@ int main() {
     rclc_executor_add_timer(&executor, &timer);
     nav_sat_fix_msg.status.service = sensor_msgs__msg__NavSatStatus__SERVICE_GPS;
 
-    printf("Starting micro-ROS gnss_publisher...\n");
     while (rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100)) == RCL_RET_OK) {
         // Main loop spins the executor
         process_gps_data();
