@@ -22,6 +22,7 @@
 #include <rmw_microros/rmw_microros.h>
 #include <std_msgs/msg/string.h>
 
+#include "display.hpp"
 #include "gnss.hpp"
 #include "hardware/i2c.h"
 #include "imu.hpp"
@@ -51,6 +52,7 @@ rcl_publisher_t gnss_publisher;
 static std::unique_ptr<Sensor> imuSensor;
 static std::unique_ptr<Sensor> tofSensor;
 static std::unique_ptr<Sensor> gnssSensor;
+static std::unique_ptr<Sensor> displaySensor;
 
 std_msgs__msg__String debug_message;
 
@@ -59,6 +61,7 @@ void registerSensors() {
     SensorFactory::getInstance().registerSensor("IMU", []() { return std::make_unique<IMUSensor>(); });
     SensorFactory::getInstance().registerSensor("GNSS", []() { return std::make_unique<GNSSSensor>(); });
     SensorFactory::getInstance().registerSensor("TOF", []() { return std::make_unique<TOFSensor>(); });
+    SensorFactory::getInstance().registerSensor("DISPLAY", []() { return std::make_unique<DisplaySensor>(); });
 }
 
 // Publish Debug data
@@ -85,9 +88,11 @@ int main() {
     imuSensor = SensorFactory::getInstance().createSensor("IMU");
     gnssSensor = SensorFactory::getInstance().createSensor("GNSS");
     tofSensor = SensorFactory::getInstance().createSensor("TOF");
+    displaySensor = SensorFactory::getInstance().createSensor("DISPLAY");
     imuSensor->initialize(i2c0);
     gnssSensor->initialize(i2c0);
     tofSensor->initialize(i2c0);
+    displaySensor->initialize(i2c0);
 
     // This is for LED on pico
     cyw43_arch_init();
@@ -137,7 +142,7 @@ int main() {
 
     // add the timer to the executor
     rclc_executor_add_timer(&executor, &timer);
-
+    displaySensor->create_welcome_screen();
     while (rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100)) == RCL_RET_OK) {
         // Main loop spins the executor
     }

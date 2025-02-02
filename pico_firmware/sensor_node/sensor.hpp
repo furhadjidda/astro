@@ -37,6 +37,8 @@ class Sensor {
     virtual void get_tof_data(sensor_msgs__msg__Range& msg) {}
 
     virtual void get_gnss_data(sensor_msgs__msg__NavSatFix& msg) {}
+
+    virtual void create_welcome_screen() {}
 };
 
 #endif  // SENSOR_HPP

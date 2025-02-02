@@ -12,6 +12,7 @@ include_directories("${ROOT_DIR_FIRMWARE}/gnss_node_firmware/gnss_parser")
 include_directories("${CMAKE_SOURCE_DIR}/sensor_node/imu")
 include_directories("${CMAKE_SOURCE_DIR}/sensor_node/gnss")
 include_directories("${CMAKE_SOURCE_DIR}/sensor_node/tof")
+include_directories("${CMAKE_SOURCE_DIR}/sensor_node/display")
 include_directories("${CMAKE_SOURCE_DIR}/sensor_node")
 
 link_directories(${MICROROS_ROOT}/libmicroros)
@@ -23,6 +24,7 @@ add_executable(sensor_node
     imu/imu.cpp
     gnss/gnss.cpp
     tof/tof.cpp
+    display/display.cpp
 )
 target_link_libraries(sensor_node
     pico_stdlib
@@ -33,11 +35,12 @@ target_link_libraries(sensor_node
     gnss_parser
     bno055
     vl53l0x
+    oled_driver_1306
 )
 
 target_include_directories(sensor_node PUBLIC
     ${MICROROS_ROOT}/libmicroros/include
-    ${CMAKE_SOURCE_DIR}/gnss_node_firmware/gnss_parser
+    ${CMAKE_SOURCE_DIR}/sensor_node/gnss_parser
 )
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -mcpu=cortex-m0 -mthumb")
