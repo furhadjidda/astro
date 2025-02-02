@@ -25,6 +25,7 @@
 #include "display.hpp"
 #include "gnss.hpp"
 #include "hardware/i2c.h"
+#include "hardware/watchdog.h"
 #include "imu.hpp"
 #include "pico/cyw43_arch.h"
 #include "pico/stdlib.h"
@@ -48,11 +49,18 @@ rcl_publisher_t dbg_publisher;
 rcl_publisher_t tof_publisher;
 rcl_publisher_t gnss_publisher;
 
+// ROS subscriber
+rcl_subscription_t imu_subscriber;
+
 // Objects
 static std::unique_ptr<Sensor> imuSensor;
 static std::unique_ptr<Sensor> tofSensor;
 static std::unique_ptr<Sensor> gnssSensor;
 static std::unique_ptr<Sensor> displaySensor;
+
+// watchdog variables
+volatile uint32_t last_msg_time = 0;
+#define WATCHDOG_TIMEOUT_MS 10000  // 10 seconds timeout
 
 std_msgs__msg__String debug_message;
 
@@ -79,10 +87,18 @@ void publish_debug_message(const std::string &message) {
     }
 }
 
+void imu_callback(const void *msgin) {
+    last_msg_time = to_ms_since_boot(get_absolute_time());
+    publish_debug_message("IMU message received: Resetting watchdog timer");
+}
+
 int main() {
     setenv("ROS_DOMAIN_ID", "10", 1);
     rmw_uros_set_custom_transport(true, NULL, pico_serial_transport_open, pico_serial_transport_close,
                                   pico_serial_transport_write, pico_serial_transport_read);
+
+    // Enable Watchdog
+    watchdog_enable(WATCHDOG_TIMEOUT_MS, 1);
 
     registerSensors();
     imuSensor = SensorFactory::getInstance().createSensor("IMU");
@@ -120,6 +136,11 @@ int main() {
                                 "gnss_data");
     rclc_publisher_init_default(&dbg_publisher, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, String), "dbg_msg");
 
+    // Initialize subscribers
+    // Initialize IMU subscriber
+    rclc_subscription_init_default(&imu_subscriber, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, Imu),
+                                   "imu/data");
+
     rcl_timer_t timer;
     // initialize timers
     rclc_timer_init_default(&timer, &support, RCL_MS_TO_NS(1000 / PUBLISH_RATE_HZ),
@@ -138,13 +159,22 @@ int main() {
 
     rclc_executor_t executor;
     // initialize executor
-    rclc_executor_init(&executor, &support.context, 1, &allocator);
+    rclc_executor_init(&executor, &support.context, 2, &allocator);
 
     // add the timer to the executor
     rclc_executor_add_timer(&executor, &timer);
+    // Assign callback
+    rclc_executor_add_subscription(&executor, &imu_subscriber, &imu_msg, &imu_callback, ON_NEW_DATA);
     displaySensor->create_welcome_screen();
+    last_msg_time = to_ms_since_boot(get_absolute_time());
+    // Main loop spin
     while (rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100)) == RCL_RET_OK) {
-        // Main loop spins the executor
+        if (to_ms_since_boot(get_absolute_time()) - last_msg_time > WATCHDOG_TIMEOUT_MS) {
+            printf("Watchdog triggered: No IMU data received, resetting!\n");
+            watchdog_reboot(0, 0, 0);
+        }
+        // Reset watchdog timer
+        watchdog_update();
     }
 
     // Clean up
@@ -156,6 +186,7 @@ int main() {
     rcl_node_fini(&node);
     rclc_support_fini(&support);
     rclc_executor_fini(&executor);
+    rcl_subscription_fini(&imu_subscriber, &node);
 
     return 0;
 }
