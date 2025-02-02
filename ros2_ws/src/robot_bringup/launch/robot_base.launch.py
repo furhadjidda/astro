@@ -77,9 +77,9 @@ def generate_launch_description():
                 arguments = ["0", "0", "0", "0", "0", "0", "odom", "base_link"]
     )
     astro_odom_publisher = Node(
-            package="astro_odometry",
-            executable = "astro_odometry",
-            name='astro_odometry',
+            package="astro_dynamixel_odometry",
+            executable = "astro_ros_odometry",
+            name='astro_ros_odometry',
     )
     lidar_node = Node(
             package='sllidar_ros2',
