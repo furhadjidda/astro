@@ -22,12 +22,8 @@ parent_dir = os.path.dirname(current_dir)
 print("Current Directory:", current_dir)
 print("Parent Directory:", parent_dir)
 
-paths = [parent_dir+'/ros2_rpi_ws/src/astro_odometry_tf_broadcaster',
-    parent_dir+'/ros2_rpi_ws/src/astro_robot_description',
-    parent_dir+'/ros2_rpi_ws/src/astro_teleop_twist_joy',
-    parent_dir+'/ros2_rpi_ws/src/robot_bringup',
-    parent_dir+'/ros2_rpi_ws/src/astro_cartographer',
-    parent_dir+'/ros2_rpi_ws/src/astro_odometry_publisher']
+paths = [parent_dir+'/ros2_ws/src',
+         parent_dir+'/ros2_ws/utils']
 
 def Usage():
   print(Fore.MAGENTA +'USAGE')
@@ -55,7 +51,7 @@ def main():
 
 # Call the main function
 if __name__ == "__main__":
-  remoteDirectoryPath = '/home/astro/ros2_ws/src'
+  remoteDirectoryPath = '/home/astro/ros2_ws'
   main()
   ssh = SSHClient()
   ssh.load_system_host_keys()
