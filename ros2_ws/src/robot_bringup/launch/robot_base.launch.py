@@ -1,98 +1,145 @@
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, LogInfo
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch_ros.actions import Node
 from launch.substitutions import LaunchConfiguration
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.conditions import IfCondition
+import os
+from ament_index_python.packages import get_package_share_directory
+
 
 def generate_launch_description():
-    channel_type =  LaunchConfiguration('channel_type', default='serial')
-    serial_port = LaunchConfiguration('serial_port', default='/dev/ttyUSB0')
-    serial_baudrate = LaunchConfiguration('serial_baudrate', default='115200')
-    frame_id = LaunchConfiguration('frame_id', default='laser')
-    inverted = LaunchConfiguration('inverted', default='false')
-    angle_compensate = LaunchConfiguration('angle_compensate', default='true')
-    scan_mode = LaunchConfiguration('scan_mode', default='Sensitivity')
+    channel_type = LaunchConfiguration("channel_type", default="serial")
+    serial_port = LaunchConfiguration("serial_port", default="/dev/rplidar")
+    serial_baudrate = LaunchConfiguration("serial_baudrate", default="460800")
+    frame_id = LaunchConfiguration("frame_id", default="laser")
+    inverted = LaunchConfiguration("inverted", default="false")
+    angle_compensate = LaunchConfiguration("angle_compensate", default="true")
+    scan_mode = LaunchConfiguration("scan_mode", default="Standard")
+
+    # Define launch arguments for each node (true/false)
+    node_configs = {
+        "enable_microros": "true",
+        "enable_lidar": "true",
+        "enable_realsense": "true",
+        "enable_dynamixel": "true",
+    }
 
     ld = LaunchDescription()
-    DeclareLaunchArgument('scan_mode', default_value='Standard', description='Scan mode to be used by the LIDAR')
 
-    DeclareLaunchArgument(
-    'channel_type',
-    default_value=channel_type,
-    description='Specifying channel type of lidar')
+    # Declare launch arguments for each node
+    for arg_name, default_value in node_configs.items():
+        ld.add_action(DeclareLaunchArgument(arg_name, default_value=default_value))
 
-    DeclareLaunchArgument(
-        'serial_port',
-        default_value=serial_port,
-        description='Specifying usb port to connected lidar')
+    # Helper function to get IfCondition
+    def is_enabled(node_name):
+        return IfCondition(LaunchConfiguration(node_name))
 
-    DeclareLaunchArgument(
-        'serial_baudrate',
-        default_value=serial_baudrate,
-        description='Specifying usb port baudrate to connected lidar')
+    # Define launch arguments for lidar node
+    lidar_args = [
+        ("channel_type", channel_type, "Specifying channel type of lidar"),
+        ("serial_port", serial_port, "Specifying usb port to connected lidar"),
+        ("serial_baudrate", serial_baudrate, "Specifying baudrate"),
+        ("frame_id", frame_id, "Specifying frame_id of lidar"),
+        ("inverted", inverted, "Specifying whether or not to invert scan data"),
+        ("angle_compensate", angle_compensate, "enable/disable angle_compensate"),
+        ("scan_mode", scan_mode, "Specifying scan mode of lidar"),
+    ]
 
-    DeclareLaunchArgument(
-        'frame_id',
-        default_value=frame_id,
-        description='Specifying frame_id of lidar')
-
-    DeclareLaunchArgument(
-        'inverted',
-        default_value=inverted,
-        description='Specifying whether or not to invert scan data')
-
-    DeclareLaunchArgument(
-        'angle_compensate',
-        default_value=angle_compensate,
-        description='Specifying whether or not to enable angle_compensate of scan data')
-
-    DeclareLaunchArgument(
-        'scan_mode',
-        default_value=scan_mode,
-        description='Specifying scan mode of lidar')
+    for arg_name, default_value, description in lidar_args:
+        ld.add_action(
+            DeclareLaunchArgument(
+                arg_name, default_value=default_value, description=description
+            )
+        )
 
     microros_node = Node(
         package="micro_ros_agent",
-        executable = "micro_ros_agent",
-        name='micro_ros_agent',
+        executable="micro_ros_agent",
+        name="micro_ros_agent",
         arguments=["serial", "--dev", "/dev/ttyACM0"],
+        condition=is_enabled("enable_microros"),
     )
     odometry_tf2_broadcaster = Node(
         package="astro_odometry_tf_broadcaster",
-        executable = "odometry_tf_broadcaster",
+        executable="odometry_tf_broadcaster",
     )
-    base_link_to_base_footprint = Node(package = "tf2_ros",
-                executable = "static_transform_publisher",
-                arguments = ["0", "0", "0", "0", "0", "0", "base_link", "base_footprint"]
+    base_link_to_base_footprint = Node(
+        package="tf2_ros",
+        executable="static_transform_publisher",
+        arguments=["0", "0", "0", "0", "0", "0", "base_link", "base_footprint"],
     )
-    base_link_to_imu_link = Node(package = "tf2_ros",
-                executable = "static_transform_publisher",
-                arguments = ["0", "0", "0", "0", "0", "0", "base_link", "imu_link"]
+    base_link_to_imu_link = Node(
+        package="tf2_ros",
+        executable="static_transform_publisher",
+        arguments=["0", "0", "0", "0", "0", "0", "base_link", "imu_link"],
     )
-    base_link_to_laser_link = Node(package = "tf2_ros",
-                executable = "static_transform_publisher",
-                arguments = ["0", "0", "0", "0", "0", "0", "base_link", "laser"]
+    base_link_to_laser_link = Node(
+        package="tf2_ros",
+        executable="static_transform_publisher",
+        arguments=["0", "0", "0", "0", "0", "0", "base_link", "laser"],
     )
-    odom_to_base_link = Node(package = "tf2_ros",
-                executable = "static_transform_publisher",
-                arguments = ["0", "0", "0", "0", "0", "0", "odom", "base_link"]
+    base_link_to_laser_link = Node(
+        package="tf2_ros",
+        executable="static_transform_publisher",
+        arguments=["0", "0", "0", "0", "0", "0", "base_link", "camera_link"],
+    )
+    odom_to_base_link = Node(
+        package="tf2_ros",
+        executable="static_transform_publisher",
+        arguments=["0", "0", "0", "0", "0", "0", "odom", "base_link"],
     )
     astro_odom_publisher = Node(
-            package="astro_dynamixel_odometry",
-            executable = "astro_ros_odometry",
-            name='astro_ros_odometry',
+        package="astro_dynamixel_odometry",
+        executable="astro_ros_odometry",
+        name="astro_ros_odometry",
+        condition=is_enabled("enable_dynamixel"),
     )
     lidar_node = Node(
-            package='sllidar_ros2',
-            executable='sllidar_node',
-            name='sllidar_node',
-            parameters=[{'channel_type':channel_type,
-                         'serial_port': serial_port,
-                         'serial_baudrate': serial_baudrate,
-                         'frame_id': frame_id,
-                         'inverted': inverted,
-                         'angle_compensate': angle_compensate}],
-            output='screen',
+        package="sllidar_ros2",
+        executable="sllidar_node",
+        name="sllidar_node",
+        parameters=[
+            {
+                "channel_type": channel_type,
+                "serial_port": serial_port,
+                "serial_baudrate": serial_baudrate,
+                "frame_id": frame_id,
+                "inverted": inverted,
+                "angle_compensate": angle_compensate,
+                "scan_mode": scan_mode,
+            }
+        ],
+        output="screen",
+        condition=is_enabled("enable_lidar"),
     )
+
+    # Path to RealSense launch file
+    realsense_launch_file = os.path.join(
+        get_package_share_directory("realsense2_camera"), "launch", "rs_launch.py"
+    )
+
+    # Check if the launch file exists
+    if not os.path.exists(realsense_launch_file):
+        raise FileNotFoundError(
+            f"RealSense launch file not found: {realsense_launch_file}"
+        )
+
+    # Include RealSense launch file with parameters
+    realsense_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(realsense_launch_file),
+        launch_arguments={
+            "enable_gyro": "false",
+            "enable_accel": "false",
+            "rgb_camera.color_profile": "640x480x15",
+            "initial_reset": "true",
+            "rgb_camera.power_line_frequency": "1",
+            "depth_module.depth_profile": "640x480x15",
+        }.items(),
+        condition=is_enabled("enable_realsense"),
+    )
+    ld = LaunchDescription()
+    ld.add_action(realsense_launch)
     ld.add_action(microros_node)
     ld.add_action(odometry_tf2_broadcaster)
     ld.add_action(base_link_to_base_footprint)
@@ -101,4 +148,5 @@ def generate_launch_description():
     ld.add_action(odom_to_base_link)
     ld.add_action(astro_odom_publisher)
     ld.add_action(lidar_node)
+
     return ld
