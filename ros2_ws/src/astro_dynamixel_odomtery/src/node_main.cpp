@@ -25,14 +25,14 @@
 #include <rclcpp/rclcpp.hpp>
 
 // Constants for Dynamixel and robot parameters
-constexpr int DXL_ID_LEFT = 1;                 // Left motor ID
-constexpr int DXL_ID_RIGHT = 2;                // Right motor ID
-constexpr int BAUDRATE = 57600;                // Communication baud rate
-constexpr char DEVICENAME[] = "/dev/ttyUSB0";  // Device name for the U2D2 port
-constexpr float WHEEL_RADIUS = 0.033;          // Radius of the wheels in meters
-constexpr float WHEEL_BASE = 0.160;            // Distance between the wheels in meters
-constexpr int TICKS_PER_REV = 4096;            // Encoder ticks per revolution
-constexpr float UPDATE_RATE = 10.0;            // Update rate in Hz
+constexpr int DXL_ID_LEFT = 1;                        // Left motor ID
+constexpr int DXL_ID_RIGHT = 2;                       // Right motor ID
+constexpr int BAUDRATE = 57600;                       // Communication baud rate
+constexpr char DEVICENAME[] = "/dev/dynamixel_u2d2";  // Device name for the U2D2 port
+constexpr float WHEEL_RADIUS = 0.033;                 // Radius of the wheels in meters
+constexpr float WHEEL_BASE = 0.160;                   // Distance between the wheels in meters
+constexpr int TICKS_PER_REV = 4096;                   // Encoder ticks per revolution
+constexpr float UPDATE_RATE = 10.0;                   // Update rate in Hz
 
 /**
  * @class OdometryNode
@@ -349,7 +349,7 @@ class OdometryNode : public rclcpp::Node {
     void publishOdometry(float distance, float delta_theta) {
         auto odom_msg = std::make_unique<nav_msgs::msg::Odometry>();
         odom_msg->header.stamp = this->get_clock()->now();
-        odom_msg->header.frame_id = "odom";
+        odom_msg->header.frame_id = "/odom";
         odom_msg->child_frame_id = "base_link";
 
         // Position
