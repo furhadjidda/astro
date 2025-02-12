@@ -84,11 +84,6 @@ def generate_launch_description():
         executable="static_transform_publisher",
         arguments=["0", "0", "0", "0", "0", "0", "base_link", "camera_link"],
     )
-    odom_to_base_link = Node(
-        package="tf2_ros",
-        executable="static_transform_publisher",
-        arguments=["0", "0", "0", "0", "0", "0", "odom", "base_link"],
-    )
     astro_odom_publisher = Node(
         package="astro_dynamixel_odometry",
         executable="astro_ros_odometry",
@@ -134,7 +129,10 @@ def generate_launch_description():
             "rgb_camera.color_profile": "640x480x15",
             "initial_reset": "true",
             "rgb_camera.power_line_frequency": "1",
-            "depth_module.depth_profile": "640x480x15",
+            # "depth_module.depth_profile": "640x480x15",
+            "enable_depth": "false",
+            "enable_infra1": "false",
+            "enable_infra2": "false",
         }.items(),
         condition=is_enabled("enable_realsense"),
     )
@@ -145,7 +143,6 @@ def generate_launch_description():
     ld.add_action(base_link_to_base_footprint)
     ld.add_action(base_link_to_imu_link)
     ld.add_action(base_link_to_laser_link)
-    ld.add_action(odom_to_base_link)
     ld.add_action(astro_odom_publisher)
     ld.add_action(lidar_node)
 
