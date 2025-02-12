@@ -34,6 +34,10 @@
         <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;"><a href="https://bucket-download.slamtec.com/d1e428e7efbdcd65a8ea111061794fb8d4ccd3a0/LD108_SLAMTEC_rplidar_datasheet_A1M8_v3.0_en.pdf">RPLIDAR A1M8</a></td>
     </tr>
     <tr>
+        <th style="background-color:rgb(212, 159, 210); padding: 10px; color: black;"><strong>Lidar</strong></th>
+        <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;"><a href="https://openzeka.com/wp-content/uploads/2024/02/SLAMTEC_rplidarkit_usermanual_C1_v1.0_en.pdf?srsltid=AfmBOopQ0e0YG65J9YMMvJnuaTrmSK2NHstQl0l8d0ITCdm3V0HowmfH">RPLIDAR C1</a></td>
+    </tr>
+    <tr>
         <th style="background-color:rgb(212, 159, 210); padding: 10px; color: black;"><strong>Microcontroler</strong></th>
         <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;"><a href="https://datasheets.raspberrypi.com/pico/pico-datasheet.pdf">Raspberry pi pico</a></td>
     </tr>
@@ -44,6 +48,10 @@
     <tr>
         <th style="background-color:rgb(212, 159, 210); padding: 10px; color: black;"><strong>RGB Depth Camera with 6 DOF IMU</strong></th>
         <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;"><a href="https://www.intelrealsense.com/download/21345/?tmstv=1697035582">Intel realsense D455</a></td>
+    </tr>
+    <tr>
+        <th style="background-color:rgb(212, 159, 210); padding: 10px; color: black;"><strong>AI Depth Camera by Luxonis</strong></th>
+        <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;"><a href="https://docs.luxonis.com/hardware/products/OAK-D%20Lite">OAK-D Lite</a></td>
     </tr>
 </table>
 
@@ -105,7 +113,7 @@ This will get build when you build the project.
 
 | Sensor Package| Package Link                                                 |   Sensor Model          |
 |---------------|--------------------------------------------------------------|-------------------------|
-| RPI Lidar     | https://github.com/Slamtec/rplidar_ros/tree/ros2             |  RPLIDAR A1M8           |
+| RPI Lidar     | https://github.com/Slamtec/rplidar_ros/tree/ros2             |  RPLIDAR A1M8/C1        |
 | Realsense     | https://github.com/IntelRealSense/realsense-ros              |  Realsense D455         |
 | Dynamixel     | https://github.com/ROBOTIS-GIT/DynamixelSDK                  |  DYNAMIXEL XL430-W250-T |
 
