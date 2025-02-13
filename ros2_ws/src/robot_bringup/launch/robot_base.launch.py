@@ -1,7 +1,7 @@
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch_ros.actions import Node
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import LaunchConfiguration, TextSubstitution
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.conditions import IfCondition
 import os
@@ -16,6 +16,14 @@ def generate_launch_description():
     inverted = LaunchConfiguration("inverted", default="false")
     angle_compensate = LaunchConfiguration("angle_compensate", default="true")
     scan_mode = LaunchConfiguration("scan_mode", default="Standard")
+    use_sim_time = LaunchConfiguration("use_sim_time", default="false")
+
+    urdf_file_name = "urdf/waffle.urdf"
+    urdf = os.path.join(
+        get_package_share_directory("astro_robot_description"), urdf_file_name
+    )
+    with open(urdf, "r") as infp:
+        robot_desc = infp.read()
 
     # Define launch arguments for each node (true/false)
     node_configs = {
@@ -52,7 +60,13 @@ def generate_launch_description():
                 arg_name, default_value=default_value, description=description
             )
         )
+    DeclareLaunchArgument(
+        "use_sim_time",
+        default_value="false",
+        description="Use simulation (Gazebo) clock if true",
+    )
 
+    # Define nodes
     microros_node = Node(
         package="micro_ros_agent",
         executable="micro_ros_agent",
@@ -108,6 +122,21 @@ def generate_launch_description():
         output="screen",
         condition=is_enabled("enable_lidar"),
     )
+    robot_state_publisher = Node(
+        package="robot_state_publisher",
+        executable="robot_state_publisher",
+        name="robot_state_publisher",
+        output="screen",
+        parameters=[{"use_sim_time": use_sim_time, "robot_description": robot_desc}],
+        arguments=[urdf],
+    )
+    joint_state_publisher = Node(
+        package="joint_state_publisher",
+        executable="joint_state_publisher",
+        name="joint_state_publisher",
+        output="screen",
+        parameters=[{"use_gui": use_sim_time}],
+    )
 
     # Path to RealSense launch file
     realsense_launch_file = os.path.join(
@@ -145,5 +174,7 @@ def generate_launch_description():
     ld.add_action(base_link_to_laser_link)
     ld.add_action(astro_odom_publisher)
     ld.add_action(lidar_node)
+    ld.add_action(robot_state_publisher)
+    ld.add_action(joint_state_publisher)
 
     return ld
