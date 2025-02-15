@@ -93,7 +93,7 @@ def generate_launch_description():
         executable="static_transform_publisher",
         arguments=["0", "0", "0", "0", "0", "0", "base_link", "laser"],
     )
-    base_link_to_laser_link = Node(
+    base_link_to_camera_link = Node(
         package="tf2_ros",
         executable="static_transform_publisher",
         arguments=["0", "0", "0", "0", "0", "0", "base_link", "camera_link"],
@@ -172,6 +172,7 @@ def generate_launch_description():
     ld.add_action(base_link_to_base_footprint)
     ld.add_action(base_link_to_imu_link)
     ld.add_action(base_link_to_laser_link)
+    ld.add_action(base_link_to_camera_link)
     ld.add_action(astro_odom_publisher)
     ld.add_action(lidar_node)
     ld.add_action(robot_state_publisher)
