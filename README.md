@@ -124,6 +124,18 @@ This will get build when you build the project.
 * Clone the needed repos using `vcs import .  < astro.repos`
 * execute `colcon build`
 * execute `source install\setup.bash`
+<div style="border: 3px solid orange ; padding: 11px; color: purple; font-weight: bold;">
+⚠️ **Note** : Without launching robot_bringup nothing else will work as all sensors and servos are brought up here
+</div>
+
+* execute `ros2 launch robot_bringup robot_base.launch.py enable_realsense:=true enable_lidar:=true enable_microros:=true enable_dynamixel:=true`
+    * enable_realsense(true/false) - enables or disables  the realsense camera
+    * enable_lidar(true/false) - enables or disableslidar
+    * enable_dynamixel(true/false) - enables or disables the dynamixel code to run the XL430 servos which moves the robot
+    * enable_microros(true/false) - enables or disables microros which enables communication with pico connected to sensors
+* now you can launch any other node you want
+    * cartography - `ros2 launch astro_cartographer cartographer.launch.py`
+    * Autonomous driving - @todo
 
 
 # Raspberry pi configurations and access
