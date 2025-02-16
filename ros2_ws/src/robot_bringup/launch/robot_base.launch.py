@@ -165,7 +165,18 @@ def generate_launch_description():
         }.items(),
         condition=is_enabled("enable_realsense"),
     )
-    ld = LaunchDescription()
+
+    ros_time_publisher = Node(
+        package="ros_time", executable="ros_time", name="ros_time", output="screen"
+    )
+
+    astro_sensor_publisher = Node(
+        package="astro_sensor",
+        executable="astro_sensor",
+        name="astro_sensor",
+        output="screen",
+    )
+
     ld.add_action(realsense_launch)
     ld.add_action(microros_node)
     ld.add_action(odometry_tf2_broadcaster)
@@ -177,5 +188,7 @@ def generate_launch_description():
     ld.add_action(lidar_node)
     ld.add_action(robot_state_publisher)
     ld.add_action(joint_state_publisher)
+    ld.add_action(ros_time_publisher)
+    ld.add_action(astro_sensor_publisher)
 
     return ld
