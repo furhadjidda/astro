@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>astro_slam</name>
+  <version>0.0.0</version>
+  <description>TODO: Package description</description>
+  <maintainer email="furhadjidda@gmail.com">furhad</maintainer>
+  <license>GNU v3.0</license>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <buildtool_depend>ament_cmake_auto</buildtool_depend>
+  <buildtool_depend>ament_cmake_ros</buildtool_depend>
+
+  <build_depend>rclcpp</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>std_srvs</build_depend>
+  <build_depend>rclcpp_components</build_depend>
+
+
+  <exec_depend>rclcpp</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>std_srvs</exec_depend>
+  <exec_depend>rclcpp_components</exec_depend>
+  <exec_depend>micro_ros_agent</exec_depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <exec_depend>cartographer_ros</exec_depend>
+  <!-- IMU Filtering and Localization -->
+  <exec_depend>imu_filter_madgwick</exec_depend>
+  <exec_depend>robot_localization</exec_depend>
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

@@ -1,0 +1,51 @@
+ekf_filter:
+  ros__parameters:
+    frequency: 10.0
+    two_d_mode: true
+    map_frame: "map"
+    odom_frame: "odom"
+    base_link_frame: "base_link"
+    world_frame: "odom"
+
+    imu0: "/imu/data_raw"
+    imu0_config: [false, false, false,   # Use IMU position? (x, y, z) - Usually false since IMUs don't provide absolute position
+                  true,  true,  true,    # Use IMU orientation? (roll, pitch, yaw) - True to use orientation data
+                  false, false, false,   # Use IMU linear velocity? (vx, vy, vz) - Usually false unless IMU provides reliable velocity
+                  true,  true,  true,    # Use IMU angular velocity? (wx, wy, wz) - True to use gyroscope data
+                  true,  true,  true]    # Use IMU linear acceleration? (ax, ay, az) - True to use accelerometer data
+
+    imu0_differential: false
+    imu0_remove_gravitational_acceleration: true
+
+    # The process_noise_covariance parameter in ekf.yaml defines the process noise covariance matrix for the Extended
+    # Kalman Filter (EKF) in the robot_localization package.This matrix represents the uncertainty in the process
+    # model, which is used to predict the state of the system.
+    # Lower values indicate high confidence in sensor data (less filtering).
+    # Higher values indicate greater uncertainty, leading to more smoothing of estimates.
+    # Adjusting these values tunes how much the EKF trusts each sensor input.
+
+    # In robot_localization, the state size is determined by the map_frame, odom_frame, and base_link_frame
+    # configuration, as well as the enabled sensors.
+    # If your ekf.yaml is defining only a 6-DOF (Degrees of Freedom) 2D state estimate, the EKF will only track:
+    # x, y, yaw (Position and orientation in 2D)
+    # vx, vy, wz (Linear velocity in x/y and angular velocity around z)
+    # Since z, roll, pitch, vz, wx, wy, ax, ay, az are not included in the state estimation, the process noise
+    # covariance matrix will only be 6×6.
+    # [x,  y,  yaw,  vx,  vy,  wz]
+    # process_noise_covariance: [σ_x²,  0,     0,     0,     0,     0,
+    #                            0,    σ_y²,   0,     0,     0,     0,
+    #                            0,     0,    σ_yaw², 0,     0,     0,
+    #                            0,     0,     0,    σ_vx²,  0,     0,
+    #                            0,     0,     0,     0,    σ_vy²,  0,
+    #                            0,     0,     0,     0,     0,    σ_wz²]
+    # Position uncertainty (x, y): 0.05
+    # Yaw uncertainty (yaw): 0.1
+    # Velocity uncertainty (vx, vy): 0.05
+    # Angular velocity uncertainty (wz): 0.1
+
+    # process_noise_covariance: [0.05, 0.0, 0.0, 0.0, 0.0, 0.0,
+    #                           0.0, 0.05, 0.0, 0.0, 0.0, 0.0,
+    #                           0.0, 0.0, 0.05, 0.0, 0.0, 0.0,
+    #                           0.0, 0.0, 0.0, 0.1, 0.0, 0.0,
+    #                           0.0, 0.0, 0.0, 0.0, 0.1, 0.0,
+    #                           0.0, 0.0, 0.0, 0.0, 0.0, 0.1]

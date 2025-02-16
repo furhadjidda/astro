@@ -1,0 +1,13 @@
+/imu_filter:
+  ros__parameters:
+    use_mag: false
+    world_frame: "enu"
+    publish_tf: false
+    publish_debug_topics: true
+    #  Filter gain controlling how fast the filter reacts to changes.
+    # 0.01 - 0.05 → Slow response, smooth output.
+    # 0.1 - 0.3 → Balanced.
+    # > 0.3 → Fast response, can be noisy.
+    # Higher gain reduces lag but increases noise
+    gain: 0.3
+
