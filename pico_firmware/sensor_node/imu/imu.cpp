@@ -41,7 +41,7 @@ void IMUSensor::get_imu_data(sensor_msgs__msg__Imu &msg) {
     quaternion_data q = {};
     uint8_t calibration[4] = {0};
     // get_calibration(uint8_t *sys, uint8_t *gyro, uint8_t *accel, uint8_t *mag)
-    imu->get_calibration(&calibration[0], &calibration[1], &calibration[3], &calibration[4]);
+    imu->get_calibration(&calibration[0], &calibration[1], &calibration[2], &calibration[3]);
 
     imu->get_vector(VECTOR_ACCELEROMETER, accel);
     imu->get_vector(VECTOR_GYROSCOPE, gyro);
