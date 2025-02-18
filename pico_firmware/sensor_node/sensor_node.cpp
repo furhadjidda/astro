@@ -129,17 +129,17 @@ int main() {
     // initialize Node
     rclc_node_init_default(&node, "imu_gnss_publisher", "", &support);
     // initialize publishers
-    rclc_publisher_init_default(&imu_publisher, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, Imu), "imu/data");
+    rclc_publisher_init_default(&imu_publisher, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, Imu), "/imu_raw");
     rclc_publisher_init_default(&tof_publisher, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, Range),
-                                "tof_data");
+                                "/tof_data_raw");
     rclc_publisher_init_default(&gnss_publisher, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, NavSatFix),
-                                "gnss_data");
+                                "/gnss_data_raw");
     rclc_publisher_init_default(&dbg_publisher, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, String), "dbg_msg");
 
     // Initialize subscribers
     // Initialize IMU subscriber
     rclc_subscription_init_default(&imu_subscriber, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, Imu),
-                                   "imu/data");
+                                   "/imu_raw");
 
     rcl_timer_t timer;
     // initialize timers

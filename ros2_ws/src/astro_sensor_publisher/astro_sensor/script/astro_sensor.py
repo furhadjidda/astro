@@ -13,10 +13,10 @@ class SensorSynchronization(Node):
 
         # Subscribers
         self.imu_subscriber = self.create_subscription(
-            Imu, "/imu/data", self.imu_callback, 10
+            Imu, "/imu_raw", self.imu_callback, 10
         )
         self.laser_subscriber = self.create_subscription(
-            NavSatFix, "/gnss_raw", self.gnss_callback, 10
+            NavSatFix, "/gnss_data_raw", self.gnss_callback, 10
         )
         self.time_subscriber = self.create_subscription(
             BuiltinTime, "/ros_time", self.time_callback, 10
@@ -27,6 +27,7 @@ class SensorSynchronization(Node):
         )
 
         # Publishers
+        self.imu_raw_publisher = self.create_publisher(Imu, "/imu/data_raw", 10)
         self.imu_publisher = self.create_publisher(Imu, "/imu", 10)
         self.gnss_publisher = self.create_publisher(NavSatFix, "/gnss", 10)
         # Publisher for synchronized Odometry
@@ -92,7 +93,7 @@ class SensorSynchronization(Node):
             self.gnss_publisher.publish(synchronized_gnss)
 
             self.previous_ros_time = self.latest_ros_time
-            self.get_logger().info(f">>Synchronized GNSS time: {synced_time}")
+            # self.get_logger().info(f">>Synchronized GNSS time: {synced_time}")
 
     def sync_imu(self):
         if self.latest_imu_time and self.ros_time:
@@ -120,8 +121,9 @@ class SensorSynchronization(Node):
                     self.latest_imu_message.linear_acceleration
                 )
                 self.imu_publisher.publish(synchronized_imu)
+                self.imu_raw_publisher.publish(synchronized_imu)
                 self.previous_ros_time = self.latest_ros_time
-                self.get_logger().info(f">>Synchronized IMU time: {synced_time}")
+                # self.get_logger().info(f">>Synchronized IMU time: {synced_time}")
 
     def sync_odom(self):
         if self.latest_odom_time and self.ros_time:
