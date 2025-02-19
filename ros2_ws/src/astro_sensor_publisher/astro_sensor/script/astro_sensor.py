@@ -46,6 +46,9 @@ class SensorSynchronization(Node):
         self.latest_imu_message = None
         self.latest_gnss_message = None
         self.ros_time = None
+        self.alpha = 0.1  # Smoothing factor (0 < alpha <= 1)
+        self.filtered_angular_velocity = None
+        self.filtered_linear_acceleration = None
 
     def imu_callback(self, msg: Imu):
         self.latest_imu_time = msg.header.stamp
@@ -95,6 +98,41 @@ class SensorSynchronization(Node):
             self.previous_ros_time = self.latest_ros_time
             # self.get_logger().info(f">>Synchronized GNSS time: {synced_time}")
 
+    def smooth_imu_data(self, new_angular_velocity, new_linear_acceleration):
+        """Applies an Exponential Moving Average (EMA) filter to smooth IMU data."""
+        if self.filtered_angular_velocity is None:
+            self.filtered_angular_velocity = new_angular_velocity
+            self.filtered_linear_acceleration = new_linear_acceleration
+        else:
+            # Apply EMA smoothing
+            self.filtered_angular_velocity.x = (
+                self.alpha * new_angular_velocity.x
+                + (1 - self.alpha) * self.filtered_angular_velocity.x
+            )
+            self.filtered_angular_velocity.y = (
+                self.alpha * new_angular_velocity.y
+                + (1 - self.alpha) * self.filtered_angular_velocity.y
+            )
+            self.filtered_angular_velocity.z = (
+                self.alpha * new_angular_velocity.z
+                + (1 - self.alpha) * self.filtered_angular_velocity.z
+            )
+
+            self.filtered_linear_acceleration.x = (
+                self.alpha * new_linear_acceleration.x
+                + (1 - self.alpha) * self.filtered_linear_acceleration.x
+            )
+            self.filtered_linear_acceleration.y = (
+                self.alpha * new_linear_acceleration.y
+                + (1 - self.alpha) * self.filtered_linear_acceleration.y
+            )
+            self.filtered_linear_acceleration.z = (
+                self.alpha * new_linear_acceleration.z
+                + (1 - self.alpha) * self.filtered_linear_acceleration.z
+            )
+
+        return self.filtered_angular_velocity, self.filtered_linear_acceleration
+
     def sync_imu(self):
         if self.latest_imu_time and self.ros_time:
             if not self.previous_ros_time:
@@ -114,12 +152,14 @@ class SensorSynchronization(Node):
                 synchronized_imu.header.stamp = synced_time
                 synchronized_imu.header.frame_id = "imu_link"
                 synchronized_imu.orientation = self.latest_imu_message.orientation
-                synchronized_imu.angular_velocity = (
-                    self.latest_imu_message.angular_velocity
+                smoothed_angular_velocity, smoothed_linear_acceleration = (
+                    self.smooth_imu_data(
+                        self.latest_imu_message.angular_velocity,
+                        self.latest_imu_message.linear_acceleration,
+                    )
                 )
-                synchronized_imu.linear_acceleration = (
-                    self.latest_imu_message.linear_acceleration
-                )
+                synchronized_imu.angular_velocity = smoothed_angular_velocity
+                synchronized_imu.linear_acceleration = smoothed_linear_acceleration
                 self.imu_publisher.publish(synchronized_imu)
                 self.imu_raw_publisher.publish(synchronized_imu)
                 self.previous_ros_time = self.latest_ros_time
