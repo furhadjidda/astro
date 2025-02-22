@@ -1,10 +1,10 @@
 <?xml version="1.0" ?>
-<robot name="turtlebot3_waffle" xmlns:xacro="http://ros.org/wiki/xacro">
+<robot name="waffle" xmlns:xacro="http://ros.org/wiki/xacro">
 
   <xacro:property name="r200_cam_rgb_px" value="0.005"/>
   <xacro:property name="r200_cam_rgb_py" value="0.018"/>
   <xacro:property name="r200_cam_rgb_pz" value="0.013"/>
-  <xacro:property name="r200_cam_depth_offset" value="0.01"/> -->
+  <xacro:property name="r200_cam_depth_offset" value="0.01"/>
 
   <!-- Init colour -->
   <material name="black">
@@ -59,7 +59,7 @@
     <visual>
       <origin xyz="-0.064 0 0.0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="package://astro_robot_description/meshes/bases/waffle_base.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://robot_bringup/meshes/bases/waffle_base.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="light_black"/>
     </visual>
@@ -91,7 +91,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="1.57 0 0"/>
       <geometry>
-        <mesh filename="package://astro_robot_description/meshes/wheels/left_tire.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://robot_bringup/meshes/wheels/left_tire.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="dark"/>
     </visual>
@@ -123,7 +123,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="1.57 0 0"/>
       <geometry>
-        <mesh filename="package://astro_robot_description/meshes/wheels/right_tire.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://robot_bringup/meshes/wheels/right_tire.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="dark"/>
     </visual>
@@ -208,7 +208,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <mesh filename="package://astro_robot_description/meshes/sensors/lds.stl" scale="0.001 0.001 0.001"/>
+        <mesh filename="package://robot_bringup/meshes/sensors/lds.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="dark"/>
     </visual>
@@ -239,7 +239,7 @@
     <visual>
      <origin xyz="0 0 0" rpy="1.57 0 1.57"/>
       <geometry>
-       <mesh filename="package://astro_robot_description/meshes/sensors/r200.dae" />
+       <mesh filename="package://robot_bringup/meshes/sensors/r200.dae" />
       </geometry>
     </visual>
     <collision>
