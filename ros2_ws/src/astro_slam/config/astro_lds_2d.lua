@@ -52,6 +52,10 @@ TRAJECTORY_BUILDER_2D.missing_data_ray_length = 3.
 TRAJECTORY_BUILDER_2D.use_imu_data = true
 TRAJECTORY_BUILDER_2D.use_online_correlative_scan_matching = true
 TRAJECTORY_BUILDER_2D.motion_filter.max_angle_radians = math.rad(0.1)
+TRAJECTORY_BUILDER_2D.imu_gravity_time_constant = 30.0  -- Default is 10.0
+POSE_GRAPH.optimization_problem.acceleration_weight = 10
+POSE_GRAPH.optimization_problem.rotation_weight = 10
+TRAJECTORY_BUILDER_2D.ceres_scan_matcher.rotation_weight = 2.0
 
 
 POSE_GRAPH.constraint_builder.min_score = 0.6

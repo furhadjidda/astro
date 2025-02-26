@@ -9,5 +9,5 @@
     # 0.1 - 0.3 → Balanced.
     # > 0.3 → Fast response, can be noisy.
     # Higher gain reduces lag but increases noise
-    gain: 0.3
+    gain: 0.01
 
