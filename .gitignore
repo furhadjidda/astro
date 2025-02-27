@@ -59,8 +59,9 @@ Mkfile.old
 dkms.conf
 
 *.xcworkspace/xcuserdata/*.xcuserdatad
-build
+build_pico2
 build_host
 build_target
 *_build
+build*
 ros2_ws/utils/

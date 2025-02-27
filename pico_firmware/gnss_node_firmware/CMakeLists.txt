@@ -30,8 +30,8 @@ target_include_directories(pico_gnss_sensor_node PUBLIC
     ${CMAKE_SOURCE_DIR}/gnss_node_firmware/gnss_parser
 )
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -mcpu=cortex-m0 -mthumb")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -mcpu=cortex-m0 -mthumb")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra ")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra ")
 # Configure Pico
 pico_enable_stdio_usb(pico_gnss_sensor_node 1)
 pico_enable_stdio_uart(pico_gnss_sensor_node 0)

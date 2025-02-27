@@ -32,8 +32,8 @@ target_include_directories(differential_drive_node PUBLIC
 )
 
 # Additional compiler flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -mcpu=cortex-m0 -mthumb")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -mcpu=cortex-m0 -mthumb")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra ")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra ")
 # Configure Pico
 pico_enable_stdio_usb(differential_drive_node 1)
 pico_enable_stdio_uart(differential_drive_node 0)
@@ -69,8 +69,8 @@ target_include_directories(differential_drive_test PUBLIC
 )
 
 # Additional compiler flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -mcpu=cortex-m0 -mthumb")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -mcpu=cortex-m0 -mthumb")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra ")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra ")
 # Configure Pico
 pico_enable_stdio_usb(differential_drive_test 1)
 pico_enable_stdio_uart(differential_drive_test 0)

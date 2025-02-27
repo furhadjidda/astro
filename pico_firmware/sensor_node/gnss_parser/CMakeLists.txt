@@ -17,5 +17,5 @@ target_link_libraries(gnss_parser
     microros
     pico_cyw43_arch_none
 )
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -mcpu=cortex-m0 -mthumb")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -mcpu=cortex-m0 -mthumb")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra ")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra ")
