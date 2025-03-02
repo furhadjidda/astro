@@ -64,3 +64,5 @@ build_host
 build_target
 *_build
 ros2_ws/utils/
+build_*
+build*
