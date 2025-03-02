@@ -182,6 +182,7 @@ From the host side you will need to use this in place of the ip address
 ### host build( for running tests )
 1. After cloning the astro repo make sure to run `git submodule update --init --recursive`.
 2. Configure cmake `cmake -S . -B host_build/ -DBUILD_FOR_HOST=ON`.
+### For Pico 2 use thse flags `-DPICO_BOARD=pico2_w -DPICO_PLATFORM=rp2350`
 3. Build the firmware `cmake --build host_build`.
 4. You can now run tests
 
