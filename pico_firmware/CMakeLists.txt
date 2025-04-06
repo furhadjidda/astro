@@ -5,6 +5,7 @@ set(BUILD_NUMBER "1")
 
 # Define an option to build for the host platform
 option(BUILD_FOR_HOST "Build for the host platform" OFF)
+option(MCU_TYPE "Target ARM Cortex CPU type" "cortex-m33")
 
 ### --------------------- HOST BUILD -------------------------------------------------
 if (BUILD_FOR_HOST)
@@ -44,8 +45,8 @@ if (BUILD_FOR_HOST)
 else()### --------------------- TARGET BUILD -------------------------------------------------
     message(STATUS "Configuring for target platform")
 
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -mcpu=cortex-m0 -mthumb")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -mcpu=cortex-m0 -mthumb")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -mcpu=${MCU_TYPE}  -mthumb")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -mcpu=${MCU_TYPE} -mthumb")
 
 
     # Set the Pico board to use
