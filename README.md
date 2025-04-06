@@ -188,7 +188,18 @@ From the host side you will need to use this in place of the ip address
 ### target build( Firmware image)
 1. After cloning the astro repo make sure to run `git submodule update --init --recursive`.
 2. Configure cmake `cmake -S . -B target_build/`.
-3. Build the firmware `cmake --build target_build`.
+3. Build the firmware
+    1. To build for pico_w use
+    ```
+    cmake -S . -B build_pico_w -DPICO_BOARD=pico_w -DMCU_TYPE=cortex-m0
+    cmake --build build_pico_w
+    ```
+    2. To build for pico2_w use
+    ```
+    cmake -S . -B build_pico2_w -DPICO_BOARD=pico2_w -DPICO_PLATFORM=rp2350 -DMCU_TYPE=cortex-m33
+    cmake --build build_pico2_w
+
+    ```
 4. Connect your device so it’s ready for file transfer.
 
 
