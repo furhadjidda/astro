@@ -126,13 +126,21 @@ This will get build when you build the project.
 * execute `source install\setup.bash`
 <div style="border: 3px solid orange ; padding: 11px; color: purple; font-weight: bold;">
 ⚠️ **Note** : Without launching robot_bringup nothing else will work as all sensors and servos are brought up here
+
+⚠️ **Note** : Please also make sure to update the udev rules 99-custom.rules to add the correct ATTRS{serial}=="E6614103E77F3A36"
+   that macthes your device. you can find out that by using this command
+   ` udevadm info --name=<device> --attribute-walk | grep -i "ATTRS{serial}" `
 </div>
 
-* execute `ros2 launch robot_bringup robot_base.launch.py enable_realsense:=true enable_lidar:=true enable_microros:=true enable_dynamixel:=true`
+* execute `ros2 launch robot_bringup robot_base.launch.py enable_realsense:=false enable_lidar:=true enable_microros:=true enable_dynamixel:=false microros_dev:=<device_name>`
     * enable_realsense(true/false) - enables or disables  the realsense camera
     * enable_lidar(true/false) - enables or disableslidar
     * enable_dynamixel(true/false) - enables or disables the dynamixel code to run the XL430 servos which moves the robot
     * enable_microros(true/false) - enables or disables microros which enables communication with pico connected to sensors
+    * device_name can be either one of the below
+        * /dev/pimoroni_pico_2W
+        * /dev/pimoroni_pico_inventor
+        * /dev/raspberry_pico
 * now you can launch any other node you want
     * cartography - `ros2 launch astro_cartographer cartographer.launch.py`
     * Autonomous driving - @todo

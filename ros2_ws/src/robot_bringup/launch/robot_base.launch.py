@@ -67,11 +67,20 @@ def generate_launch_description():
     )
 
     # Define nodes
+    ## Micro-ROS Node
+    ld.add_action(
+        DeclareLaunchArgument(
+            "microros_dev",
+            default_value="/dev/ttyACM0",
+            description="Serial device path for micro-ROS Agent",
+        )
+    )
+
     microros_node = Node(
         package="micro_ros_agent",
         executable="micro_ros_agent",
         name="micro_ros_agent",
-        arguments=["serial", "--dev", "/dev/ttyACM0"],
+        arguments=["serial", "--dev", LaunchConfiguration("microros_dev")],
         condition=is_enabled("enable_microros"),
     )
     odometry_tf2_broadcaster = Node(
