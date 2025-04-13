@@ -4,10 +4,23 @@ import json
 import paramiko
 from paramiko import SSHClient
 from scp import SCPClient
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QFileDialog, QLabel, QLineEdit, QInputDialog, QMessageBox
+from PyQt5.QtWidgets import (
+    QApplication,
+    QWidget,
+    QVBoxLayout,
+    QPushButton,
+    QFileDialog,
+    QLabel,
+    QLineEdit,
+    QInputDialog,
+    QMessageBox,
+)
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QIcon  # Add this import at the top
+from PyQt5.QtGui import QPixmap  # Add at the top if not already imported
 
 SETTINGS_FILE = "scp_transfer_settings.json"
+
 
 class SCPTransferUI(QWidget):
     def __init__(self):
@@ -17,13 +30,17 @@ class SCPTransferUI(QWidget):
         self.files_to_transfer = []
         self.total_size = 0
         self.transferred_size = 0
-        self.remote_directory = '/home/astro/ros2_ws'  # Default remote directory
+        self.remote_directory = "/home/astro/ros2_ws"  # Default remote directory
         self.initUI()  # Initialize UI first
         self.load_settings()  # Then load settings
 
     def initUI(self):
-        self.setWindowTitle("SCP File Transfer")
+        self.setWindowTitle("Astro SCP Transfer Tool")
         self.setGeometry(100, 100, 400, 250)
+
+        # Set taskbar icon
+        # Make sure this file exists in the same directory
+        self.setWindowIcon(QIcon("../images/atro.ico"))
 
         layout = QVBoxLayout()
 
@@ -60,7 +77,9 @@ class SCPTransferUI(QWidget):
                 settings = json.load(f)
                 self.ip_input.setText(settings.get("last_ip", ""))
                 self.files_to_transfer = settings.get("last_folder", [])
-                self.remote_directory = settings.get("last_remote_directory", '/home/astro/ros2_ws')
+                self.remote_directory = settings.get(
+                    "last_remote_directory", "/home/astro/ros2_ws"
+                )
                 if self.files_to_transfer:
                     self.label.setText(f"Selected: {self.files_to_transfer[0]}")
 
@@ -69,14 +88,16 @@ class SCPTransferUI(QWidget):
         settings = {
             "last_ip": self.ip_input.text().strip(),
             "last_folder": self.files_to_transfer[:1],  # Save only the latest folder
-            "last_remote_directory": self.remote_directory
+            "last_remote_directory": self.remote_directory,
         }
         with open(SETTINGS_FILE, "w") as f:
             json.dump(settings, f)
 
     def select_folders(self):
         """Allow user to select a folder and update settings."""
-        folder = QFileDialog.getExistingDirectory(self, "Select Folder", os.getcwd(), QFileDialog.ShowDirsOnly)
+        folder = QFileDialog.getExistingDirectory(
+            self, "Select Folder", os.getcwd(), QFileDialog.ShowDirsOnly
+        )
         if folder:
             self.files_to_transfer = [folder]  # Store only the latest selected folder
             self.label.setText(f"Selected: {folder}")
@@ -84,7 +105,12 @@ class SCPTransferUI(QWidget):
 
     def select_remote_directory(self):
         """Allow user to select a remote directory and update settings."""
-        remote_dir, ok = QInputDialog.getText(self, "Remote Directory", "Enter Remote Directory:", text=self.remote_directory)
+        remote_dir, ok = QInputDialog.getText(
+            self,
+            "Remote Directory",
+            "Enter Remote Directory:",
+            text=self.remote_directory,
+        )
         if ok and remote_dir:
             self.remote_directory = remote_dir
             self.remote_dir_label.setText(f"Remote Directory: {self.remote_directory}")
@@ -117,7 +143,9 @@ class SCPTransferUI(QWidget):
         self.ssh = SSHClient()
         self.ssh.load_system_host_keys()
         self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        self.ssh.connect(hostname=target_ip, port=22, username='astro', password='astro123')
+        self.ssh.connect(
+            hostname=target_ip, port=22, username="astro", password="astro123"
+        )
 
         self.scp = SCPClient(self.ssh.get_transport(), progress=self.progress_callback)
 
@@ -151,12 +179,19 @@ class SCPTransferUI(QWidget):
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Information)
         msg.setWindowTitle("Transfer Complete")
-        msg.setText(f"Transfer complete! Transferred: {', '.join(transferred_folders)} to {self.remote_directory}")
+        msg.setText(
+            f"Transfer complete! Transferred: {', '.join(transferred_folders)} to {self.remote_directory}"
+        )
+
+        # Use custom icon image on the left side
+        pixmap = QPixmap("../images/atro.ico")  # Or use .ico if supported
+        msg.setIconPixmap(pixmap.scaled(64, 64))  # Resize as needed
 
         # Set the custom light green background for the pop-up
-        msg.setStyleSheet("QMessageBox { background-color: lightgreen; }")
+        # msg.setStyleSheet("QMessageBox { background-color: lightgreen; }")
 
         msg.exec_()
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
