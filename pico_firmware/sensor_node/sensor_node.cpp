@@ -36,7 +36,7 @@
 #include "sensorFactory.hpp"
 #include "tof.hpp"
 
-#define PUBLISH_RATE_HZ 5
+#define PUBLISH_RATE_HZ 50
 
 sensor_msgs__msg__Imu imu_msg;
 sensor_msgs__msg__Range tof_range_msg;

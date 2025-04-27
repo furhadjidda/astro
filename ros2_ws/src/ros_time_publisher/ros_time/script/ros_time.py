@@ -10,7 +10,7 @@ class RosTimePublisher(Node):
         # Create a publisher on the /ros_time topic
         self.publisher_ = self.create_publisher(BuiltinTime, "/ros_time", 10)
         # Set up a timer to publish the message at regular intervals
-        timer_period = 0.1  # Publish every 1 second
+        timer_period = 0.001  # Publish every 1 second
         self.timer = self.create_timer(timer_period, self.publish_ros_time)
         self.get_logger().info("ROS Time Publisher Node has started.")
 
