@@ -95,12 +95,12 @@ def generate_launch_description():
     base_link_to_imu_link = Node(
         package="tf2_ros",
         executable="static_transform_publisher",
-        arguments=["0", "0", "0", "0", "0", "0", "base_link", "imu_link"],
+        arguments=["0", "0", "0", "0", "3.1416", "0", "base_link", "imu_link"],
     )
     base_link_to_laser_link = Node(
         package="tf2_ros",
         executable="static_transform_publisher",
-        arguments=["0", "0", "0", "0", "0", "0", "base_link", "laser"],
+        arguments=["0", "0", "0", "0", "3.1416", "0", "base_link", "laser"],
     )
     base_link_to_camera_link = Node(
         package="tf2_ros",
