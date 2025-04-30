@@ -24,6 +24,7 @@
 #include <memory>
 
 #include "bno055.hpp"
+#include "flash_manager.hpp"
 #include "sensor.hpp"
 
 class IMUSensor : public Sensor {
@@ -36,6 +37,7 @@ class IMUSensor : public Sensor {
    private:
     std::unique_ptr<bno055_sensor::Bno055> imu = std::make_unique<bno055_sensor::Bno055>();
     char debug_msg_buffer[1024];
+    FlashManager _flashManager;
 };
 
 #endif  // IMU_HPP

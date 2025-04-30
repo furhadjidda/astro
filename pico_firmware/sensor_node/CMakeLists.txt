@@ -36,6 +36,7 @@ target_link_libraries(sensor_node
     bno055
     vl53l0x
     oled_driver_1306
+    flash_manager
 )
 
 target_include_directories(sensor_node PUBLIC

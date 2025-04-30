@@ -26,6 +26,9 @@ bool IMUSensor::initialize(i2c_inst_t *aI2cInstance) {
         return false;
     }
     printf("BNO055 initialized successfully.\n");
+    CalibrationData data = {};
+    _flashManager.read_data(data, sizeof(data));
+    imu->set_calibration_data(data);
     return true;
 }
 
@@ -42,7 +45,6 @@ void IMUSensor::get_imu_data(sensor_msgs__msg__Imu &msg) {
     uint8_t calibration[4] = {0};
     // get_calibration(uint8_t *sys, uint8_t *gyro, uint8_t *accel, uint8_t *mag)
     imu->get_calibration(&calibration[0], &calibration[1], &calibration[2], &calibration[3]);
-
     imu->get_vector(VECTOR_ACCELEROMETER, accel);
     imu->get_vector(VECTOR_GYROSCOPE, gyro);
     imu->get_vector(VECTOR_MAGNETOMETER, mag);
