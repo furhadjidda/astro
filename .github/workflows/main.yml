@@ -1,58 +1,45 @@
-name: CI
+name: Pico Firmware CI
 
 on:
   push:
-    branches:
-      - 'main'
   pull_request:
-    branches:
-      - 'main'
 
 jobs:
-  build_target:
-    name: Build and Test Targets
+  build:
+    name: Build pico_firmware
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
-      with:
-        fetch-depth: 1
-        submodules: recursive
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Debug contents
-      run: |
-        echo "Listing root of repo:"
-        ls -la
-        echo "Listing pico_firmware:"
-        ls -la pico_firmware || echo "pico_firmware not found"
-        echo "Listing FreeRTOS-Kernel:"
-        ls -la FreeRTOS-Kernel || echo "FreeRTOS-Kernel not found"
+      - name: Initialize submodules
+        run: git submodule update --init --recursive
 
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y cmake gcc-arm-none-eabi build-essential libnewlib-arm-none-eabi
 
-    - name: Install ARM GCC toolchain and CMake
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y gcc-arm-none-eabi make cmake
+      - name: Configure PICO_SDK_PATH
+        run: |
+           echo "PICO_SDK_PATH=$PWD/pico_firmware/external/pico-sdk" >> $GITHUB_ENV
 
-    - name: Build for pico_w (cortex-m0)
-      env:
-        PICO_SDK_PATH: ${{ github.workspace }}/pico_firmware/external/pico-sdk
-        PICO_TOOLCHAIN_PATH: /usr/bin
-      run: |
-        cd pico_firmware  # Change to pico_firmware directory
-        cmake -S . -B build_pico_w -DPICO_BOARD=pico_w -DMCU_TYPE=cortex-m0
-        cmake --build build_pico_w
 
-    - name: Build for pico2_w (cortex-m33)
-      env:
-        PICO_SDK_PATH: ${{ github.workspace }}/external/pico-sdk
-        PICO_TOOLCHAIN_PATH: /usr/bin
-      run: |
-        cd pico_firmware  # Change to pico_firmware directory
-        cmake -S . -B build_pico2_w -DPICO_BOARD=pico2_w -DPICO_PLATFORM=rp2350 -DMCU_TYPE=cortex-m33
-        cmake --build build_pico2_w
+      - name: Configure CMake for pico_w cortex-m0
+        working-directory: pico_firmware
+        run: cmake -S . -B build_pico_w -DPICO_BOARD=pico_w -DMCU_TYPE=cortex-m0 -DPICO_SDK_PATH=${{ env.PICO_SDK_PATH }}
+
+      - name: Build
+        working-directory: pico_firmware
+        run: cmake --build build_pico_w
+
+
+      - name: Configure CMake for pico_2w 2350 based cortex-m33
+        working-directory: pico_firmware
+        run: cmake -S . -B build_pico2_w -DPICO_BOARD=pico2_w -DPICO_PLATFORM=rp2350 -DMCU_TYPE=cortex-m33 -DPICO_SDK_PATH=${{ env.PICO_SDK_PATH }}
+
+      - name: Build
+        working-directory: pico_firmware
+        run: cmake --build build_pico2_w
+
