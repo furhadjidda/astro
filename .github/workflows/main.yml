@@ -13,6 +13,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Initialize submodules
+        run: git submodule update --init --recursive --depth 1
+
       - name: Install dependencies
         run: |
           sudo apt update
@@ -20,8 +23,8 @@ jobs:
 
       - name: Configure CMake
         working-directory: pico_firmware
-        run: cmake -S . -B build
+        run: cmake -S . -B build_pico_w -DPICO_BOARD=pico_w -DMCU_TYPE=cortex-m0
 
       - name: Build
         working-directory: pico_firmware
-        run: cmake --build build
+        run: cmake --build build_pico_w
