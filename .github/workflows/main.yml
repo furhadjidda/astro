@@ -41,7 +41,7 @@ jobs:
 
     - name: Build for pico_w (cortex-m0)
       env:
-        PICO_SDK_PATH: ${{ github.workspace }}/external/pico-sdk
+        PICO_SDK_PATH: ${{ github.workspace }}/pico_firmware/external/pico-sdk
         PICO_TOOLCHAIN_PATH: /usr/bin
       run: |
         cd pico_firmware  # Change to pico_firmware directory
