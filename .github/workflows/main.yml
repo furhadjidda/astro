@@ -3,22 +3,25 @@ name: CI
 on:
   push:
     branches:
-      - 'main'
+      - '*'
   pull_request:
     branches:
-      - 'main'
+      - '*'
 
 jobs:
   build_target:
     name: Build and Test Targets
     runs-on: ubuntu-latest
 
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
       with:
         fetch-depth: 1
-        submodules: recursive
+
+    - name: Initialize submodules
+      run: git submodule update --init --recursive
 
     - name: Debug contents
       run: |
@@ -44,6 +47,9 @@ jobs:
         PICO_SDK_PATH: ${{ github.workspace }}/pico_firmware/external/pico-sdk
         PICO_TOOLCHAIN_PATH: /usr/bin
       run: |
+        echo ${PICO_SDK_PATH}
+        echo ${PICO_TOOLCHAIN_PATH}
+        ls -al
         cd pico_firmware  # Change to pico_firmware directory
         cmake -S . -B build_pico_w -DPICO_BOARD=pico_w -DMCU_TYPE=cortex-m0
         cmake --build build_pico_w
