@@ -67,11 +67,20 @@ def generate_launch_description():
     )
 
     # Define nodes
+    ## Micro-ROS Node
+    ld.add_action(
+        DeclareLaunchArgument(
+            "microros_dev",
+            default_value="/dev/ttyACM0",
+            description="Serial device path for micro-ROS Agent",
+        )
+    )
+
     microros_node = Node(
         package="micro_ros_agent",
         executable="micro_ros_agent",
         name="micro_ros_agent",
-        arguments=["serial", "--dev", "/dev/ttyACM0"],
+        arguments=["serial", "--dev", LaunchConfiguration("microros_dev")],
         condition=is_enabled("enable_microros"),
     )
     odometry_tf2_broadcaster = Node(
@@ -86,12 +95,12 @@ def generate_launch_description():
     base_link_to_imu_link = Node(
         package="tf2_ros",
         executable="static_transform_publisher",
-        arguments=["0", "0", "0", "0", "0", "0", "base_link", "imu_link"],
+        arguments=["0", "0", "0", "0", "3.1416", "0", "base_link", "imu_link"],
     )
     base_link_to_laser_link = Node(
         package="tf2_ros",
         executable="static_transform_publisher",
-        arguments=["0", "0", "0", "0", "0", "0", "base_link", "laser"],
+        arguments=["0", "0", "0", "0", "3.1416", "0", "base_link", "laser"],
     )
     base_link_to_camera_link = Node(
         package="tf2_ros",

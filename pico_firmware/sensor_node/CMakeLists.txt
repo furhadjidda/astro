@@ -36,6 +36,7 @@ target_link_libraries(sensor_node
     bno055
     vl53l0x
     oled_driver_1306
+    flash_manager
 )
 
 target_include_directories(sensor_node PUBLIC
@@ -43,8 +44,8 @@ target_include_directories(sensor_node PUBLIC
     ${CMAKE_SOURCE_DIR}/sensor_node/gnss_parser
 )
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -mcpu=cortex-m0 -mthumb")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -mcpu=cortex-m0 -mthumb")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -mthumb")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -mthumb")
 # Configure Pico
 pico_enable_stdio_usb(sensor_node 1)
 pico_enable_stdio_uart(sensor_node 0)

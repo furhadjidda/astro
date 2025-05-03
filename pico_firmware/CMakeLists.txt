@@ -5,6 +5,7 @@ set(BUILD_NUMBER "1")
 
 # Define an option to build for the host platform
 option(BUILD_FOR_HOST "Build for the host platform" OFF)
+option(MCU_TYPE "Target ARM Cortex CPU type" "cortex-m33")
 
 ### --------------------- HOST BUILD -------------------------------------------------
 if (BUILD_FOR_HOST)
@@ -44,12 +45,12 @@ if (BUILD_FOR_HOST)
 else()### --------------------- TARGET BUILD -------------------------------------------------
     message(STATUS "Configuring for target platform")
 
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -mcpu=cortex-m0 -mthumb")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -mcpu=cortex-m0 -mthumb")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -mcpu=${MCU_TYPE}  -mthumb")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -mcpu=${MCU_TYPE} -mthumb")
 
 
     # Set the Pico board to use
-    set(PICO_BOARD pico_w)
+    # set(PICO_BOARD pico_w)
 
     # Specify the app(s) source code directories
     set(FREERTOS_TIMER_APP_SRC_DIRECTORY "${CMAKE_SOURCE_DIR}/micro_ros_app")
@@ -60,6 +61,9 @@ else()### --------------------- TARGET BUILD -----------------------------------
 
     # Set env variable 'PICO_SDK_PATH' to the local Pico SDK
     set(ENV{PICO_SDK_PATH} "${CMAKE_SOURCE_DIR}/external/pico-sdk")
+    if(MCU_TYPE STREQUAL "cortex-m33")
+        set(ENV{PIMORONI_PICO_PATH} "${CMAKE_SOURCE_DIR}/external/pimoroni-pico")
+    endif()
 
     # Set FreeRTOS directories
     set(FREERTOS_CFG_DIRECTORY "${CMAKE_SOURCE_DIR}/free_rtos_config")
@@ -68,6 +72,9 @@ else()### --------------------- TARGET BUILD -----------------------------------
 
     # Include the Pico SDK
     include(pico_sdk_import.cmake)
+    if(MCU_TYPE STREQUAL "cortex-m33")
+        include(pimoroni_pico_import.cmake)
+    endif()
 
     # Name the project
     project(${PROJECT_NAME}
@@ -96,6 +103,11 @@ else()### --------------------- TARGET BUILD -----------------------------------
         ${FREERTOS_SRC_DIRECTORY}/include
         ${FREERTOS_SRC_DIRECTORY}/portable/GCC/ARM_CM0
     )
+
+    if(MCU_TYPE STREQUAL "cortex-m33")
+        include(common/pimoroni_i2c)
+        include(common/pimoroni_bus)
+    endif()
 
     # Include the apps' source code
     add_subdirectory(${FREERTOS_TIMER_APP_SRC_DIRECTORY})

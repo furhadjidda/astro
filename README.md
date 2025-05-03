@@ -27,31 +27,31 @@
 <table>
     <tr>
         <th style="background-color:rgb(212, 159, 210); padding: 10px; color: black;"><strong>IMU</strong></th>
-        <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;"><a href="https://cdn-learn.adafruit.com/assets/assets/000/125/776/original/bst-bno055-ds000.pdf?1698865246">BNO055</a></td>
+        <td style="background-color:rgb(8, 30, 61); padding: 10px; color: black;"><a href="https://cdn-learn.adafruit.com/assets/assets/000/125/776/original/bst-bno055-ds000.pdf?1698865246">BNO055</a></td>
     </tr>
     <tr>
         <th style="background-color:rgb(212, 159, 210); padding: 10px; color: black;"><strong>Lidar</strong></th>
-        <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;"><a href="https://bucket-download.slamtec.com/d1e428e7efbdcd65a8ea111061794fb8d4ccd3a0/LD108_SLAMTEC_rplidar_datasheet_A1M8_v3.0_en.pdf">RPLIDAR A1M8</a></td>
+        <td style="background-color:rgb(8, 30, 61); padding: 10px; color: black;"><a href="https://bucket-download.slamtec.com/d1e428e7efbdcd65a8ea111061794fb8d4ccd3a0/LD108_SLAMTEC_rplidar_datasheet_A1M8_v3.0_en.pdf">RPLIDAR A1M8</a></td>
     </tr>
     <tr>
         <th style="background-color:rgb(212, 159, 210); padding: 10px; color: black;"><strong>Lidar</strong></th>
-        <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;"><a href="https://openzeka.com/wp-content/uploads/2024/02/SLAMTEC_rplidarkit_usermanual_C1_v1.0_en.pdf?srsltid=AfmBOopQ0e0YG65J9YMMvJnuaTrmSK2NHstQl0l8d0ITCdm3V0HowmfH">RPLIDAR C1</a></td>
+        <td style="background-color:rgb(8, 30, 61); padding: 10px; color: black;"><a href="https://openzeka.com/wp-content/uploads/2024/02/SLAMTEC_rplidarkit_usermanual_C1_v1.0_en.pdf?srsltid=AfmBOopQ0e0YG65J9YMMvJnuaTrmSK2NHstQl0l8d0ITCdm3V0HowmfH">RPLIDAR C1</a></td>
     </tr>
     <tr>
         <th style="background-color:rgb(212, 159, 210); padding: 10px; color: black;"><strong>Microcontroler</strong></th>
-        <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;"><a href="https://datasheets.raspberrypi.com/pico/pico-datasheet.pdf">Raspberry pi pico</a></td>
+        <td style="background-color:rgb(8, 30, 61); padding: 10px; color: black;"><a href="https://datasheets.raspberrypi.com/pico/pico-datasheet.pdf">Raspberry pi pico</a></td>
     </tr>
     <tr>
         <th style="background-color:rgb(212, 159, 210); padding: 10px; color: black;"><strong>Time of Flight Sensor</strong></th>
-        <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;"><a href="https://www.adafruit.com/product/3317">VL53L0X</a></td>
+        <td style="background-color:rgb(8, 30, 61); padding: 10px; color: black;"><a href="https://www.adafruit.com/product/3317">VL53L0X</a></td>
     </tr>
     <tr>
         <th style="background-color:rgb(212, 159, 210); padding: 10px; color: black;"><strong>RGB Depth Camera with 6 DOF IMU</strong></th>
-        <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;"><a href="https://www.intelrealsense.com/download/21345/?tmstv=1697035582">Intel realsense D455</a></td>
+        <td style="background-color:rgb(8, 30, 61); padding: 10px; color: black;"><a href="https://www.intelrealsense.com/download/21345/?tmstv=1697035582">Intel realsense D455</a></td>
     </tr>
     <tr>
         <th style="background-color:rgb(212, 159, 210); padding: 10px; color: black;"><strong>AI Depth Camera by Luxonis</strong></th>
-        <td style="background-color:rgb(163, 186, 219); padding: 10px; color: black;"><a href="https://docs.luxonis.com/hardware/products/OAK-D%20Lite">OAK-D Lite</a></td>
+        <td style="background-color:rgb(8, 30, 61); padding: 10px; color: black;"><a href="https://docs.luxonis.com/hardware/products/OAK-D%20Lite">OAK-D Lite</a></td>
     </tr>
 </table>
 
@@ -126,13 +126,21 @@ This will get build when you build the project.
 * execute `source install\setup.bash`
 <div style="border: 3px solid orange ; padding: 11px; color: purple; font-weight: bold;">
 ⚠️ **Note** : Without launching robot_bringup nothing else will work as all sensors and servos are brought up here
+
+⚠️ **Note** : Please also make sure to update the udev rules 99-custom.rules to add the correct ATTRS{serial}=="E6614103E77F3A36"
+   that macthes your device. you can find out that by using this command
+   ` udevadm info --name=<device> --attribute-walk | grep -i "ATTRS{serial}" `
 </div>
 
-* execute `ros2 launch robot_bringup robot_base.launch.py enable_realsense:=true enable_lidar:=true enable_microros:=true enable_dynamixel:=true`
+* execute `ros2 launch robot_bringup robot_base.launch.py enable_realsense:=false enable_lidar:=true enable_microros:=true enable_dynamixel:=false microros_dev:=<device_name>`
     * enable_realsense(true/false) - enables or disables  the realsense camera
     * enable_lidar(true/false) - enables or disableslidar
     * enable_dynamixel(true/false) - enables or disables the dynamixel code to run the XL430 servos which moves the robot
     * enable_microros(true/false) - enables or disables microros which enables communication with pico connected to sensors
+    * device_name can be either one of the below
+        * /dev/pimoroni_pico_2W
+        * /dev/pimoroni_pico_inventor
+        * /dev/raspberry_pico
 * now you can launch any other node you want
     * cartography - `ros2 launch astro_cartographer cartographer.launch.py`
     * Autonomous driving - @todo
@@ -188,7 +196,18 @@ From the host side you will need to use this in place of the ip address
 ### target build( Firmware image)
 1. After cloning the astro repo make sure to run `git submodule update --init --recursive`.
 2. Configure cmake `cmake -S . -B target_build/`.
-3. Build the firmware `cmake --build target_build`.
+3. Build the firmware
+    1. To build for pico_w use
+    ```
+    cmake -S . -B build_pico_w -DPICO_BOARD=pico_w -DMCU_TYPE=cortex-m0
+    cmake --build build_pico_w
+    ```
+    2. To build for pico2_w use
+    ```
+    cmake -S . -B build_pico2_w -DPICO_BOARD=pico2_w -DPICO_PLATFORM=rp2350 -DMCU_TYPE=cortex-m33
+    cmake --build build_pico2_w
+
+    ```
 4. Connect your device so it’s ready for file transfer.
 
 
@@ -208,3 +227,59 @@ ros2 launch sllidar_ros2 view_sllidar_a1_launch.py scan_mode:=Standard
 * https://www.thegeekpub.com/16265/using-xbox-one-controllers-on-a-raspberry-pi/
 * https://mjwhite8119.github.io/Robots/twr-model-part1
 * https://hackaday.io/project/167074-build-your-own-turtlebot-3-backbone/log/166955-motor-speed-control
+
+
+## Nodes
+<table>
+    <tr>
+        <th style="background-color:rgb(235, 201, 129); padding: 20px; color: black;font-size: 18px;">Node Name</th>
+        <th style="background-color:rgb(235, 201, 129); padding: 20px; color: black;font-size: 18px;">Description</th>
+    </tr>
+    <tr>
+        <td style="background-color:rgb(161, 161, 159); padding: 10px; color: black;font-size: 16px;">robot_base.launch</td>
+        <td style="background-color:rgb(161, 161, 159); padding: 10px; color: black;font-size: 16px;">
+            This launches core nodes of the robot. Below are the nodes this package launches.
+            <ul>
+                <li>micro_ros_agent</li>
+                <li>astro_odometry_tf_broadcaster</li>
+                <li>static_transform_publisher</li>
+                    <ul>
+                        <li>baselink -> base_footprint</li>
+                        <li>baselink -> imu_link</li>
+                        <li>baselink -> laser</li>
+                        <li>baselink -> camera_link</li>
+                    </ul>
+                <li>sllidar_ros2</li>
+                <li>robot_state_publisher</li>
+                <li>realsense2_camera</li>
+                <li>ros_time</li>
+                <li>astro_sensor</li>
+                <li>astro_dynamixel_odometry</li>
+            </ul>
+        </td>
+    </tr>
+    <tr>
+        <td style="background-color:rgb(161, 161, 159); padding: 10px; color: black;font-size: 16px;">ros_time</td>
+        <td style="background-color:rgb(161, 161, 159); padding: 10px; color: black;font-size: 16px;">Publishes time for synchronization</td>
+    </tr>
+    <tr>
+        <td style="background-color:rgb(161, 161, 159); padding: 10px; color: black;font-size: 16px;">astro_sensor</td>
+        <td style="background-color:rgb(161, 161, 159); padding: 10px; color: black;font-size: 16px;">Synchronizes imu , odom and gnss messages with time provided by ros_time</td>
+    </tr>
+    <tr>
+        <td style="background-color:rgb(161, 161, 159); padding: 10px; color: black;font-size: 16px;">astro_robot_description</td>
+        <td style="background-color:rgb(161, 161, 159); padding: 10px; color: black;font-size: 16px;">Publishes description for the robot to be able to see the model on rviz2</td>
+    </tr>
+    <tr>
+        <td style="background-color:rgb(161, 161, 159); padding: 10px; color: black;font-size: 16px;">astro_dynamixel_odometry</td>
+        <td style="background-color:rgb(161, 161, 159); padding: 10px; color: black;font-size: 16px;">Publishes odometry for the robot</td>
+    </tr>
+    <tr>
+        <td style="background-color:rgb(161, 161, 159); padding: 10px; color: black;font-size: 16px;">astro_slam</td>
+        <td style="background-color:rgb(161, 161, 159); padding: 10px; color: black;font-size: 16px;">Publishes nodes for SLAM</td>
+    </tr>
+    <tr>
+        <td style="background-color:rgb(161, 161, 159); padding: 10px; color: black;font-size: 16px;">astro_teleop_twist_joy</td>
+        <td style="background-color:rgb(161, 161, 159); padding: 10px; color: black;font-size: 16px;">Publishes nodes to control the robot through terminal</td>
+    </tr>
+</table>

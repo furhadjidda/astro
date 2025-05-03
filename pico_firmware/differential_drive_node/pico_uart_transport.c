@@ -18,10 +18,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "pico/stdlib.h"
 #include <stdio.h>
+#include <time.h>
 #include <uxr/client/profile/transport/custom/custom_transport.h>
 
+#include "pico/stdlib.h"
 void usleep(uint64_t us) { sleep_us(us); }
 
 int clock_gettime(clockid_t unused, struct timespec *tp) {
