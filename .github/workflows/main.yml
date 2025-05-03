@@ -23,7 +23,7 @@ jobs:
 
       - name: Configure PICO_SDK_PATH
         run: |
-           echo "PICO_SDK_PATH=/home/runner/work/astro/pico_firmware/pico-sdk" >> $GITHUB_ENV
+           echo "PICO_SDK_PATH=$PWD/pico_firmware/external/pico-sdk" >> $GITHUB_ENV
 
 
       - name: Configure CMake
