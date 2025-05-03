@@ -3,7 +3,6 @@
 
 #include <stdint.h>
 #include <stdio.h>
-#include <time.h>
 #include <uxr/client/profile/transport/custom/custom_transport.h>
 
 bool pico_serial_transport_open(struct uxrCustomTransport* transport);
