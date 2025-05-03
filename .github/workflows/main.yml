@@ -18,19 +18,16 @@ jobs:
       uses: actions/checkout@v2
       with:
         fetch-depth: 1
+        submodules: recursive
 
-    - name: Force update submodule URLs to HTTPS
+    - name: Debug contents
       run: |
-        # Remove the existing submodule configuration to ensure it will be reconfigured
-        git submodule deinit -f --all
-        git submodule update --init --recursive
-
-        # Update submodule URLs to HTTPS
-        git submodule foreach --recursive '
-        git config submodule.$name.url https://github.com/furhadjidda/$name.git
-        '
-    - name: Initialize submodules
-      run: git submodule update --init --recursive --depth 1
+        echo "Listing root of repo:"
+        ls -la
+        echo "Listing pico_firmware:"
+        ls -la pico_firmware || echo "pico_firmware not found"
+        echo "Listing FreeRTOS-Kernel:"
+        ls -la FreeRTOS-Kernel || echo "FreeRTOS-Kernel not found"
 
     - name: Set up Python
       uses: actions/setup-python@v2
@@ -49,7 +46,7 @@ jobs:
       run: |
         cd pico_firmware  # Change to pico_firmware directory
         cmake -S . -B build_pico_w -DPICO_BOARD=pico_w -DMCU_TYPE=cortex-m0
-        cmake --build build_pico_w -- -j8
+        cmake --build build_pico_w
 
     - name: Build for pico2_w (cortex-m33)
       env:
@@ -58,4 +55,4 @@ jobs:
       run: |
         cd pico_firmware  # Change to pico_firmware directory
         cmake -S . -B build_pico2_w -DPICO_BOARD=pico2_w -DPICO_PLATFORM=rp2350 -DMCU_TYPE=cortex-m33
-        cmake --build build_pico2_w -- -j8
+        cmake --build build_pico2_w
