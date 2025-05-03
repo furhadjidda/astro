@@ -3,10 +3,10 @@ name: CI
 on:
   push:
     branches:
-      - '*'
+      - 'main'
   pull_request:
     branches:
-      - '*'
+      - 'main'
 
 jobs:
   build_target:
@@ -19,12 +19,16 @@ jobs:
       with:
         fetch-depth: 1
 
-    - name: Set HTTPS for submodules
+    - name: Force update submodule URLs to HTTPS
       run: |
-        git submodule foreach --recursive '
-          git config submodule.$name.url https://github.com/furhadjidda/$name.git
-        '
+        # Remove the existing submodule configuration to ensure it will be reconfigured
+        git submodule deinit -f --all
+        git submodule update --init --recursive
 
+        # Update submodule URLs to HTTPS
+        git submodule foreach --recursive '
+        git config submodule.$name.url https://github.com/furhadjidda/$name.git
+        '
     - name: Initialize submodules
       run: git submodule update --init --recursive --depth 1
 
