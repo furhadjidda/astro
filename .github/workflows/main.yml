@@ -19,7 +19,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y cmake gcc-arm-none-eabi build-essential libnewlib-arm-none-eabi g++-arm-none-eabi libstdc++-arm-none-eabi-newlib libgcc-9-dev-arm-none-eabi libnewlib-dev
+          sudo apt install -y cmake gcc-arm-none-eabi build-essential libnewlib-arm-none-eabi
 
       - name: Configure CMake
         working-directory: pico_firmware
