@@ -37,6 +37,7 @@ jobs:
         PICO_SDK_PATH: ${{ github.workspace }}/external/pico-sdk
         PICO_TOOLCHAIN_PATH: /usr/bin
       run: |
+        cd pico_firmware  # Change to pico_firmware directory
         cmake -S . -B build_pico_w -DPICO_BOARD=pico_w -DMCU_TYPE=cortex-m0
         cmake --build build_pico_w -- -j8
 
@@ -45,17 +46,18 @@ jobs:
         PICO_SDK_PATH: ${{ github.workspace }}/external/pico-sdk
         PICO_TOOLCHAIN_PATH: /usr/bin
       run: |
+        cd pico_firmware  # Change to pico_firmware directory
         cmake -S . -B build_pico2_w -DPICO_BOARD=pico2_w -DPICO_PLATFORM=rp2350 -DMCU_TYPE=cortex-m33
         cmake --build build_pico2_w -- -j8
 
     - name: Upload build artifacts for pico_w
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v2
       with:
         name: pico_w_build
-        path: build_pico_w
+        path: pico_firmware/build_pico_w
 
     - name: Upload build artifacts for pico2_w
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v2
       with:
         name: pico2_w_build
-        path: build_pico2_w
+        path: pico_firmware/build_pico2_w
