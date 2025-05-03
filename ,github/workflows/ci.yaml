@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - '*'
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  build_target:
+    name: Build and Test Targets
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+
+    - name: Initialize submodules
+      run: git submodule update --init --recursive --depth 1
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.11'
+
+    - name: Install ARM GCC toolchain and CMake
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc-arm-none-eabi make cmake
+
+    - name: Build for pico_w (cortex-m0)
+      env:
+        PICO_SDK_PATH: ${{ github.workspace }}/external/pico-sdk
+        PICO_TOOLCHAIN_PATH: /usr/bin
+      run: |
+        cmake -S . -B build_pico_w -DPICO_BOARD=pico_w -DMCU_TYPE=cortex-m0
+        cmake --build build_pico_w -- -j8
+
+    - name: Build for pico2_w (cortex-m33)
+      env:
+        PICO_SDK_PATH: ${{ github.workspace }}/external/pico-sdk
+        PICO_TOOLCHAIN_PATH: /usr/bin
+      run: |
+        cmake -S . -B build_pico2_w -DPICO_BOARD=pico2_w -DPICO_PLATFORM=rp2350 -DMCU_TYPE=cortex-m33
+        cmake --build build_pico2_w -- -j8
+
+    - name: Upload build artifacts for pico_w
+      uses: actions/upload-artifact@v3
+      with:
+        name: pico_w_build
+        path: build_pico_w
+
+    - name: Upload build artifacts for pico2_w
+      uses: actions/upload-artifact@v3
+      with:
+        name: pico2_w_build
+        path: build_pico2_w
