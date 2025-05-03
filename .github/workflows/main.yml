@@ -26,10 +26,20 @@ jobs:
            echo "PICO_SDK_PATH=$PWD/pico_firmware/external/pico-sdk" >> $GITHUB_ENV
 
 
-      - name: Configure CMake
+      - name: Configure CMake for pico_w cortex-m0
         working-directory: pico_firmware
         run: cmake -S . -B build_pico_w -DPICO_BOARD=pico_w -DMCU_TYPE=cortex-m0 -DPICO_SDK_PATH=${{ env.PICO_SDK_PATH }}
 
       - name: Build
         working-directory: pico_firmware
         run: cmake --build build_pico_w
+
+
+      - name: Configure CMake for pico_2w 2350 based cortex-m33
+        working-directory: pico_firmware
+        run: cmake -S . -B build_pico2_w -DPICO_BOARD=pico2_w -DPICO_PLATFORM=rp2350 -DMCU_TYPE=cortex-m33 -DPICO_SDK_PATH=${{ env.PICO_SDK_PATH }}
+
+      - name: Build
+        working-directory: pico_firmware
+        run: cmake --build build_pico2_w
+
