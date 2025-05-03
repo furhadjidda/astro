@@ -19,6 +19,12 @@ jobs:
       with:
         fetch-depth: 1
 
+    - name: Set HTTPS for submodules
+      run: |
+        git submodule foreach --recursive '
+          git config submodule.$name.url https://github.com/furhadjidda/$name.git
+        '
+
     - name: Initialize submodules
       run: git submodule update --init --recursive --depth 1
 
@@ -49,4 +55,3 @@ jobs:
         cd pico_firmware  # Change to pico_firmware directory
         cmake -S . -B build_pico2_w -DPICO_BOARD=pico2_w -DPICO_PLATFORM=rp2350 -DMCU_TYPE=cortex-m33
         cmake --build build_pico2_w -- -j8
-
