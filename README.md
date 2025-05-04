@@ -1,5 +1,8 @@
 # Astro ( A Turtlebot3 based ROS Robot )
-![Important](https://img.shields.io/badge/Caution-Read-orange)
+Branch: main [![Pico Firmware CI(main)](https://github.com/furhadjidda/astro/actions/workflows/main.yml/badge.svg)](https://github.com/furhadjidda/astro/actions/workflows/main.yml) [![ROS 2 CI (Humble)](https://github.com/furhadjidda/astro/actions/workflows/ros2.yml/badge.svg)](https://github.com/furhadjidda/astro/actions/workflows/ros2.yml)
+
+Branch: feature/slam [![Pico Firmware CI(feature/slam)](https://github.com/furhadjidda/astro/actions/workflows/main.yml/badge.svg?branch=feature%2Fslam)](https://github.com/furhadjidda/astro/actions/workflows/main.yml) [![ROS 2 CI (Humble)](https://github.com/furhadjidda/astro/actions/workflows/ros2.yml/badge.svg?branch=feature%2Fslam)](https://github.com/furhadjidda/astro/actions/workflows/ros2.yml)
+
 <div style="border: 2px solid orange ; padding: 10px; color: orange; font-weight: bold;">
 ⚠️ **Warning** : This is a work in progress and there will be frequent updates to this repository.
 </div>

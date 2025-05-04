@@ -1,0 +1,46 @@
+name: ROS 2 CI (Humble)
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    container:
+      image: ros:humble  # 👈 Official Docker image
+      options: --privileged  # Needed for some ROS nodes that access /dev
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Import repositories from .repos file
+      shell: bash
+      working-directory: ros2_ws
+      run: |
+        vcs import . < astro.repos
+
+    - name: Install dependencies
+      run: |
+        apt update && apt install -y \
+          python3-colcon-common-extensions \
+          build-essential \
+          libyaml-dev \
+          git \
+          && rosdep update
+
+    - name: Install ROS dependencies
+      shell: bash
+      working-directory: ros2_ws
+      run: |
+        source /opt/ros/humble/setup.bash
+        rosdep install --from-paths src --ignore-src -r -y
+
+    - name: Build with colcon
+      shell: bash
+      working-directory: ros2_ws
+      run: |
+        source /opt/ros/humble/setup.bash
+        colcon build --event-handlers console_direct+
