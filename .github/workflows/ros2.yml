@@ -26,11 +26,14 @@ jobs:
           && rosdep update
 
     - name: Install ROS dependencies
+      shell: bash
+      working-directory: ros2_ws
       run: |
         source /opt/ros/humble/setup.bash
         rosdep install --from-paths src --ignore-src -r -y
 
     - name: Build with colcon
+      shell: bash
       working-directory: ros2_ws
       run: |
         source /opt/ros/humble/setup.bash
