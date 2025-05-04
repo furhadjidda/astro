@@ -20,7 +20,7 @@ jobs:
       shell: bash
       working-directory: ros2_ws
       run: |
-        vcs import src < ros2.repos
+        vcs import . < astro.repos
 
     - name: Install dependencies
       run: |
