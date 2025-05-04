@@ -21,9 +21,9 @@
   <build_depend>rclcpp_components</build_depend>
   <build_depend>realsense2_camera_msgs</build_depend>
   <build_depend>realsense2_camera</build_depend>
-  <build_depend>realsense2_camera</build_depend>
   <build_depend>depthai</build_depend>
   <build_depend>depthai_ros_msgs</build_depend>
+  <build_depend>camera_info_manager</build_depend>
 
   <exec_depend>rclcpp</exec_depend>
   <exec_depend>sensor_msgs</exec_depend>
@@ -31,7 +31,6 @@
   <exec_depend>rclcpp_components</exec_depend>
   <exec_depend>micro_ros_agent</exec_depend>
   <exec_depend>realsense2_camera_msgs</exec_depend>
-  <exec_depend>realsense2_camera</exec_depend>
   <exec_depend>realsense2_camera</exec_depend>
   <exec_depend>depthai</exec_depend>
   <exec_depend>depthai_ros_msgs</exec_depend>
