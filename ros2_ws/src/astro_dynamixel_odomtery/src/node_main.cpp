@@ -30,7 +30,7 @@ constexpr int DXL_ID_RIGHT = 2;                       // Right motor ID
 constexpr int BAUDRATE = 57600;                       // Communication baud rate
 constexpr char DEVICENAME[] = "/dev/dynamixel_u2d2";  // Device name for the U2D2 port
 constexpr float WHEEL_RADIUS = 0.033;                 // Radius of the wheels in meters
-constexpr float WHEEL_BASE = 0.160;                   // Distance between the wheels in meters
+constexpr float WHEEL_BASE = 0.287;                   // Distance between the wheels in meters
 constexpr int TICKS_PER_REV = 4096;                   // Encoder ticks per revolution
 constexpr float UPDATE_RATE = 10.0;                   // Update rate in Hz
 
