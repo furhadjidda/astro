@@ -28,6 +28,8 @@ bool IMUSensor::initialize(i2c_inst_t *aI2cInstance) {
     printf("BNO055 initialized successfully.\n");
     CalibrationData data = {};
     _flashManager.read_data(data, sizeof(data));
+    // Wait before setting calibration data
+    sleep_ms(3000);
     imu->set_calibration_data(data);
     return true;
 }
@@ -84,13 +86,13 @@ void IMUSensor::get_imu_data(sensor_msgs__msg__Imu &msg) {
         msg.orientation_covariance[i] = 0.0;
     }
 
+    uint8_t system = 0;
+    uint8_t seltest = 0;
+    uint8_t error = 0;
+    imu->get_system_status(&system, &seltest, &error);
+
     std::snprintf(debug_msg_buffer, sizeof(debug_msg_buffer),
-                  "{\"accelerometer\":{\"x\":%.2f,\"y\":%.2f,\"z\":%.2f},"
-                  "\"gyroscope\":{\"x\":%.2f,\"y\":%.2f,\"z\":%.2f},"
-                  "\"magnetometer\":{\"x\":%.2f,\"y\":%.2f,\"z\":%.2f},"
-                  "\"euler\":{\"roll\":%.2f,\"pitch\":%.2f,\"yaw\":%.2f},"
-                  "\"quaternion\":{\"w\":%.2f,\"x\":%.2f,\"y\":%.2f,\"z\":%.2f},"
+                  "{\"system_stats\":{\"sys\":%d,\"self_test\":%d,\"error\":%d},"
                   "\"calibration\":{\"sys\":%d,\"gyro\":%d,\"accel\":%d,\"mag\":%d}}",
-                  accel[0], accel[1], accel[2], gyro[0], gyro[1], gyro[2], mag[0], mag[1], mag[2], euler[0], euler[1],
-                  euler[2], q.w, q.x, q.y, q.z, calibration[0], calibration[1], calibration[2], calibration[3]);
+                  system, seltest, error, calibration[0], calibration[1], calibration[2], calibration[3]);
 }
