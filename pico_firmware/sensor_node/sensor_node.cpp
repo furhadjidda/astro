@@ -143,7 +143,7 @@ int main() {
 
     rcl_timer_t timer;
     rcl_timer_t debug_timer;
-    // initialize timers
+    //  initialize timers
     rclc_timer_init_default(&timer, &support, RCL_MS_TO_NS(1000 / PUBLISH_RATE_HZ),
                             [](rcl_timer_t *timer, int64_t last_call_time) {
                                 imuSensor->get_imu_data(imu_msg);
@@ -164,11 +164,12 @@ int main() {
 
     rclc_executor_t executor;
     // initialize executor
-    rclc_executor_init(&executor, &support.context, 2, &allocator);
+    rclc_executor_init(&executor, &support.context, 3, &allocator);
 
     // add the timer to the executor
     rclc_executor_add_timer(&executor, &timer);
     rclc_executor_add_timer(&executor, &debug_timer);
+
     // Assign callback
     rclc_executor_add_subscription(&executor, &imu_subscriber, &imu_msg, &imu_callback, ON_NEW_DATA);
     displaySensor->create_welcome_screen();
