@@ -37,7 +37,7 @@
 #include "tof.hpp"
 
 #define PUBLISH_RATE_HZ 10
-
+#define DEBUG_PUBLISH_RATE_HZ 1
 sensor_msgs__msg__Imu imu_msg;
 sensor_msgs__msg__Range tof_range_msg;
 sensor_msgs__msg__NavSatFix nav_sat_fix_msg;
@@ -142,19 +142,24 @@ int main() {
                                    "/imu_raw");
 
     rcl_timer_t timer;
+    rcl_timer_t debug_timer;
     // initialize timers
     rclc_timer_init_default(&timer, &support, RCL_MS_TO_NS(1000 / PUBLISH_RATE_HZ),
                             [](rcl_timer_t *timer, int64_t last_call_time) {
                                 imuSensor->get_imu_data(imu_msg);
                                 rcl_publish(&imu_publisher, &imu_msg, NULL);
-                                imuSensor->get_debug_message(debug_message);
-                                // publish_debug_message(debug_message);
-                                rcl_publish(&dbg_publisher, &debug_message, NULL);
                                 tofSensor->get_tof_data(tof_range_msg);
                                 rcl_publish(&tof_publisher, &tof_range_msg, NULL);
                                 gnssSensor->get_gnss_data(nav_sat_fix_msg);
                                 rcl_publish(&gnss_publisher, &nav_sat_fix_msg, NULL);
                                 cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, !cyw43_arch_gpio_get(CYW43_WL_GPIO_LED_PIN));
+                            });
+
+    // initialize timers
+    rclc_timer_init_default(&debug_timer, &support, RCL_MS_TO_NS(1000 / DEBUG_PUBLISH_RATE_HZ),
+                            [](rcl_timer_t *timer, int64_t last_call_time) {
+                                imuSensor->get_debug_message(debug_message);
+                                rcl_publish(&dbg_publisher, &debug_message, NULL);
                             });
 
     rclc_executor_t executor;
@@ -163,6 +168,7 @@ int main() {
 
     // add the timer to the executor
     rclc_executor_add_timer(&executor, &timer);
+    rclc_executor_add_timer(&executor, &debug_timer);
     // Assign callback
     rclc_executor_add_subscription(&executor, &imu_subscriber, &imu_msg, &imu_callback, ON_NEW_DATA);
     displaySensor->create_welcome_screen();
@@ -184,6 +190,8 @@ int main() {
     rcl_publisher_fini(&dbg_publisher, &node);
     rcl_publisher_fini(&tof_publisher, &node);
     rcl_node_fini(&node);
+    rcl_timer_fini(&timer);
+    rcl_timer_fini(&debug_timer);
     rclc_support_fini(&support);
     rclc_executor_fini(&executor);
     rcl_subscription_fini(&imu_subscriber, &node);
