@@ -14,7 +14,7 @@ def generate_launch_description():
     map_dir = LaunchConfiguration(
         "map",
         default=os.path.join(
-            get_package_share_directory("astro_navigation2"), "map", "astro_map.yaml"
+            get_package_share_directory("astro_navigation2"), "map", "astro_map_2.yaml"
         ),
     )
 
