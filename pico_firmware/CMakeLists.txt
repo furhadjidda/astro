@@ -53,7 +53,7 @@ else()### --------------------- TARGET BUILD -----------------------------------
     # set(PICO_BOARD pico_w)
 
     # Specify the app(s) source code directories
-    set(FREERTOS_TIMER_APP_SRC_DIRECTORY "${CMAKE_SOURCE_DIR}/micro_ros_app")
+    set(MICROROS_EXAMPLE_APP "${CMAKE_SOURCE_DIR}/pico_micro_ros_example_app")
     set(MICROROS_ROOT "${CMAKE_SOURCE_DIR}/external/micro_ros_raspberrypi_pico_sdk")
 
     # Set debugging on debug builds
@@ -110,13 +110,13 @@ else()### --------------------- TARGET BUILD -----------------------------------
     endif()
 
     # Include the apps' source code
-    add_subdirectory(${FREERTOS_TIMER_APP_SRC_DIRECTORY})
+    add_subdirectory(${MICROROS_EXAMPLE_APP})
     add_subdirectory(${MICROROS_ROOT})
     add_subdirectory("${CMAKE_SOURCE_DIR}/sensor_drivers")
-    add_subdirectory("${CMAKE_SOURCE_DIR}/gnss_node_firmware")
-    add_subdirectory("${CMAKE_SOURCE_DIR}/bno055_node_firmware")
-    add_subdirectory("${CMAKE_SOURCE_DIR}/sensor_node")
-    add_subdirectory("${CMAKE_SOURCE_DIR}/differential_drive_node")
+    add_subdirectory("${CMAKE_SOURCE_DIR}/pico_gnss_node")
+    add_subdirectory("${CMAKE_SOURCE_DIR}/pico_bno055_node")
+    add_subdirectory("${CMAKE_SOURCE_DIR}/pico_sensors_node")
+    add_subdirectory("${CMAKE_SOURCE_DIR}/pico_differential_drive_node")
 
     message(STATUS "Configuring for target platform complete !!")
 endif()

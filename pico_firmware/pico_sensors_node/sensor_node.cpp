@@ -28,6 +28,7 @@
 #include "hardware/watchdog.h"
 #include "imu.hpp"
 #include "pico/cyw43_arch.h"
+#include "pico/multicore.h"
 #include "pico/stdlib.h"
 #include "pico_uart_transports.h"
 #include "rcl/time.h"
@@ -92,6 +93,17 @@ void imu_callback(const void *msgin) {
     publish_debug_message("IMU message received: Resetting watchdog timer");
 }
 
+// This uses core1 to handle time synchronization
+void core1_time_sync_loop() {
+    while (true) {
+        bool ok = rmw_uros_sync_session(50);  // small timeout
+        if (!ok) {
+            printf("Time sync failed\n");
+        }
+        sleep_ms(1000);  // sync every 1 second (or whatever interval you want)
+    }
+}
+
 int main() {
     setenv("ROS_DOMAIN_ID", "10", 1);
     rmw_uros_set_custom_transport(true, NULL, pico_serial_transport_open, pico_serial_transport_close,
@@ -113,6 +125,14 @@ int main() {
     // This is for LED on pico
     cyw43_arch_init();
     cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
+    rmw_uros_ping_agent(1000, 10);
+    if (!rmw_uros_sync_session(2000)) {
+        printf("Time sync failed\n");
+    } else {
+        printf("Time sync OK\n");
+    }
+    // enables core1 and starts time sync loop
+    multicore_launch_core1(core1_time_sync_loop);
 
     // Initialize micro-ROS
     rcl_allocator_t allocator = rcl_get_default_allocator();

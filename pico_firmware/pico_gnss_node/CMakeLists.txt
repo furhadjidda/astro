@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 pico_sdk_init()
 
-add_subdirectory("${CMAKE_SOURCE_DIR}/gnss_node_firmware/gnss_parser")
+add_subdirectory("${CMAKE_SOURCE_DIR}/pico_gnss_node/gnss_parser")
 
 link_directories(${MICROROS_ROOT}/libmicroros)
 
@@ -27,7 +27,7 @@ target_link_libraries(pico_gnss_sensor_node
 
 target_include_directories(pico_gnss_sensor_node PUBLIC
     ${MICROROS_ROOT}/libmicroros/include
-    ${CMAKE_SOURCE_DIR}/gnss_node_firmware/gnss_parser
+    ${CMAKE_SOURCE_DIR}/pico_gnss_node/gnss_parser
 )
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -mthumb")
