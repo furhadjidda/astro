@@ -21,6 +21,7 @@
 #include <rclc/rclc.h>
 #include <rmw_microros/rmw_microros.h>
 #include <std_msgs/msg/string.h>
+#include <std_srvs/srv/trigger.h>
 
 #include "display.hpp"
 #include "gnss.hpp"
@@ -36,6 +37,9 @@
 #include "sensor.hpp"
 #include "sensorFactory.hpp"
 #include "tof.hpp"
+extern "C" {
+#include "pico/bootrom.h"
+}
 
 #define PUBLISH_RATE_HZ 10
 #define DEBUG_PUBLISH_RATE_HZ 1
@@ -58,6 +62,9 @@ static std::unique_ptr<Sensor> imuSensor;
 static std::unique_ptr<Sensor> tofSensor;
 static std::unique_ptr<Sensor> gnssSensor;
 static std::unique_ptr<Sensor> displaySensor;
+
+std_srvs__srv__Trigger_Request reboot_req;
+std_srvs__srv__Trigger_Response reboot_resp;
 
 // watchdog variables
 volatile uint32_t last_msg_time = 0;
@@ -102,6 +109,17 @@ void core1_time_sync_loop() {
         }
         sleep_ms(1000);  // sync every 1 second (or whatever interval you want)
     }
+}
+
+void reboot_callback(const void *req_msg, void *resp_msg) {
+    (void)req_msg;  // unused
+
+    auto response = (std_srvs__srv__Trigger_Response *)resp_msg;
+    response->success = true;
+    strcpy(response->message.data, "Rebooting into bootloader...");
+
+    sleep_ms(1000);        // allow ROS message to flush
+    reset_usb_boot(0, 0);  // reboot Pico into UF2 bootloader
 }
 
 int main() {
@@ -161,6 +179,12 @@ int main() {
     rclc_subscription_init_default(&imu_subscriber, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, Imu),
                                    "/imu_raw");
 
+    // Service initializations
+    rcl_service_t service;
+
+    rclc_service_init_default(&service, &node, ROSIDL_GET_SRV_TYPE_SUPPORT(std_srvs, srv, Trigger),
+                              "reboot_to_bootloader");
+
     rcl_timer_t timer;
     rcl_timer_t debug_timer;
     //  initialize timers
@@ -184,7 +208,7 @@ int main() {
 
     rclc_executor_t executor;
     // initialize executor
-    rclc_executor_init(&executor, &support.context, 3, &allocator);
+    rclc_executor_init(&executor, &support.context, 4, &allocator);
 
     // add the timer to the executor
     rclc_executor_add_timer(&executor, &timer);
@@ -192,6 +216,7 @@ int main() {
 
     // Assign callback
     rclc_executor_add_subscription(&executor, &imu_subscriber, &imu_msg, &imu_callback, ON_NEW_DATA);
+    rclc_executor_add_service(&executor, &service, &reboot_req, &reboot_resp, &reboot_callback);
     displaySensor->create_welcome_screen();
     last_msg_time = to_ms_since_boot(get_absolute_time());
     // Main loop spin
