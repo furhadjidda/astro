@@ -37,6 +37,7 @@ target_link_libraries(pico_sensors_node
     vl53l0x
     oled_driver_1306
     flash_manager
+    pico_multicore
 )
 
 target_include_directories(pico_sensors_node PUBLIC

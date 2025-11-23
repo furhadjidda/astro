@@ -17,6 +17,8 @@
 
 #include "gnss.hpp"
 
+#include <rmw_microros/rmw_microros.h>
+
 #include "pico/cyw43_arch.h"
 #include "pico/stdlib.h"
 #define GPS_I2C_ADDRESS 0x10
@@ -51,12 +53,9 @@ void GNSSSensor::get_gnss_data(sensor_msgs__msg__NavSatFix &msg) {
         // Pack and publish GNSS data
         msg = parser->packData(GPS->mLatitude, GPS->mLat, GPS->mLongitude, GPS->mLon, GPS->mAltitude, GPS->mFix,
                                GPS->mFixquality_3d, GPS->mHDOP, GPS->mPDOP, GPS->mVDOP);
-        rcl_time_point_value_t now;
-        rcutils_time_point_value_t time_now;
-        rcutils_system_time_now(&time_now);
-        now = static_cast<rcl_time_point_value_t>(time_now);
-        // Populate the timestamp
-        msg.header.stamp.sec = static_cast<uint32_t>(now / RCL_S_TO_NS(1));
-        msg.header.stamp.nanosec = static_cast<uint32_t>(now % RCL_S_TO_NS(1));
+
+        rcl_time_point_value_t now = rmw_uros_epoch_nanos();
+        msg.header.stamp.sec = now / 1e9;
+        msg.header.stamp.nanosec = now % (uint32_t)1e9;
     }
 }
