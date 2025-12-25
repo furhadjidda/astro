@@ -1,0 +1,25 @@
+/ {
+    aliases {
+        my-led = &myled;
+    };
+
+	chosen {
+        zephyr,console = &cdc_acm_uart0;
+    };
+
+    leds {
+        compatible = "gpio-leds";
+
+        myled: my_led {
+            gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
+            label = "External LED";
+        };
+    };
+};
+
+&zephyr_udc0 {
+    cdc_acm_uart0: cdc_acm_uart0 {
+        compatible = "zephyr,cdc-acm-uart";
+        label = "CDC_ACM_0";
+    };
+};

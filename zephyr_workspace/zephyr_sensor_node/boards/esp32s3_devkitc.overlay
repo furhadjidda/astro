@@ -1,0 +1,18 @@
+/ {
+    aliases {
+        my-led = &led0;
+    };
+
+    leds {
+        compatible = "gpio-leds";
+        led0: d13 {
+            gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
+        };
+    };
+};
+
+/* Node override MUST be top-level */
+&usb_otg {
+    status = "okay";
+    interrupts = <31 IRQ_DEFAULT_PRIORITY 0>;
+};
