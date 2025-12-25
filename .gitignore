@@ -66,3 +66,7 @@ build_target
 ros2_ws/utils/
 build_*
 build*
+zephyr_workspace/.west
+zephyr_workspace/zephyr
+zephyr_workspace/modules
+zephyr_workspace/tools

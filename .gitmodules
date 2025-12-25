@@ -20,3 +20,4 @@
 [submodule "zephyr_workspace/zephyr_microros_app"]
 	path = zephyr_workspace/zephyr_microros_app
 	url = https://github.com/furhadjidda/micro_ros_zephyr_module.git
+	branch = dev/humble
