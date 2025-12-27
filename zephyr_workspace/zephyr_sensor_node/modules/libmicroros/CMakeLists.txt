@@ -10,8 +10,13 @@ else()
 set(submake "make")
 endif()
 
-# micro-ROS library
+set(MICROROS_ANNEXK_FLAG "")
+if(CONFIG_PICOLIBC)
+  set(MICROROS_ANNEXK_FLAG "-D__STDC_WANT_LIB_EXT1__=1")
+endif()
 
+
+# micro-ROS library
 zephyr_get_include_directories_for_lang_as_string(       C includes)
 zephyr_get_system_include_directories_for_lang_as_string(C system_includes)
 zephyr_get_compile_definitions_for_lang_as_string(       C definitions)
@@ -23,11 +28,11 @@ zephyr_get_compile_definitions_for_lang_as_string(       CXX definitions_cxx)
 zephyr_get_compile_options_for_lang_as_string(           CXX options_cxx)
 
 set(external_project_cflags
-    "${includes} ${definitions} ${options} ${system_includes}"
+    "${includes} ${definitions} ${options} ${system_includes} ${MICROROS_ANNEXK_FLAG}"
     )
 
 set(external_project_cxxflags
-    "${includes_cxx} ${definitions_cxx} ${options_cxx} ${system_includes_cxx}"
+    "${includes_cxx} ${definitions_cxx} ${options_cxx} ${system_includes_cxx} ${MICROROS_ANNEXK_FLAG}"
     )
 
 include(ExternalProject)
@@ -103,5 +108,4 @@ set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
     ${MICROROS_DIR}/configured_colcon.meta
     ${MICROROS_DIR}/zephyr_toolchain.cmake
     )
-
 endif()

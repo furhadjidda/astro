@@ -11,21 +11,21 @@ if MICROROS
         bool "Link 'app' with MICROROS"
         default n
         help
-            Add MICROROS header files to the 'app' include path. 
-   
+            Add MICROROS header files to the 'app' include path.
+
     choice
         prompt "micro-ROS transport"
-        
+
         config MICROROS_TRANSPORT_SERIAL
             bool "micro-ROS serial transport"
             select RING_BUFFER
         config MICROROS_TRANSPORT_SERIAL_USB
             bool "micro-ROS USB serial transport"
              select RING_BUFFER
-             select USB_DEVICE_STACK
+             select USB_DEVICE_STACK_NEXT
         config MICROROS_TRANSPORT_UDP
             bool "micro-ROS UDP network transport"
-        
+
     endchoice
 
     if MICROROS_TRANSPORT_UDP
@@ -34,7 +34,7 @@ if MICROROS
             default "192.168.1.100"
             help
                 micro-ROS Agent IP.
-        
+
         config MICROROS_AGENT_PORT
             string "micro-ROS Agent Port"
             default "8888"
@@ -48,7 +48,7 @@ if MICROROS
                 default "myssid"
                 help
                     SSID (network name) for the example to connect to.
-        
+
             config MICROROS_WIFI_PASSWORD
                 string "WiFi Password"
                 default "mypassword"
@@ -67,7 +67,7 @@ if MICROROS
 
     if MICROROS_TRANSPORT_SERIAL_USB
         config USB_CDC_ACM
-            bool 
+            bool
             default y
         config USB_CDC_ACM_RINGBUF_SIZE
             int "USB-CDC-ACM Ringbuffer size"
@@ -84,7 +84,7 @@ if MICROROS
     config MICROROS_PUBLISHERS
         string "available micro-ROS publishers"
         default "1"
-    
+
     config MICROROS_SUBSCRIBERS
         string "available micro-ROS subscribers"
         default "1"
@@ -96,18 +96,18 @@ if MICROROS
     config MICROROS_SERVERS
         string "available micro-ROS service servers"
         default "1"
-        
+
     config MICROROS_RMW_HISTORIC
         string "available micro-ROS RMW historic memory"
         default "4"
-    
+
     config MICROROS_XRCE_DDS_MTU
         string "micro-ROS transport MTU"
         default "512"
-        
+
     config MICROROS_XRCE_DDS_HISTORIC
         string "micro-ROS middleware memory slots"
-        default "4"  
+        default "4"
 
 endif
 
