@@ -35,9 +35,15 @@ west flash
 
 west build -p always -b adafruit_feather_esp32s3/esp32s3/procpu --sysbuild . -- -DDTC_OVERLAY_FILE=boards/adafruit_feather_s3.overlay -DEXTRA_CONF_FILE=boards/adafruit_feather_s3.conf
 
+west build -p always -b adafruit_feather_esp32s3/esp32s3/procpu -S flash-4M -S psram-2M --sysbuild . -- -DDTC_OVERLAY_FILE=boards/adafruit_feather_s3.overlay -DEXTRA_CONF_FILE=boards/adafruit_feather_s3.conf
+
+
 west flash --esp-device /dev/adafruit_esp32s3_zephyr
 
 west build -p always -b esp32s3_devkitc/esp32s3/procpu  . -- -DDTC_OVERLAY_FILE=boards/esp32s3_devkitc.overlay -DEXTRA_CONF_FILE=boards/esp32_s3.conf
 
 west flash --esp-device /dev/espressif_esp32_s3
+
+west build -p always -b pico_plus2/rp2350b/m33 -- -DEXTRA_CONF_FILE=boards/rpi_pico.conf -DDTC_OVERLAY_FILE=boards/rpi_pico.overlay
+
 ```
