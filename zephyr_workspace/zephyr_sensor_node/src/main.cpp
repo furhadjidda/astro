@@ -19,6 +19,9 @@
 #include <microros_transports.h>
 #include <rmw_microros/rmw_microros.h>
 
+#include "status_class.hpp"
+#include <zephyr/device.h>
+
 /* =========================================================
  * Configuration
  * ========================================================= */
@@ -114,16 +117,17 @@ static void time_sync_thread_entry(void *a, void *b, void *c) {
   ARG_UNUSED(b);
   ARG_UNUSED(c);
 
+  StatusClass status_led;
   /* Give transport + agent time to come up */
   k_sleep(K_SECONDS(2));
 
+  status_led.display_color(colors[1]);
   while (1) {
     bool ok = rmw_uros_sync_session(50); /* 50 ms timeout */
 
     if (!ok) {
       printk("micro-ROS time sync failed\n");
     }
-
     k_sleep(K_MSEC(TIME_SYNC_PERIOD_MS));
   }
 }
@@ -134,6 +138,8 @@ static void time_sync_thread_entry(void *a, void *b, void *c) {
 
 int main(void) {
   printk("Zephyr micro-ROS example starting\n");
+
+  k_sleep(K_MSEC(10)); /* allow rail to stabilize */
 
   /* Allow system to stabilize */
   k_sleep(K_SECONDS(2));
