@@ -18,8 +18,9 @@
 
 #include <microros_transports.h>
 #include <rmw_microros/rmw_microros.h>
-
+#if CONFIG_ZSN_STATUS_CLASS
 #include "status_class.hpp"
+#endif
 #include <zephyr/device.h>
 
 /* =========================================================
@@ -116,12 +117,12 @@ static void time_sync_thread_entry(void *a, void *b, void *c) {
   ARG_UNUSED(a);
   ARG_UNUSED(b);
   ARG_UNUSED(c);
-
+#if CONFIG_ZSN_STATUS_CLASS
   StatusClass status_led;
+  status_led.display_color(colors[0]);
+#endif
   /* Give transport + agent time to come up */
   k_sleep(K_SECONDS(2));
-
-  status_led.display_color(colors[1]);
   while (1) {
     bool ok = rmw_uros_sync_session(50); /* 50 ms timeout */
 

@@ -1,0 +1,9 @@
+
+
+config ZSN_STATUS_CLASS
+    bool "Enable status class"
+    default y if BOARD_ADAFRUIT_FEATHER_ESP32S3_ESP32S3_PROCPU || BOARD_ADAFRUIT_FEATHER_ESP32S3_ESP32S3_APPCPU
+    help
+    Enables the status class implementation for supported boards.
+
+source "Kconfig.zephyr"
