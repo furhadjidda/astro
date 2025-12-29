@@ -10,6 +10,12 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo docker image prune --all --force
       # Step 1: Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
