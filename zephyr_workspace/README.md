@@ -47,3 +47,7 @@ west flash --esp-device /dev/espressif_esp32_s3
 west build -p always -b pico_plus2/rp2350b/m33 -- -DEXTRA_CONF_FILE=boards/pimoroni_pico_plus_2w.conf -DDTC_OVERLAY_FILE=boards/pimoroni_pico_plus_2w.overlay
 
 ```
+
+
+## References
+The original project structure was taken from https://github.com/micro-ROS/micro_ros_zephyr_module and adapted to suit my needs. I have left the build structure of the project exactly same but changed the code to suit my needs.
