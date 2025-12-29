@@ -66,3 +66,15 @@ build_target
 ros2_ws/utils/
 build_*
 build*
+zephyr_workspace/.west
+zephyr_workspace/zephyr
+zephyr_workspace/modules
+zephyr_workspace/tools
+zephyr_workspace/bootloader
+zephyr_workspace/zephyr_microros_app
+zephyr_workspace/zephyr_sensor_node/build
+zephyr_workspace/zephyr_sensor_node/modules/libmicroros/include
+zephyr_workspace/zephyr_sensor_node/modules/libmicroros/micro_ros_dev
+zephyr_workspace/zephyr_sensor_node/modules/libmicroros/micro_ros_src
+*.meta
+*.cmake
