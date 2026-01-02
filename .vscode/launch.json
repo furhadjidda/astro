@@ -1,0 +1,30 @@
+{
+    "configurations": [
+        {
+            "name": "Debug ESP32-S3",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${input:elfPath}",
+            "args": [],
+            "stopAtEntry": true,
+            "cwd":  "${workspaceFolder}",
+            "MIMode": "gdb",
+            "miDebuggerPath": "/home/furhad/zephyr-sdk-0.17.4/xtensa-espressif_esp32s3_zephyr-elf/bin/xtensa-espressif_esp32s3_zephyr-elf-gdb",
+            "miDebuggerServerAddress": "localhost:3333",
+            "setupCommands": [
+                {
+                    "description": "Pretty print for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        }
+    ],
+    "inputs": [
+        {
+            "id": "elfPath",
+            "type": "promptString",
+            "description": "Enter the path to the ELF file",
+        }
+    ]
+}
