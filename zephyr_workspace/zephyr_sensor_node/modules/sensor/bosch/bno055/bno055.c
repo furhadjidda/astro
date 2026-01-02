@@ -1,0 +1,552 @@
+/*
+ * Copyright (c) 2024, CATIE
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#define DT_DRV_COMPAT bosch_bno055
+
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/logging/log.h>
+
+#include "bno055.h"
+
+LOG_MODULE_REGISTER(BNO055, CONFIG_SENSOR_LOG_LEVEL);
+
+struct bno055_config {
+  struct i2c_dt_spec i2c_bus;
+  bool use_xtal;
+  bool deferred;
+
+#if BNO055_USE_IRQ
+  const struct gpio_dt_spec irq_gpio;
+#endif
+};
+
+struct bno055_data {
+  uint8_t current_page;
+  bno055_opmode_t mode;
+  bno055_powermode_t power;
+
+  struct bno055_vector3_data acc;
+  struct bno055_vector3_data mag;
+  struct bno055_vector3_data gyr;
+
+  struct bno055_vector3_data eul;
+  struct bno055_vector4_data qua;
+  struct bno055_vector3_data lia;
+  struct bno055_vector3_data grv;
+
+  struct bno055_calib_data calib;
+
+#if BNO055_USE_IRQ
+  const struct device *dev;
+  struct gpio_callback gpio_cb;
+  sensor_trigger_handler_t trigger_handler[BNO055_IRQ_SIZE];
+  const struct sensor_trigger *trigger[BNO055_IRQ_SIZE];
+  struct k_work cb_work;
+
+  struct sensor_value acc_am;
+#endif
+};
+
+uint8_t get_temp() { return bno055_read_register(BNO055_TEMP_ADDR); }
+
+// void get_euler_angles(EulerData &euler_data) {
+//   bno055_read_bytes(BNO055_EULER_H_LSB_ADDR, euler_data, 6);
+// }
+
+static int get_vector(const struct device *dev, const uint8_t data_register,
+                      struct bno055_vector3_data *data) {
+  uint8_t buffer[6] = {0};
+  const struct bno055_config *config = dev->config;
+  int16_t x, y, z;
+  x = y = z = 0;
+
+  /* Read vector data (6 bytes) */
+  // get vecotor 3
+  printk("Reading vector data from register 0x%02X\n", data_register);
+  int err = i2c_burst_read_dt(&config->i2c_bus, data_register, buffer,
+                              sizeof(buffer));
+
+  x = ((int16_t)buffer[0]) | (((int16_t)buffer[1]) << 8);
+  y = ((int16_t)buffer[2]) | (((int16_t)buffer[3]) << 8);
+  z = ((int16_t)buffer[4]) | (((int16_t)buffer[5]) << 8);
+
+  /*!
+   * Convert the value to an appropriate range (section 3.6.4)
+   * and assign the value to the Vector type
+   */
+  double scale = 1.0;
+  switch (data_register) {
+  case VECTOR_MAGNETOMETER:
+  case VECTOR_GYROSCOPE:
+  case VECTOR_EULER:
+    scale = 16.0;
+    break;
+  case VECTOR_ACCELEROMETER:
+  case VECTOR_GRAVITY:
+  case VECTOR_LINEARACCEL:
+    scale = 100.0;
+    break;
+  }
+
+  data->x = ((int16_t)x) / scale;
+  data->y = ((int16_t)y) / scale;
+  data->z = ((int16_t)z) / scale;
+  printk("Reading vector data from register complete \n");
+  return 0;
+}
+
+// get vector 4
+static int get_quaternion(const struct device *dev, const uint8_t data_register,
+                          struct bno055_vector4_data *data) {
+  const struct bno055_config *config = dev->config;
+  uint8_t buffer[8] = {
+      0}; // Quaternion data is 8 bytes (4 components, 2 bytes each)
+
+  // Read 8 bytes starting at the quaternion data register
+  int err = i2c_burst_read_dt(&config->i2c_bus, data_register, buffer,
+                              sizeof(buffer));
+  if (err < 0) {
+    return err;
+  }
+
+  // Convert the raw data into signed integers
+  int16_t w = ((int16_t)buffer[0]) | (((int16_t)buffer[1]) << 8);
+  int16_t x = ((int16_t)buffer[2]) | (((int16_t)buffer[3]) << 8);
+  int16_t y = ((int16_t)buffer[4]) | (((int16_t)buffer[5]) << 8);
+  int16_t z = ((int16_t)buffer[6]) | (((int16_t)buffer[7]) << 8);
+
+  // Scale the values to the range specified in the datasheet
+  const double scale = 1.0 / 16384.0;
+
+  data->w = w * scale;
+  data->x = x * scale;
+  data->y = y * scale;
+  data->z = z * scale;
+}
+
+static int get_system_status(const struct device *dev, uint8_t *system_status,
+                             uint8_t *self_test_result, uint8_t *system_error) {
+
+  const struct bno055_config *config = dev->config;
+  struct bno055_data *data = dev->data;
+  // Configure BNO055
+  // bno055_write_register(BNO055_OPR_MODE_ADDR, OPERATION_MODE_CONFIG);
+  // sleep_ms(100);
+
+  int err = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_PAGE_ID_ADDR, 0x00);
+  if (err < 0) {
+    return err;
+  }
+
+  /* System Status (see section 4.3.58)
+     0 = Idle
+     1 = System Error
+     2 = Initializing Peripherals
+     3 = System Iniitalization
+     4 = Executing Self-Test
+     5 = Sensor fusio algorithm running
+     6 = System running without fusion algorithms
+   */
+
+  if (system_status != 0) {
+    uint8_t reg;
+    err = i2c_reg_read_byte_dt(&config->i2c_bus, BNO055_SYS_STAT_ADDR, &reg);
+    *system_status = reg;
+  }
+
+  /* Self Test Results
+     1 = test passed, 0 = test failed
+
+     Bit 0 = Accelerometer self test
+     Bit 1 = Magnetometer self test
+     Bit 2 = Gyroscope self test
+     Bit 3 = MCU self test
+
+     0x0F = all good!
+   */
+  if (self_test_result != 0) {
+    uint8_t reg;
+    err = i2c_reg_read_byte_dt(&config->i2c_bus, BNO055_SELFTEST_RESULT_ADDR,
+                               &reg);
+    *self_test_result = reg;
+  }
+
+  /* System Error (see section 4.3.59)
+     0 = No error
+     1 = Peripheral initialization error
+     2 = System initialization error
+     3 = Self test result failed
+     4 = Register map value out of range
+     5 = Register map address out of range
+     6 = Register map write error
+     7 = BNO low power mode not available for selected operat ion mode
+     8 = Accelerometer power mode not available
+     9 = Fusion algorithm configuration error
+     A = Sensor configuration error
+   */
+
+  if (system_error != 0) {
+    uint8_t reg;
+    err = i2c_reg_read_byte_dt(&config->i2c_bus, BNO055_SYS_ERR_ADDR, &reg);
+    *system_error = reg;
+  }
+
+  // bno055_write_register(BNO055_OPR_MODE_ADDR, OPERATION_MODE_NDOF);
+  // sleep_ms(100);
+}
+
+void check_firmware_version(const struct device *dev) {
+  const struct bno055_config *config = dev->config;
+  uint8_t sw_major = 0;
+  int err = i2c_reg_read_byte_dt(&config->i2c_bus, BNO055_SW_REV_ID_LSB_ADDR,
+                                 &sw_major);
+  uint8_t sw_minor = 0;
+  err = i2c_reg_read_byte_dt(&config->i2c_bus, BNO055_SW_REV_ID_MSB_ADDR,
+                             &sw_minor);
+  printk("Firmware Version: %u.%u\n", sw_major, sw_minor);
+}
+
+void get_calibration(const struct device *dev, uint8_t *sys, uint8_t *gyro,
+                     uint8_t *accel, uint8_t *mag) {
+  uint8_t calData = 0;
+  const struct bno055_config *config = dev->config;
+  int err =
+      i2c_reg_read_byte_dt(&config->i2c_bus, BNO055_CALIB_STAT_ADDR, &calData);
+  if (sys != NULL) {
+    *sys = (calData >> 6) & 0x03;
+  }
+  if (gyro != NULL) {
+    *gyro = (calData >> 4) & 0x03;
+  }
+  if (accel != NULL) {
+    *accel = (calData >> 2) & 0x03;
+  }
+  if (mag != NULL) {
+    *mag = calData & 0x03;
+  }
+}
+
+bool is_fully_calibrated(const struct device *dev) {
+  uint8_t system, gyro, accel, mag;
+  get_calibration(dev, &system, &gyro, &accel, &mag);
+  printk("system: %x gyro %x accel %x mag %x\n", system, gyro, accel, mag);
+  int mMode = OPERATION_MODE_NDOF;
+  switch (mMode) {
+  case OPERATION_MODE_ACCONLY:
+    return (accel == 3);
+  case OPERATION_MODE_MAGONLY:
+    return (mag == 3);
+  case OPERATION_MODE_GYRONLY:
+  case OPERATION_MODE_M4G: /* No magnetometer calibration required. */
+    return (gyro == 3);
+  case OPERATION_MODE_ACCMAG:
+  case OPERATION_MODE_COMPASS:
+    return (accel == 3 && mag == 3);
+  case OPERATION_MODE_ACCGYRO:
+  case OPERATION_MODE_IMUPLUS:
+    return (accel == 3 && gyro == 3);
+  case OPERATION_MODE_MAGGYRO:
+    return (mag == 3 && gyro == 3);
+  default:
+    return (system == 3 && gyro == 3 && accel == 3 && mag == 3);
+  }
+}
+
+void set_ext_crystal_use(const struct device *dev, bool usextal) {
+  /* Switch to config mode (just in case since this is the default) */
+  // bno055_write_register(BNO055_OPR_MODE_ADDR, OPERATION_MODE_CONFIG);
+  const struct bno055_config *config = dev->config;
+  int err = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_OPR_MODE_ADDR,
+                                  OPERATION_MODE_CONFIG);
+  k_sleep(K_MSEC(25));
+  // bno055_write_register(BNO055_PAGE_ID_ADDR, 0);
+  err = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_PAGE_ID_ADDR, 0x00);
+  if (usextal) {
+    // bno055_write_register(BNO055_SYS_TRIGGER_ADDR, 0x80);
+    err =
+        i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_SYS_TRIGGER_ADDR, 0x80);
+  } else {
+    err =
+        i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_SYS_TRIGGER_ADDR, 0x00);
+  }
+  k_sleep(K_MSEC(10));
+  /* Set the requested operating mode (see section 3.3) */
+  // bno055_write_register(BNO055_OPR_MODE_ADDR, OPERATION_MODE_NDOF);
+  err = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_OPR_MODE_ADDR,
+                              OPERATION_MODE_NDOF);
+  k_sleep(K_MSEC(20));
+}
+
+void get_calibration_data(const struct device *dev) {
+  // bno055_write_register(BNO055_OPR_MODE_ADDR, OPERATION_MODE_CONFIG);
+  const struct bno055_config *config = dev->config;
+  struct bno055_calib_data calibration_data;
+  int err = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_OPR_MODE_ADDR,
+                                  OPERATION_MODE_CONFIG);
+  k_sleep(K_MSEC(25));
+
+  i2c_reg_read_bytes_dt(&config->i2c_bus, 0x55, calibration_data,
+                        CALIBRATION_DATA_SIZE);
+
+  err = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_OPR_MODE_ADDR,
+                              OPERATION_MODE_NDOF);
+  k_sleep(K_MSEC(20));
+}
+
+// void set_calibration_data(const CalibrationData &calibration_data) {
+//   if (is_valid_calibration_data(calibration_data, CALIBRATION_DATA_SIZE) ==
+//       false) {
+//     printk("❌ Invalid calibration data!\n");
+//     return;
+//   }
+//   // Write the calibration data to the BNO055 sensor
+//   bno055_write_register(BNO055_OPR_MODE_ADDR, OPERATION_MODE_CONFIG);
+//   sleep_ms(25);
+
+//   bno055_write_bytes(ACCEL_OFFSET_X_LSB_ADDR, calibration_data,
+//                      CALIBRATION_DATA_SIZE);
+
+//   bno055_write_register(BNO055_OPR_MODE_ADDR, OPERATION_MODE_NDOF);
+//   sleep_ms(25);
+// }
+
+bool is_valid_calibration_data(const uint8_t *cal, size_t len) {
+  if (len != 22) {
+    printk("❌ Calibration data length incorrect. Expected 22, got %zu\n", len);
+    return false;
+  }
+
+  int16_t acc_offset_x = (int16_t)(cal[0] | (cal[1] << 8));
+  int16_t acc_offset_y = (int16_t)(cal[2] | (cal[3] << 8));
+  int16_t acc_offset_z = (int16_t)(cal[4] | (cal[5] << 8));
+
+  int16_t mag_offset_x = (int16_t)(cal[6] | (cal[7] << 8));
+  int16_t mag_offset_y = (int16_t)(cal[8] | (cal[9] << 8));
+  int16_t mag_offset_z = (int16_t)(cal[10] | (cal[11] << 8));
+
+  int16_t gyro_offset_x = (int16_t)(cal[12] | (cal[13] << 8));
+  int16_t gyro_offset_y = (int16_t)(cal[14] | (cal[15] << 8));
+  int16_t gyro_offset_z = (int16_t)(cal[16] | (cal[17] << 8));
+
+  uint16_t acc_radius = (uint16_t)(cal[18] | (cal[19] << 8));
+  uint16_t mag_radius = (uint16_t)(cal[20] | (cal[21] << 8));
+
+  printk("Accel offset: X=%d Y=%d Z=%d\n", acc_offset_x, acc_offset_y,
+         acc_offset_z);
+  printk("Mag offset  : X=%d Y=%d Z=%d\n", mag_offset_x, mag_offset_y,
+         mag_offset_z);
+  printk("Gyro offset : X=%d Y=%d Z=%d\n", gyro_offset_x, gyro_offset_y,
+         gyro_offset_z);
+  printk("Radius      : Acc=%u Mag=%u\n", acc_radius, mag_radius);
+
+  // Basic sanity check: large offsets might indicate bad data
+  if (abs(acc_offset_x) > 2000 || abs(acc_offset_y) > 2000 ||
+      abs(acc_offset_z) > 2000) {
+    printk("❌ Accel offsets too large!\n");
+    return false;
+  }
+
+  if (abs(mag_offset_x) > 2000 || abs(mag_offset_y) > 2000 ||
+      abs(mag_offset_z) > 2000) {
+    printk("❌ Mag offsets too large!\n");
+    return false;
+  }
+
+  if (abs(gyro_offset_x) > 500 || abs(gyro_offset_y) > 500 ||
+      abs(gyro_offset_z) > 500) {
+    printk("❌ Gyro offsets too large!\n");
+    return false;
+  }
+
+  return true;
+}
+
+static int bno055_channel_get(const struct device *dev,
+                              enum sensor_channel chan,
+                              struct sensor_value *val) {
+  struct bno055_data *data = dev->data;
+  printk("Getting channel data for channel %d\n", chan);
+  if(NULL == data || NULL == val || NULL == (val+1) || NULL == (val+2)) {
+    printk("Data pointer is NULL!\n");
+    return -EIO;
+  }
+  if (chan == (enum sensor_channel)BNO055_SENSOR_CHAN_EULER_YRP) {
+    (val)->val1 = data->eul.x;
+    (val)->val2 = 0;
+    (val + 1)->val1 = data->eul.y;
+    (val + 1)->val2 = 0;
+    (val + 2)->val1 = data->eul.z;
+    (val + 2)->val2 = 0;
+    return 0;
+  }
+
+  if (chan == (enum sensor_channel)BNO055_SENSOR_CHAN_QUATERNION_WXYZ) {
+    (val)->val1 = data->qua.w;
+    (val)->val2 = 0;
+    (val + 1)->val2 = 0;
+    (val + 2)->val1 = data->qua.y;
+    (val + 2)->val2 = 0;
+    (val + 3)->val1 = data->qua.z;
+    (val + 3)->val2 = 0;
+    return 0;
+  }
+
+  if (chan == (enum sensor_channel)BNO055_SENSOR_CHAN_CALIBRATION_SYS) {
+    (val)->val1 = data->calib.sys;
+    (val)->val2 = 0;
+    return 0;
+  }
+
+  if (chan == (enum sensor_channel)BNO055_SENSOR_CHAN_CALIBRATION_GYR) {
+    (val)->val1 = data->calib.gyr;
+    (val)->val2 = 0;
+    return 0;
+  }
+
+  if (chan == (enum sensor_channel)BNO055_SENSOR_CHAN_CALIBRATION_ACC) {
+    (val)->val1 = data->calib.acc;
+    (val)->val2 = 0;
+    return 0;
+  }
+
+  if (chan == (enum sensor_channel)BNO055_SENSOR_CHAN_CALIBRATION_MAG) {
+    (val)->val1 = data->calib.mag;
+    (val)->val2 = 0;
+    return 0;
+  }
+
+  if (chan == (enum sensor_channel)BNO055_SENSOR_CHAN_CALIBRATION_SGAM) {
+    (val)->val1 = data->calib.sys;
+    (val)->val2 = 0;
+    (val + 1)->val1 = data->calib.gyr;
+    (val + 1)->val2 = 0;
+    (val + 2)->val1 = data->calib.acc;
+    (val + 2)->val2 = 0;
+    (val + 3)->val1 = data->calib.mag;
+    (val + 3)->val2 = 0;
+    return 0;
+  }
+
+  return -ENOTSUP;
+}
+
+static int bno055_sample_fetch(const struct device *dev,
+                               enum sensor_channel chan) {
+  struct bno055_data *data = dev->data;
+  int err = 0;
+  printk("Fetching sample data...\n");
+  switch (data->mode) {
+  case OPERATION_MODE_CONFIG:
+    LOG_WRN("CONFIG Mode no sample");
+    break;
+  case OPERATION_MODE_NDOF:
+    LOG_DBG("NDOF fetching..");
+    err = get_vector(dev, VECTOR_EULER, &data->eul);
+    if (err < 0) {
+      return err;
+    }
+    break;
+
+  default:
+    LOG_WRN("BNO055 Not in Computation Mode!!");
+    return -ENOTSUP;
+  }
+  printk("Sample data fetch complete.\n");
+  return 0;
+}
+
+static int bno055_init(const struct device *dev) {
+  // Initialize I2C bus
+  const struct bno055_config *config = dev->config;
+  struct bno055_data *data = dev->data;
+  int err = 0;
+
+  if (!i2c_is_ready_dt(&config->i2c_bus)) {
+    LOG_ERR("I2C bus not ready!!");
+    return -ENODEV;
+  }
+
+  printk("Initializing BNO055...\n");
+
+  // Setting Page to 0
+  err = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_PAGE_ID_ADDR, 0x00);
+
+  // reset the BNO055
+  err = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_SYS_TRIGGER_ADDR, 0x20);
+  k_sleep(K_MSEC(650)); // Wait for the reset to complete
+
+  // Check if the BNO055 is connected
+  uint8_t chip_id;
+  err = i2c_reg_read_byte_dt(&config->i2c_bus, BNO055_CHIP_ID_ADDR, &chip_id);
+
+  if (chip_id != BNO055_ID) {
+    printk("BNO055 not detected! Chip ID: 0x%02X\n", chip_id);
+    return -ENODEV; // Initialization failed
+  }
+  printk("BNO055 detected! Chip ID: 0x%02X\n", chip_id);
+
+  // Perform a soft reset
+  // bno055_write_register(BNO055_SYS_TRIGGER_ADDR, 0x20);
+  // err = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_SYS_TRIGGER_ADDR, 0x20);
+  // k_sleep(K_MSEC(650)); // Wait for the reset to complete
+
+  // Verify chip ID again after reset
+  // chip_id = bno055_read_register(BNO055_CHIP_ID_ADDR);
+  	uint8_t soft[2];
+	err = i2c_burst_read_dt(&config->i2c_bus, 0x04, soft, sizeof(soft));
+	LOG_INF("SOFTWARE REV [%d][%d]", soft[1], soft[0]);
+
+  // Set the operating mode to CONFIG_MODE for initial setup
+  // bno055_write_register(BNO055_OPR_MODE_ADDR, OPERATION_MODE_CONFIG);
+  err = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_OPR_MODE_ADDR,
+                              OPERATION_MODE_CONFIG);
+  k_sleep(K_MSEC(30));
+
+  // Perform any necessary sensor configuration (e.g., power mode, unit
+  // selection) Example: Set the power mode to normal
+  // bno055_write_register(BNO055_PWR_MODE_ADDR, POWER_MODE_NORMAL);
+  err = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_PWR_MODE_ADDR,
+                              POWER_MODE_NORMAL);
+
+  k_sleep(K_MSEC(30));
+
+  // bno055_write_register(BNO055_PAGE_ID_ADDR, 0x00);
+  err = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_PAGE_ID_ADDR, 0x00);
+  // bno055_write_register(BNO055_SYS_TRIGGER_ADDR, 0x00);
+  err = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_SYS_TRIGGER_ADDR, 0x00);
+  k_sleep(K_MSEC(10));
+  // Set the sensor to NDOF mode
+  // bno055_write_register(BNO055_OPR_MODE_ADDR, OPERATION_MODE_NDOF);
+  err = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_OPR_MODE_ADDR,
+                              OPERATION_MODE_NDOF);
+  data->mode = OPERATION_MODE_NDOF;
+  k_sleep(K_MSEC(30));
+
+  printk("BNO055 initialization complete.\n");
+  return 0; // Initialization successful
+}
+
+static const struct sensor_driver_api bno055_driver_api = {
+//    .attr_set = bno055_attr_set,
+    .sample_fetch = bno055_sample_fetch,
+	.channel_get = bno055_channel_get,
+#if BNO055_USE_IRQ
+    .trigger_set = bno055_trigger_set,
+#endif
+};
+
+#define BNO055_INIT(n)                                                         \
+  static struct bno055_config bno055_config_##n = {                            \
+      .i2c_bus = I2C_DT_SPEC_INST_GET(n),                                      \
+      .use_xtal = DT_INST_PROP(n, use_xtal),                                   \
+  };                                                                           \
+  static struct bno055_data bno055_data_##n;                                   \
+  DEVICE_DT_INST_DEFINE(n, bno055_init, NULL, &bno055_data_##n,                \
+                        &bno055_config_##n, POST_KERNEL,                       \
+                        CONFIG_SENSOR_INIT_PRIORITY, &bno055_driver_api);
+
+DT_INST_FOREACH_STATUS_OKAY(BNO055_INIT)
