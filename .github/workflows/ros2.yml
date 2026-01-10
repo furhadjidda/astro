@@ -3,6 +3,7 @@ name: ROS 2 CI (Humble)
 on:
   push:
   pull_request:
+  workflow_call:
 
 jobs:
   build:
