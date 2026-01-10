@@ -3,3 +3,14 @@
         my-led = &led0;
     };
 };
+
+&i2c0 {
+    status = "okay";
+
+    bno055: bno055@28 {
+        compatible = "bosch,bno055";
+        reg = <0x28>;
+        use_xtal;
+        zephyr,deferred-init;
+    };
+};

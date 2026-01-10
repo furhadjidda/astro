@@ -1,0 +1,19 @@
+&i2c0 {
+    status = "okay";
+};
+
+
+&i2c0_default {
+    group1 {
+        pinmux = <I2C0_SDA_GPIO17 I2C0_SCL_GPIO18>;
+        bias-pull-up;
+        drive-open-drain;
+        output-high;
+    };
+};
+
+/ {
+    oled_reset: oled-reset {
+        gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+    };
+};
