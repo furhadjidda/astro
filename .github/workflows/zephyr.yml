@@ -3,6 +3,7 @@ name: Zephyr Firmware CI
 on:
   push:
   pull_request:
+  workflow_call:
 
 jobs:
   build:

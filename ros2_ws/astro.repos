@@ -6,7 +6,7 @@ repositories:
   utils/realsense_ros:
     type: git
     url: https://github.com/IntelRealSense/realsense-ros.git
-    version: ros2-master
+    version: r/4.56.4
   utils/slamtech_rplidar_ros:
     type: git
     url: https://github.com/Slamtec/rplidar_ros.git

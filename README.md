@@ -1,5 +1,5 @@
 # Astro ( A Turtlebot3 based ROS Robot )
-Branch: main [![Pico Firmware CI(main)](https://github.com/furhadjidda/astro/actions/workflows/main.yml/badge.svg)](https://github.com/furhadjidda/astro/actions/workflows/main.yml) [![ROS 2 CI (Humble)](https://github.com/furhadjidda/astro/actions/workflows/ros2.yml/badge.svg)](https://github.com/furhadjidda/astro/actions/workflows/ros2.yml)
+Branch: main [![Pico Firmware CI(main)](https://github.com/furhadjidda/astro/actions/workflows/main.yml/badge.svg)](https://github.com/furhadjidda/astro/actions/workflows/main.yml) [![ROS 2 CI (Humble)](https://github.com/furhadjidda/astro/actions/workflows/ros2.yml/badge.svg)](https://github.com/furhadjidda/astro/actions/workflows/ros2.yml)[![Zephyr](https://github.com/furhadjidda/astro/actions/workflows/zephyr.yml/badge.svg)](https://github.com/furhadjidda/astro/actions/workflows/zephyr.yml)
 
 Branch: feature/slam [![Pico Firmware CI(feature/slam)](https://github.com/furhadjidda/astro/actions/workflows/main.yml/badge.svg?branch=feature%2Fslam)](https://github.com/furhadjidda/astro/actions/workflows/main.yml) [![ROS 2 CI (Humble)](https://github.com/furhadjidda/astro/actions/workflows/ros2.yml/badge.svg?branch=feature%2Fslam)](https://github.com/furhadjidda/astro/actions/workflows/ros2.yml)
 

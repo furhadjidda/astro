@@ -1,0 +1,17 @@
+name: Nightly CI
+
+on:
+  schedule:
+    # 4:00 PM CST is 22:00 UTC
+    - cron: '15 22 * * *'
+  workflow_dispatch:
+
+jobs:
+  main:
+    uses: ./.github/workflows/main.yml
+
+  ros2:
+    uses: ./.github/workflows/ros2.yml
+
+  zephyr:
+    uses: ./.github/workflows/zephyr.yml
