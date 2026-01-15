@@ -1,0 +1,41 @@
+/ {
+	chosen {
+		zephyr,console = &usb_serial;
+		zephyr,shell-uart = &usb_serial;
+	};
+};
+
+&usb_serial {
+	status = "okay";
+};
+&gpio1 {
+	status = "okay";
+};
+
+&gpio0 {
+    status = "okay";
+     /*
+     * Needed to power the sensor slot A ( and possibly B , C and D )
+     */
+    sensor_slot_power: sensor-slot-power {
+        gpio-hog;
+        gpios = <14 GPIO_ACTIVE_HIGH>;
+        output-high;
+        line-name = "SENSOR_POWER_EN";
+    };
+};
+
+
+
+&i2c0 {
+	status = "okay";
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+    bno055: bno055@28 {
+        compatible = "bosch,bno055";
+        reg = <0x28>;
+        use_xtal;
+        zephyr,deferred-init;
+    };
+};
