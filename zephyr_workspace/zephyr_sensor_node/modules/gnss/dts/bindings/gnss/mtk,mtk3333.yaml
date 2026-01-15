@@ -1,6 +1,6 @@
 description: Adafruit Ultimate GPS Breakout using MTK3333 GNSS chipset (I2C)
 
-compatible: "adafruit,mtk3333"
+compatible: "mtk,mtk3333"
 
 include: i2c-device.yaml
 
