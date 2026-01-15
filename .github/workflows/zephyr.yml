@@ -88,6 +88,18 @@ jobs:
           -DEXTRA_CONF_FILE=boards/adafruit_feather_s3.conf
 
       # Step 7: Build Zephyr firmware
+      - name: Build Zephyr firmware for RAK Wisblock R3312
+        working-directory: zephyr_workspace/zephyr_sensor_node
+        run: |
+          . ../../.venv/bin/activate
+          rm -rf build/ modules/libmicroros/micro_ros_src/build \
+          modules/libmicroros/micro_ros_src/install/ \
+          modules/libmicroros/micro_ros_src/log/
+          west build -p always -b adafruit_feather_esp32s3/esp32s3/procpu \
+          --sysbuild . -- -DDTC_OVERLAY_FILE=boards/rak_wireless_rak3312.overlay \
+          -DEXTRA_CONF_FILE=boards/rak_wireless_rak3312.conf
+
+      # Step 7: Build Zephyr firmware
       - name: Build Zephyr firmware for pimoroni pico plus 2w
         working-directory: zephyr_workspace/zephyr_sensor_node
         run: |
