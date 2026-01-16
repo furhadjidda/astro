@@ -20,20 +20,6 @@ jobs:
             conf: boards/nicla.conf
             sysbuild: true
 
-          - name: feather_esp32s3
-            board: adafruit_feather_esp32s3/esp32s3/procpu
-            overlay: boards/adafruit_feather_s3.overlay
-            conf: boards/adafruit_feather_s3.conf
-            sysbuild: true
-            # clean_micro_ros: true
-
-          - name: pico_plus_2w
-            board: pico_plus2/rp2350b/m33
-            overlay: boards/pimoroni_pico_plus_2w.overlay
-            conf: boards/pimoroni_pico_plus_2w.conf
-            sysbuild: false
-            # clean_micro_ros: true
-
     steps:
       - name: Free disk space
         run: |
