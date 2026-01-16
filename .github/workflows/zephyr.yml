@@ -51,7 +51,7 @@ jobs:
             west patool pykwalify \
             catkin_pkg lark-parser \
             'empy<4.0.0' \
-            colcon-common-extensions
+            colcon-common-extensions \
             ament-package
 
       - name: Initialize Zephyr workspace
