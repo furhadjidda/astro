@@ -52,6 +52,7 @@ jobs:
             catkin_pkg lark-parser \
             'empy<4.0.0' \
             colcon-common-extensions
+            ament-*
 
       - name: Initialize Zephyr workspace
         working-directory: zephyr_workspace
