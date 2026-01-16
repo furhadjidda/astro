@@ -1,3 +1,5 @@
+.NOTPARALLEL:
+
 UROS_DIR = $(COMPONENT_PATH)/micro_ros_src
 DEBUG ?= 0
 
