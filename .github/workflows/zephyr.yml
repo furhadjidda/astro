@@ -8,131 +8,96 @@ on:
 jobs:
   build:
     name: Build Zephyr Firmware
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+
+    strategy:
+      fail-fast: true
+      matrix:
+        board:
+          - name: nicla_vision
+            board: arduino_nicla_vision/stm32h747xx/m7
+            overlay: boards/nicla-vision.overlay
+            conf: boards/nicla.conf
+            sysbuild: true
+
+          - name: feather_esp32s3
+            board: adafruit_feather_esp32s3/esp32s3/procpu
+            overlay: boards/adafruit_feather_s3.overlay
+            conf: boards/adafruit_feather_s3.conf
+            sysbuild: true
+            # clean_micro_ros: true
+
+          - name: pico_plus_2w
+            board: pico_plus2/rp2350b/m33
+            overlay: boards/pimoroni_pico_plus_2w.overlay
+            conf: boards/pimoroni_pico_plus_2w.conf
+            sysbuild: false
+            # clean_micro_ros: true
 
     steps:
       - name: Free disk space
         run: |
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /usr/local/lib/android
-          sudo rm -rf /opt/ghc
-          sudo docker image prune --all --force
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          sudo docker image prune -af
 
-      # Step 1: Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
-      # Step 2: Initialize git submodules
-      - name: Initialize submodules
-        run: git submodule update --init --recursive
-
-      # Step 3: Install system dependencies
       - name: Install system dependencies
         run: |
           sudo apt update
           sudo apt install -y --no-install-recommends \
-            git cmake ninja-build gperf \
-            ccache dfu-util device-tree-compiler \
-            wget python3-dev python3-venv python3-tk \
-            xz-utils file make gcc gcc-multilib \
-            g++-multilib libsdl2-dev libmagic1
+            git cmake ninja-build gperf ccache \
+            dfu-util device-tree-compiler \
+            python3 python3-dev python3-venv \
+            wget xz-utils file make \
+            gcc gcc-multilib g++-multilib \
+            libsdl2-dev libmagic1
 
-      # Step 3a: Set up Python 3.10.12
-      - name: Set up Python 3.10.12
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.10.12
-
-      # Optional: Verify Python version
-      - name: Check Python version
-        run: python --version
-
-      # Step 4: Create Python virtual environment and install west
-      - name: Set up Python virtual environment and install west
+      - name: Set up Python venv
         run: |
-          python -m venv .venv
+          python3 -m venv .venv
           . .venv/bin/activate
           pip install --upgrade pip
-          pip install "setuptools<80" west patool pykwalify 'empy<4.0.0' catkin_pkg lark-parser colcon-common-extensions
+          pip install \
+            west patool pykwalify \
+            catkin_pkg lark-parser \
+            'empy<4.0.0' \
+            colcon-common-extensions
 
-      # Step 5: Initialize Zephyr workspace
       - name: Initialize Zephyr workspace
         working-directory: zephyr_workspace
         run: |
           . ../.venv/bin/activate
+
+          # repo root contains west.yml
           west init .
-          west update
+          west update --narrow
           west packages pip --install
 
-      # Step 6: Install Zephyr SDK
       - name: Install Zephyr SDK
         working-directory: zephyr_workspace
         run: |
           . ../.venv/bin/activate
           west sdk install
-        env:
-          ZEPHYR_TOOLCHAIN_VARIANT: zephyr
 
-      # Step 7: Build Zephyr firmware for Nicla Vision
-      - name: Build Zephyr firmware for Nicla Vision
-        working-directory: zephyr_workspace/zephyr_sensor_node
+      - name: Build firmware (${{ matrix.board.name }})
+        working-directory: zephyr_workspace
         run: |
-          . ../../.venv/bin/activate
-          rm -rf build/ modules/libmicroros/micro_ros_src/build \
-          modules/libmicroros/micro_ros_src/install/ \
-          modules/libmicroros/micro_ros_src/log/ \
-          modules/libmicroros/micro_ros_dev
+          . ../.venv/bin/activate
+
+          if [[ "${{ matrix.board.clean_micro_ros }}" == "true" ]]; then
+            rm -rf \
+              modules/libmicroros/micro_ros_src/build \
+              modules/libmicroros/micro_ros_src/install \
+              modules/libmicroros/micro_ros_src/log
+          fi
+
           west build -p always \
-            -b arduino_nicla_vision/stm32h747xx/m7 \
-            --sysbuild . -- \
-            -DDTC_OVERLAY_FILE=boards/nicla-vision.overlay \
-            -DEXTRA_CONF_FILE=boards/nicla.conf
-
-      # Step 7: Build Zephyr firmware for Adafruit feather esp32 s3
-      - name: Build Zephyr firmware for Adafruit feather esp32 s3
-        working-directory: zephyr_workspace/zephyr_sensor_node
-        run: |
-          . ../../.venv/bin/activate
-          rm -rf build/ modules/libmicroros/micro_ros_src/build \
-          modules/libmicroros/micro_ros_src/install/ \
-          modules/libmicroros/micro_ros_src/log/ \
-          modules/libmicroros/micro_ros_dev
-          west build -p always -b adafruit_feather_esp32s3/esp32s3/procpu \
-          --sysbuild . -- -DDTC_OVERLAY_FILE=boards/adafruit_feather_s3.overlay \
-          -DEXTRA_CONF_FILE=boards/adafruit_feather_s3.conf
-
-      # Step 7: Build Zephyr firmware for RAK Wisblock R3312
-      - name: Build Zephyr firmware for RAK Wisblock R3312
-        working-directory: zephyr_workspace/zephyr_sensor_node
-        run: |
-          . ../../.venv/bin/activate
-          rm -rf build/ modules/libmicroros/micro_ros_src/build \
-          modules/libmicroros/micro_ros_src/install/ \
-          modules/libmicroros/micro_ros_src/log/
-          west build -p always -b rak3112/esp32s3/procpu \
-          --sysbuild . -- -DDTC_OVERLAY_FILE=boards/rak_wireless_rak3312.overlay \
-          -DEXTRA_CONF_FILE=boards/rak_wireless_rak3312.conf
-
-      # Step 7: Build Zephyr firmware for Pimoroni Pico Plus 2W
-      - name: Build Zephyr firmware for Pimoroni Pico Plus 2W
-        working-directory: zephyr_workspace/zephyr_sensor_node
-        run: |
-          . ../../.venv/bin/activate
-          rm -rf build/ modules/libmicroros/micro_ros_src/build \
-          modules/libmicroros/micro_ros_src/install/ \
-          modules/libmicroros/micro_ros_src/log/
-          west build -p always -b pico_plus2/rp2350b/m33 -- \
-          -DEXTRA_CONF_FILE=boards/pimoroni_pico_plus_2w.conf \
-          -DDTC_OVERLAY_FILE=boards/pimoroni_pico_plus_2w.overlay
-
-      # Step 7: Build Zephyr firmware for Espressif Esp32 S3 devkitc
-      - name: Build Zephyr firmware for Espressif Esp32 S3 devkitc
-        working-directory: zephyr_workspace/zephyr_sensor_node
-        run: |
-          . ../../.venv/bin/activate
-          rm -rf build/ modules/libmicroros/micro_ros_src/build \
-          modules/libmicroros/micro_ros_src/install/ \
-          modules/libmicroros/micro_ros_src/log/
-          west build -p always -b esp32s3_devkitc/esp32s3/procpu  . -- \
-          -DDTC_OVERLAY_FILE=boards/esp32s3_devkitc.overlay \
-          -DEXTRA_CONF_FILE=boards/esp32_s3.conf
+            -b ${{ matrix.board.board }} \
+            ${{ matrix.board.sysbuild && '--sysbuild' || '' }} \
+            "zephyr_sensor_node" -- \
+            -DDTC_OVERLAY_FILE=${{ matrix.board.overlay }} \
+            -DEXTRA_CONF_FILE=${{ matrix.board.conf }}
