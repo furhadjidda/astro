@@ -62,9 +62,6 @@ $(COMPONENT_PATH)/micro_ros_dev/install:
 	rm -rf micro_ros_dev; \
 	mkdir micro_ros_dev; cd micro_ros_dev; \
 	git clone -b humble https://github.com/ament/ament_cmake src/ament_cmake; \
-	cd src/ament_cmake; \
-	git checkout 089519b06bfa562e76dc96b6fa67d30cf84653b7;\
-	cd ../..; \
 	git clone -b humble https://github.com/ament/ament_lint src/ament_lint; \
 	git clone -b humble https://github.com/ament/ament_package src/ament_package; \
 	git clone -b humble https://github.com/ament/googletest src/googletest; \
@@ -109,7 +106,11 @@ $(COMPONENT_PATH)/micro_ros_src/src:
 
 $(COMPONENT_PATH)/micro_ros_src/install: configure_colcon_meta configure_toolchain $(COMPONENT_PATH)/micro_ros_dev/install $(COMPONENT_PATH)/micro_ros_src/src
 	cd $(UROS_DIR); \
+	@echo ">>> Sourcing micro-ROS ament environment"; \
 	. ../micro_ros_dev/install/local_setup.sh; \
+	\
+	echo ">>> Building micro-ROS components with colcon"; \
+	sleep 1; \
 	colcon build \
 		--merge-install \
 		--packages-ignore-regex=.*_cpp \
