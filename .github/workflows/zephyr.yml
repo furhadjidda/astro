@@ -8,38 +8,59 @@ jobs:
   build:
     runs-on: ubuntu-22.04
 
+    strategy:
+      fail-fast: false
+      matrix:
+        board:
+          - name: adafruit_feather_esp32s3/esp32s3/procpu
+            overlay: boards/adafruit_feather_s3.overlay
+            conf: boards/adafruit_feather_s3.conf
+            sysbuild: true   # include --sysbuild
+          - name: rak3112/esp32s3/procpu
+            overlay: boards/rak_wireless_rak3312.overlay
+            conf: boards/rak_wireless_rak3312.conf
+            sysbuild: true  # no --sysbuild
+
     container:
       image: ghcr.io/furhadjidda/zephyr-dev:latest
       options: --user root
 
     steps:
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo docker image prune --all --force
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Activate venv and initialize workspace
+        shell: bash
         run: |
-          # Activate Python venv inside Docker
           . /opt/zephyr-venv/bin/activate
-
-          # Go to workspace
           cd zephyr_workspace
-
-          # Initialize workspace if not already
           if [ ! -d ".west" ]; then
             west init .
             west update --narrow
           fi
-
-          # Install pip packages for Zephyr modules inside workspace
           west packages pip --install
 
       - name: Build firmware
+        shell: bash
         working-directory: zephyr_workspace/zephyr_sensor_node
         run: |
           . /opt/zephyr-venv/bin/activate
-          west build -p always \
-            -b arduino_nicla_vision/stm32h747xx/m7 \
-            --sysbuild . \
-            -- \
-            -DDTC_OVERLAY_FILE=boards/nicla-vision.overlay \
-            -DEXTRA_CONF_FILE=boards/nicla.conf
+
+          # Build command with optional --sysbuild
+          CMD="west build -p always -b '${{ matrix.board.name }}'"
+
+          if [ "${{ matrix.board.sysbuild }}" = "true" ]; then
+            CMD="$CMD --sysbuild ."
+          fi
+
+          CMD="$CMD -- -DDTC_OVERLAY_FILE='${{ matrix.board.overlay }}' -DEXTRA_CONF_FILE='${{ matrix.board.conf }}'"
+
+          echo "Running: $CMD"
+          eval $CMD
