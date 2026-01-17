@@ -3,6 +3,21 @@
 		zephyr,console = &usb_serial;
 		zephyr,shell-uart = &usb_serial;
 	};
+    aliases {
+        my-green-led = &green_led;
+        my-blue-led = &blue_led;
+    };
+    leds {
+		compatible = "gpio-leds";
+		blue_led: led_0 {
+			gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>; /* G45 */
+			label = "Blue LED";
+		};
+		green_led: led_1 {
+			gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>; /* G46 */
+			label = "Green LED";
+		};
+	};
 };
 
 &usb_serial {
