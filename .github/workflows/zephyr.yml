@@ -3,108 +3,43 @@ name: Zephyr Firmware CI
 on:
   push:
   pull_request:
-  workflow_call:
 
 jobs:
   build:
-    name: Build Zephyr Firmware
     runs-on: ubuntu-22.04
 
-    strategy:
-      fail-fast: false
-      matrix:
-        board:
-          - name: nicla_vision
-            board: arduino_nicla_vision/stm32h747xx/m7
-            overlay: boards/nicla-vision.overlay
-            conf: boards/nicla.conf
-            sysbuild: true
+    container:
+      image: ghcr.io/furhadjidda/zephyr-dev:latest
+      options: --user root
 
     steps:
-      - name: Free disk space
-        run: |
-          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
-          sudo docker image prune -af
-
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          submodules: recursive
 
-      - name: Create build script
+      - name: Activate venv and initialize workspace
         run: |
-          cat << 'EOF' > build.sh
-          #!/usr/bin/env bash
-          set -euo pipefail
+          # Activate Python venv inside Docker
+          . /opt/zephyr-venv/bin/activate
 
-          echo "=== Zephyr build script ==="
-
-          echo "Python version:"
-          python3 --version
-
-          # --------------------------------------------------------------------
-          # Python virtual environment
-          # --------------------------------------------------------------------
-          python3 -m venv .venv
-          source .venv/bin/activate
-
-          pip install --upgrade pip
-          pip install \
-            west patool pykwalify \
-            catkin_pkg lark-parser \
-            'empy<4.0.0' \
-            colcon-common-extensions \
-            ament-package
-
-          # --------------------------------------------------------------------
-          # Zephyr workspace initialization
-          # --------------------------------------------------------------------
+          # Go to workspace
           cd zephyr_workspace
 
-          west init .
-          west update --narrow
+          # Initialize workspace if not already
+          if [ ! -d ".west" ]; then
+            west init .
+            west update --narrow
+          fi
+
+          # Install pip packages for Zephyr modules inside workspace
           west packages pip --install
-          west sdk install
 
-          # --------------------------------------------------------------------
-          # Optional micro-ROS cleanup
-          # --------------------------------------------------------------------
-          if [[ "${CLEAN_MICRO_ROS:-false}" == "true" ]]; then
-            rm -rf \
-              modules/libmicroros/micro_ros_src/build \
-              modules/libmicroros/micro_ros_src/install \
-              modules/libmicroros/micro_ros_src/log
-          fi
-
-          # --------------------------------------------------------------------
-          # Build
-          # --------------------------------------------------------------------
-          BUILD_ARGS=()
-          if [[ "${SYSBUILD}" == "true" ]]; then
-            BUILD_ARGS+=(--sysbuild)
-          fi
-
-          west build -p always \
-            -b "${BOARD}" \
-            "${BUILD_ARGS[@]}" \
-            zephyr_sensor_node -- \
-            -DDTC_OVERLAY_FILE="${OVERLAY}" \
-            -DEXTRA_CONF_FILE="${CONF}"
-
-          echo "=== Build completed successfully ==="
-          EOF
-
-          chmod +x build.sh
-
-      - name: Build (Docker)
+      - name: Build firmware
+        working-directory: zephyr_workspace/zephyr_sensor_node
         run: |
-          sudo docker run --rm \
-            --user root \
-            -v "${{ github.workspace }}:/github/workspace" \
-            -w /github/workspace \
-            -e BOARD="${{ matrix.board.board }}" \
-            -e OVERLAY="${{ matrix.board.overlay }}" \
-            -e CONF="${{ matrix.board.conf }}" \
-            -e SYSBUILD="${{ matrix.board.sysbuild }}" \
-            zephyrprojectrtos/ci:v0.26.17 \
-            /github/workspace/build.sh
+          . /opt/zephyr-venv/bin/activate
+          west build -p always \
+            -b arduino_nicla_vision/stm32h747xx/m7 \
+            --sysbuild . \
+            -- \
+            -DDTC_OVERLAY_FILE=boards/nicla-vision.overlay \
+            -DEXTRA_CONF_FILE=boards/nicla.conf
