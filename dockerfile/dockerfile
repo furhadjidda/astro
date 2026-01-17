@@ -1,0 +1,75 @@
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# -----------------------------------------------------------------------------
+# System dependencies required by Zephyr + SDK
+# -----------------------------------------------------------------------------
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    bash \
+    ca-certificates \
+    curl \
+    file \
+    git \
+    locales \
+    python3 \
+    python3-pip \
+    python3-venv \
+    cmake \
+    ninja-build \
+    build-essential \
+    device-tree-compiler \
+    xz-utils \
+    unzip \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
+# Locale (some Zephyr tools expect UTF-8)
+RUN locale-gen en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
+
+# -----------------------------------------------------------------------------
+# Install Zephyr SDK (fixed version, non-interactive)
+# -----------------------------------------------------------------------------
+ENV ZEPHYR_SDK_VERSION=0.17.4
+ENV ZEPHYR_SDK_INSTALL_DIR=/opt/zephyr-sdk-${ZEPHYR_SDK_VERSION}
+
+RUN curl -L \
+    https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v${ZEPHYR_SDK_VERSION}/zephyr-sdk-${ZEPHYR_SDK_VERSION}_linux-x86_64.tar.xz \
+    | tar -xJ -C /opt
+
+RUN /bin/bash ${ZEPHYR_SDK_INSTALL_DIR}/setup.sh \
+    -t all
+
+# Make SDK discoverable by Zephyr
+ENV ZEPHYR_SDK_INSTALL_DIR=${ZEPHYR_SDK_INSTALL_DIR}
+ENV PATH="${ZEPHYR_SDK_INSTALL_DIR}/cmake:${ZEPHYR_SDK_INSTALL_DIR}/arm-zephyr-eabi/bin:${PATH}"
+
+# -----------------------------------------------------------------------------
+# Python virtual environment (image-owned)
+# -----------------------------------------------------------------------------
+RUN python3 -m venv /opt/zephyr-venv && \
+    /opt/zephyr-venv/bin/pip install --upgrade pip && \
+    /opt/zephyr-venv/bin/pip install \
+        west \
+        patool \
+        pykwalify \
+        catkin_pkg \
+        lark-parser \
+        'empy<4.0.0' \
+        colcon-common-extensions
+
+
+# -----------------------------------------------------------------------------
+# Sanity checks (fail fast if something is wrong)
+# -----------------------------------------------------------------------------
+RUN test -x ${ZEPHYR_SDK_INSTALL_DIR}/arm-zephyr-eabi/bin/arm-zephyr-eabi-gcc
+RUN /opt/zephyr-venv/bin/west --version
+
+# -----------------------------------------------------------------------------
+# Runtime configuration
+# -----------------------------------------------------------------------------
+SHELL ["/bin/bash", "-c"]
+ENTRYPOINT ["bash", "-c", "source /opt/zephyr-venv/bin/activate && exec bash"]
