@@ -1,6 +1,8 @@
 name: Pico Firmware CI
 
 on:
+  push:
+  pull_request:
   workflow_call:
 
 jobs:
