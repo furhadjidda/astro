@@ -1,4 +1,5 @@
 #include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/kernel.h>
 
@@ -11,6 +12,11 @@ static uint8_t fb[WIDTH * HEIGHT / 8];
 static const int32_t sleep_time_ms = 1000;
 
 const struct device* const i2c_dev = DEVICE_DT_GET(I2C_INST);
+#define LED1_NODE DT_ALIAS(my_blue_led)
+#define LED2_NODE DT_ALIAS(my_green_led)
+
+static const struct gpio_dt_spec blueled = GPIO_DT_SPEC_GET(LED1_NODE, gpios);
+static const struct gpio_dt_spec greenled = GPIO_DT_SPEC_GET(LED2_NODE, gpios);
 
 static int ssd1306_cmd(uint8_t cmd) {
     uint8_t buf[2];
@@ -77,11 +83,27 @@ static void ssd1306_update(void) {
 
 void main(void) {
     bool is_ready = false;
+    k_msleep(2000);
     if (!device_is_ready(i2c_dev)) {
         printk("I2C device not ready\n");
     } else {
         printk("i2c is ready\n");
         is_ready = true;
+    }
+    if (!gpio_is_ready_dt(&blueled)) {
+        return 0;
+    }
+    if (!gpio_is_ready_dt(&greenled)) {
+        return 0;
+    }
+
+    int ret = gpio_pin_configure_dt(&blueled, GPIO_OUTPUT_ACTIVE);
+    if (ret < 0) {
+        return 0;
+    }
+    ret = gpio_pin_configure_dt(&greenled, GPIO_OUTPUT_ACTIVE);
+    if (ret < 0) {
+        return 0;
     }
 
     /* --- Minimal Init Sequence --- */
@@ -132,8 +154,28 @@ void main(void) {
 
     /* Update display */
     ssd1306_update();
+    int x_index = 0;
+    int y_index = 5;
     while (1) {
         printk("I2C device is ready: %s\n", is_ready ? "true" : "false");
+        int ret = gpio_pin_toggle_dt(&greenled);
+        if (ret < 0) {
+            return 0;
+        }
+        ret = gpio_pin_toggle_dt(&blueled);
+        if (ret < 0) {
+            return 0;
+        }
+        draw_square(x_index, y_index, 40);
+        ssd1306_update();
+        x_index += 4;
+        if (x_index > (WIDTH - 40)) {
+            x_index = 0;
+            y_index += 2;
+            if (y_index > (HEIGHT - 40)) {
+                y_index = 0;
+            }
+        }
         k_msleep(sleep_time_ms);
     }
 }

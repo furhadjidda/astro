@@ -53,4 +53,18 @@
         use_xtal;
         zephyr,deferred-init;
     };
+    ssd1306: ssd1306@3c {
+        compatible = "solomon,ssd1306fb";
+        reg = <0x3c>;
+        width = <128>;
+        height = <64>;
+
+        segment-offset = <0>;
+        page-offset = <0>;
+        display-offset = <0>;
+        multiplex-ratio = <63>;
+        prechargep = <0x22>;
+        label = "SSD1306";
+        ready-time-ms = <1000>;
+    };
 };
