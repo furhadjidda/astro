@@ -11,11 +11,6 @@
 
 #include "mtk3333_pmtk.h"
 
-#define GPS_MAX_I2C_TRANSFER 32  ///< The max number of bytes we'll try to read at once
-#define MAXLINELENGTH 120        ///< how long are max NMEA lines to parse?
-#define NMEA_MAX_SENTENCE_ID 20  ///< maximum length of a sentence ID name, including terminating 0
-#define NMEA_MAX_SOURCE_ID 3     ///< maximum length of a source ID name, including terminating 0
-
 LOG_MODULE_REGISTER(mtk3333, CONFIG_LOG_DEFAULT_LEVEL);
 
 /* ----------------------------- Driver Data ----------------------------- */
@@ -23,33 +18,6 @@ LOG_MODULE_REGISTER(mtk3333, CONFIG_LOG_DEFAULT_LEVEL);
 struct mtk3333_config {
     struct i2c_dt_spec i2c_bus;
     uint16_t i2c_addr;
-};
-
-struct mtk3333_data {
-    struct k_work_delayable poll_work;
-    const struct device* dev;
-
-    int8_t read_buffer_index;
-
-    char i2c_buffer[GPS_MAX_I2C_TRANSFER];
-    int8_t buff_max;
-    char last_char;
-    volatile char buffer_line1[MAXLINELENGTH];
-    volatile char buffer_line2[MAXLINELENGTH];
-    volatile uint8_t line_index;
-    volatile char* current_line;
-    volatile char* last_line;
-    volatile bool rcvd_flag;
-
-    uint32_t last_update;
-    uint32_t last_fix;
-    uint32_t last_time;
-    uint32_t last_date;
-    uint32_t rcvd_time;
-    uint32_t sent_time;
-
-    /* Simulated GNSS data */
-    struct gnss_data data;
 };
 
 static int mtk3333_send_command(const struct device* dev, const char* cmd, size_t len) {
@@ -136,28 +104,29 @@ static char mtk3333_read_data(const struct device* dev) {
 static void mtk3333_poll_work(struct k_work* work) {
     struct k_work_delayable* dwork = k_work_delayable_from_work(work);
     struct mtk3333_data* data = CONTAINER_OF(dwork, struct mtk3333_data, poll_work);
-
-    /* --- Simulate a GNSS fix --- */
-    data->data.info.fix_status = GNSS_FIX_STATUS_GNSS_FIX;
-    data->data.info.fix_quality = GNSS_FIX_QUALITY_GNSS_SPS;
-    data->data.info.satellites_cnt = 8;
-    data->data.info.hdop = 100;
-
-    data->data.nav_data.latitude = 374221234;     // 37.4221234 deg * 1e7
-    data->data.nav_data.longitude = -1220845678;  // -122.0845678 deg * 1e7
-    data->data.nav_data.altitude = 15000;         // 15 m
-    data->data.nav_data.speed = 0;
-    data->data.nav_data.bearing = 0;
+    memset(&data->data, 0, sizeof(struct gnss_data));
 
     char c = mtk3333_read_data(data->dev);
 
     if (data->rcvd_flag) {
         data->rcvd_flag = false;
-        printk("Received NMEA: %s\n", data->last_line);
-    }
+        LOG_DBG("Received NMEA: %s", data->last_line);
 
-    /* Publish the GNSS data */
-    gnss_publish_data(data->dev, &data->data);
+        // parse_nmea(data->last_line, data);
+        gnss_nmea_parse(data->last_line, &data->data);
+
+        /* Publish the GNSS data */
+        if (data->data.info.fix_status == GNSS_FIX_STATUS_GNSS_FIX) {
+            LOG_DBG("Published GNSS fix: Lat %lld, Lon %lld, Alt %d mm", data->data.nav_data.latitude,
+                    data->data.nav_data.longitude, data->data.nav_data.altitude);
+            LOG_DBG("Satellites: %d, HDOP: %d", data->data.info.satellites_cnt, data->data.info.hdop);
+            LOG_DBG("Fix Status: %d, Fix Quality: %d", data->data.info.fix_status, data->data.info.fix_quality);
+            LOG_DBG("Geoid Separation: %d mm", data->data.info.geoid_separation);
+            LOG_DBG("UTC Time: %02d %02d:%02d", data->data.utc.month, data->data.utc.hour, data->data.utc.minute);
+        }
+
+        gnss_publish_data(data->dev, &data->data);
+    }
 
     // LOG_INF("MTK3333 simulated fix published");
 
@@ -272,7 +241,7 @@ static int mtk3333_init(const struct device* dev) {
     k_work_init_delayable(&data->poll_work, mtk3333_poll_work);
 
     /* Schedule first poll after 200 ms */
-    k_work_schedule(&data->poll_work, K_MSEC(200));
+    k_work_schedule(&data->poll_work, K_MSEC(50));
 
     LOG_INF("MTK3333 simulated GNSS driver initialized");
 
