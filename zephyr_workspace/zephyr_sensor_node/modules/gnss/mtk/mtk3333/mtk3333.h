@@ -45,6 +45,7 @@ struct mtk3333_data {
 
     /* Simulated GNSS data */
     struct gnss_data data;
+    int fix_rate_ms;
 };
 
 #ifdef __cplusplus

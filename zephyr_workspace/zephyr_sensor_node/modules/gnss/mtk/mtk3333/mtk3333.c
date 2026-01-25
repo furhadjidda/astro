@@ -22,7 +22,6 @@ struct mtk3333_config {
 
 static int mtk3333_send_command(const struct device* dev, const char* cmd, size_t len) {
     const struct mtk3333_config* cfg = dev->config;
-    struct mtk3333_data* data = dev->data;
 
     int ret = i2c_write_dt(&cfg->i2c_bus, cmd, len);
     printk("MTK3333: Sent command '%s' to I2C\n", cmd);
@@ -127,9 +126,6 @@ static void mtk3333_poll_work(struct k_work* work) {
 
         gnss_publish_data(data->dev, &data->data);
     }
-
-    // LOG_INF("MTK3333 simulated fix published");
-
     /* Reschedule the poll work in 200 ms */
     k_work_schedule(&data->poll_work, K_MSEC(50));
 }
@@ -137,13 +133,18 @@ static void mtk3333_poll_work(struct k_work* work) {
 /* --------------------------- GNSS API Stubs ---------------------------- */
 
 static int mtk3333_set_fix_rate(const struct device* dev, uint32_t fix_ms) {
-    ARG_UNUSED(dev);
-    ARG_UNUSED(fix_ms);
-    return -ENOTSUP;
+    struct mtk3333_data* data = dev->data;
+    data->fix_rate_ms = fix_ms;
+    return fix_ms;
 }
 
 static int mtk3333_get_fix_rate(const struct device* dev, uint32_t* fix_ms) {
-    mtk3333_send_command(dev, (const uint8_t*)PMTK_SET_NMEA_UPDATE_1HZ, strlen(PMTK_SET_NMEA_UPDATE_1HZ));
+    struct mtk3333_data* data = dev->data;
+    if (fix_ms) {
+        *fix_ms = data->fix_rate_ms;
+    } else {
+        return -ENOTSUP;
+    }
     return 1;
 }
 
@@ -229,6 +230,7 @@ static int mtk3333_init(const struct device* dev) {
     // Set the update rate
     mtk3333_send_command(dev, (const uint8_t*)PMTK_SET_NMEA_UPDATE_1HZ,
                          strlen(PMTK_SET_NMEA_UPDATE_1HZ));  // 1 Hz update rate
+    mtk3333_set_fix_rate(dev, 1000);
     // For the parsing code to work nicely and have time to sort thru the data,
     // and print it out we don't suggest using anything higher than 1 Hz
 

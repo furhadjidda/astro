@@ -52,12 +52,12 @@ int main(void) {
     rc = gnss_get_supported_systems(GNSS_MODEM, &supported);
     if (rc < 0) {
         printk("Failed to query supported systems (%d)\n", rc);
-        // return rc;
+        return rc;
     }
     rc = gnss_get_enabled_systems(GNSS_MODEM, &enabled);
     if (rc < 0) {
         printk("Failed to query enabled systems (%d)\n", rc);
-        // return rc;
+        return rc;
     }
     printk("GNSS Systems:\n");
     GNSS_SYSTEMS_PRINTF(GNSS_SYSTEM_GPS, supported, enabled);
