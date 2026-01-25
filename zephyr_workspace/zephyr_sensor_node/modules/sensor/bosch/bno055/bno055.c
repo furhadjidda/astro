@@ -250,7 +250,7 @@ bool is_fully_calibrated(const struct device* dev) {
     }
 }
 
-void set_ext_crystal_use(const struct device* dev, bool usextal) {
+int set_ext_crystal_use(const struct device* dev, bool usextal) {
     /* Switch to config mode (just in case since this is the default) */
     // bno055_write_register(BNO055_OPR_MODE_ADDR, OPERATION_MODE_CONFIG);
     const struct bno055_config* config = dev->config;
@@ -298,40 +298,23 @@ void get_calibration_data(const struct device* dev) {
     int err = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_OPR_MODE_ADDR, OPERATION_MODE_CONFIG);
     if (err < 0) {
         LOG_ERR("I2C communication failed %d", err);
-        return err;
+        return;
     }
     k_sleep(K_MSEC(25));
 
     err = i2c_reg_read_bytes_dt(&config->i2c_bus, 0x55, calibration_data, CALIBRATION_DATA_SIZE);
     if (err < 0) {
         LOG_ERR("I2C communication failed %d", err);
-        return err;
+        return;
     }
 
     err = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_OPR_MODE_ADDR, OPERATION_MODE_NDOF);
     if (err < 0) {
         LOG_ERR("I2C communication failed %d", err);
-        return err;
+        return;
     }
     k_sleep(K_MSEC(20));
 }
-
-// void set_calibration_data(const CalibrationData &calibration_data) {
-//   if (is_valid_calibration_data(calibration_data, CALIBRATION_DATA_SIZE) ==
-//       false) {
-//     printk("❌ Invalid calibration data!\n");
-//     return;
-//   }
-//   // Write the calibration data to the BNO055 sensor
-//   bno055_write_register(BNO055_OPR_MODE_ADDR, OPERATION_MODE_CONFIG);
-//   sleep_ms(25);
-
-//   bno055_write_bytes(ACCEL_OFFSET_X_LSB_ADDR, calibration_data,
-//                      CALIBRATION_DATA_SIZE);
-
-//   bno055_write_register(BNO055_OPR_MODE_ADDR, OPERATION_MODE_NDOF);
-//   sleep_ms(25);
-// }
 
 bool is_valid_calibration_data(const struct device* dev, const uint8_t* cal, size_t len) {
     if (len != 22) {
