@@ -46,7 +46,7 @@ static int get_vector(const struct device* dev, const uint8_t data_register, str
 
     /* Read vector data (6 bytes) */
     // get vecotor 3
-    LOG_DBG(">>>> Reading vector data from register[0x%02x]", data_register);
+    // LOG_DBG(">>>> Reading vector data from register[0x%02x]", data_register);
     int err = i2c_burst_read_dt(&config->i2c_bus, data_register, buffer, sizeof(buffer));
 
     x = ((int16_t)buffer[0]) | (((int16_t)buffer[1]) << 8);
@@ -74,7 +74,6 @@ static int get_vector(const struct device* dev, const uint8_t data_register, str
     data->x = ((int16_t)x) / scale;
     data->y = ((int16_t)y) / scale;
     data->z = ((int16_t)z) / scale;
-    printk("Reading vector data from register complete \n");
     return 0;
 }
 
@@ -185,7 +184,7 @@ static int get_system_status(const struct device* dev) {
     return 0;
 }
 
-void check_firmware_version(const struct device* dev) {
+static int check_firmware_version(const struct device* dev) {
     const struct bno055_config* config = dev->config;
     uint8_t sw_major = 0;
     int err = i2c_reg_read_byte_dt(&config->i2c_bus, BNO055_SW_REV_ID_LSB_ADDR, &sw_major);
@@ -200,9 +199,11 @@ void check_firmware_version(const struct device* dev) {
         return err;
     }
     printk("Firmware Version: %u.%u\n", sw_major, sw_minor);
+
+    return 0;
 }
 
-void get_calibration(const struct device* dev, uint8_t* sys, uint8_t* gyro, uint8_t* accel, uint8_t* mag) {
+static int get_calibration(const struct device* dev, uint8_t* sys, uint8_t* gyro, uint8_t* accel, uint8_t* mag) {
     uint8_t calData = 0;
     const struct bno055_config* config = dev->config;
     int err = i2c_reg_read_byte_dt(&config->i2c_bus, BNO055_CALIB_STAT_ADDR, &calData);
@@ -222,10 +223,14 @@ void get_calibration(const struct device* dev, uint8_t* sys, uint8_t* gyro, uint
     if (mag != NULL) {
         *mag = calData & 0x03;
     }
+    return 0;
 }
 
-bool is_fully_calibrated(const struct device* dev) {
-    uint8_t system, gyro, accel, mag;
+static bool is_fully_calibrated(const struct device* dev) {
+    uint8_t system = 0;
+    uint8_t gyro = 0;
+    uint8_t accel = 0;
+    uint8_t mag = 0;
     get_calibration(dev, &system, &gyro, &accel, &mag);
     LOG_DBG("system: %x gyro %x accel %x mag %x\n", system, gyro, accel, mag);
     int mMode = OPERATION_MODE_NDOF;
@@ -250,7 +255,7 @@ bool is_fully_calibrated(const struct device* dev) {
     }
 }
 
-void set_ext_crystal_use(const struct device* dev, bool usextal) {
+static int set_ext_crystal_use(const struct device* dev, bool usextal) {
     /* Switch to config mode (just in case since this is the default) */
     // bno055_write_register(BNO055_OPR_MODE_ADDR, OPERATION_MODE_CONFIG);
     const struct bno055_config* config = dev->config;
@@ -291,7 +296,7 @@ void set_ext_crystal_use(const struct device* dev, bool usextal) {
     k_sleep(K_MSEC(20));
 }
 
-void get_calibration_data(const struct device* dev) {
+static int get_calibration_data(const struct device* dev) {
     // bno055_write_register(BNO055_OPR_MODE_ADDR, OPERATION_MODE_CONFIG);
     const struct bno055_config* config = dev->config;
     struct bno055_calib_data calibration_data;
@@ -314,28 +319,12 @@ void get_calibration_data(const struct device* dev) {
         return err;
     }
     k_sleep(K_MSEC(20));
+    return 0;
 }
 
-// void set_calibration_data(const CalibrationData &calibration_data) {
-//   if (is_valid_calibration_data(calibration_data, CALIBRATION_DATA_SIZE) ==
-//       false) {
-//     printk("❌ Invalid calibration data!\n");
-//     return;
-//   }
-//   // Write the calibration data to the BNO055 sensor
-//   bno055_write_register(BNO055_OPR_MODE_ADDR, OPERATION_MODE_CONFIG);
-//   sleep_ms(25);
-
-//   bno055_write_bytes(ACCEL_OFFSET_X_LSB_ADDR, calibration_data,
-//                      CALIBRATION_DATA_SIZE);
-
-//   bno055_write_register(BNO055_OPR_MODE_ADDR, OPERATION_MODE_NDOF);
-//   sleep_ms(25);
-// }
-
-bool is_valid_calibration_data(const struct device* dev, const uint8_t* cal, size_t len) {
+static bool is_valid_calibration_data(const struct device* dev, const uint8_t* cal, size_t len) {
     if (len != 22) {
-        printk("❌ Calibration data length incorrect. Expected 22, got %zu\n", len);
+        printk("Calibration data length incorrect. Expected 22, got %zu\n", len);
         return false;
     }
     get_calibration_data(dev);
@@ -354,24 +343,24 @@ bool is_valid_calibration_data(const struct device* dev, const uint8_t* cal, siz
     uint16_t acc_radius = (uint16_t)(cal[18] | (cal[19] << 8));
     uint16_t mag_radius = (uint16_t)(cal[20] | (cal[21] << 8));
 
-    printk("Accel offset: X=%d Y=%d Z=%d\n", acc_offset_x, acc_offset_y, acc_offset_z);
-    printk("Mag offset  : X=%d Y=%d Z=%d\n", mag_offset_x, mag_offset_y, mag_offset_z);
-    printk("Gyro offset : X=%d Y=%d Z=%d\n", gyro_offset_x, gyro_offset_y, gyro_offset_z);
-    printk("Radius      : Acc=%u Mag=%u\n", acc_radius, mag_radius);
+    LOG_DBG("Accel offset: X=%d Y=%d Z=%d\n", acc_offset_x, acc_offset_y, acc_offset_z);
+    LOG_DBG("Mag offset  : X=%d Y=%d Z=%d\n", mag_offset_x, mag_offset_y, mag_offset_z);
+    LOG_DBG("Gyro offset : X=%d Y=%d Z=%d\n", gyro_offset_x, gyro_offset_y, gyro_offset_z);
+    LOG_DBG("Radius      : Acc=%u Mag=%u\n", acc_radius, mag_radius);
 
     // Basic sanity check: large offsets might indicate bad data
     if (abs(acc_offset_x) > 2000 || abs(acc_offset_y) > 2000 || abs(acc_offset_z) > 2000) {
-        printk("❌ Accel offsets too large!\n");
+        LOG_ERR("Accel offsets too large!\n");
         return false;
     }
 
     if (abs(mag_offset_x) > 2000 || abs(mag_offset_y) > 2000 || abs(mag_offset_z) > 2000) {
-        printk("❌ Mag offsets too large!\n");
+        LOG_ERR("Mag offsets too large!\n");
         return false;
     }
 
     if (abs(gyro_offset_x) > 500 || abs(gyro_offset_y) > 500 || abs(gyro_offset_z) > 500) {
-        printk("❌ Gyro offsets too large!\n");
+        LOG_ERR("Gyro offsets too large!\n");
         return false;
     }
 
@@ -380,7 +369,7 @@ bool is_valid_calibration_data(const struct device* dev, const uint8_t* cal, siz
 
 static int bno055_channel_get(const struct device* dev, enum sensor_channel chan, struct sensor_value* val) {
     struct bno055_data* data = dev->data;
-    LOG_DBG("Getting channel data for channel %d\n", chan);
+    // LOG_DBG("Getting channel data for channel %d\n", chan);
 
     if (chan == (enum sensor_channel)BNO055_SENSOR_CHAN_EULER_YRP) {
         (val)->val1 = data->eul.x;
@@ -455,13 +444,10 @@ static int bno055_channel_get(const struct device* dev, enum sensor_channel chan
 static int bno055_sample_fetch(const struct device* dev, enum sensor_channel chan) {
     struct bno055_data* data = dev->data;
     int err = 0;
-    printk("Fetching sample data...\n");
     switch (data->mode) {
         case OPERATION_MODE_CONFIG:
-            LOG_WRN("CONFIG Mode no sample");
             break;
         case OPERATION_MODE_NDOF:
-            LOG_DBG("NDOF fetching..");
             err = get_system_status(dev);
             err = get_vector(dev, VECTOR_EULER, &data->eul);
             is_fully_calibrated(dev);
@@ -474,7 +460,6 @@ static int bno055_sample_fetch(const struct device* dev, enum sensor_channel cha
             LOG_WRN("BNO055 Not in Computation Mode!!");
             return -ENOTSUP;
     }
-    printk("Sample data fetch complete.\n");
     return 0;
 }
 
@@ -489,7 +474,7 @@ static int bno055_init(const struct device* dev) {
         return -ENODEV;
     }
 
-    printk("Initializing BNO055...\n");
+    LOG_DBG("Initializing BNO055...\n");
 
     // Setting Page to 0
     err = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_PAGE_ID_ADDR, 0x00);
@@ -503,41 +488,29 @@ static int bno055_init(const struct device* dev) {
     err = i2c_reg_read_byte_dt(&config->i2c_bus, BNO055_CHIP_ID_ADDR, &chip_id);
 
     if (chip_id != BNO055_ID) {
-        printk("BNO055 not detected! Chip ID: 0x%02X\n", chip_id);
+        LOG_DBG("BNO055 not detected! Chip ID: 0x%02X\n", chip_id);
         return -ENODEV;  // Initialization failed
     }
-    printk("BNO055 detected! Chip ID: 0x%02X\n", chip_id);
+    LOG_DBG("BNO055 detected! Chip ID: 0x%02X\n", chip_id);
 
-    // Perform a soft reset
-    // bno055_write_register(BNO055_SYS_TRIGGER_ADDR, 0x20);
-    // err = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_SYS_TRIGGER_ADDR, 0x20);
-    // k_sleep(K_MSEC(650)); // Wait for the reset to complete
-
-    // Verify chip ID again after reset
-    // chip_id = bno055_read_register(BNO055_CHIP_ID_ADDR);
     uint8_t soft[2];
     err = i2c_burst_read_dt(&config->i2c_bus, 0x04, soft, sizeof(soft));
     LOG_INF("SOFTWARE REV [%d][%d]", soft[1], soft[0]);
 
     // Set the operating mode to CONFIG_MODE for initial setup
-    // bno055_write_register(BNO055_OPR_MODE_ADDR, OPERATION_MODE_CONFIG);
     err = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_OPR_MODE_ADDR, OPERATION_MODE_CONFIG);
     k_sleep(K_MSEC(30));
 
     // Perform any necessary sensor configuration (e.g., power mode, unit
     // selection) Example: Set the power mode to normal
-    // bno055_write_register(BNO055_PWR_MODE_ADDR, POWER_MODE_NORMAL);
     err = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_PWR_MODE_ADDR, POWER_MODE_NORMAL);
 
     k_sleep(K_MSEC(30));
 
-    // bno055_write_register(BNO055_PAGE_ID_ADDR, 0x00);
     err = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_PAGE_ID_ADDR, 0x00);
-    // bno055_write_register(BNO055_SYS_TRIGGER_ADDR, 0x00);
     err = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_SYS_TRIGGER_ADDR, 0x00);
     k_sleep(K_MSEC(10));
     // Set the sensor to NDOF mode
-    // bno055_write_register(BNO055_OPR_MODE_ADDR, OPERATION_MODE_NDOF);
     err = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_OPR_MODE_ADDR, OPERATION_MODE_NDOF);
     data->mode = OPERATION_MODE_NDOF;
     k_sleep(K_MSEC(30));
