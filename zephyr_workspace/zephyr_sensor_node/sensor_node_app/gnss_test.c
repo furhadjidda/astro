@@ -72,7 +72,7 @@ int main(void) {
     rc = gnss_get_fix_rate(GNSS_MODEM, &fix_interval);
     if (rc < 0) {
         printk("Failed to query fix rate (%d)\n", rc);
-        // return rc;
+        return rc;
     }
     printk("Fix rate = %d ms\n", fix_interval);
 
