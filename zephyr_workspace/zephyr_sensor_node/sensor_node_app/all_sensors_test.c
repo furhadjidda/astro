@@ -162,10 +162,7 @@ static void time_sync_thread_entry(void* a, void* b, void* c) {
     ARG_UNUSED(a);
     ARG_UNUSED(b);
     ARG_UNUSED(c);
-#if CONFIG_ZSN_STATUS_CLASS
-    StatusClass status_led;
-    status_led.display_color(colors[0]);
-#endif
+
     /* Give transport + agent time to come up */
     k_sleep(K_SECONDS(2));
     while (1) {
