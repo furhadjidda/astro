@@ -17,10 +17,6 @@ jobs:
             overlay: boards/adafruit_feather_s3.overlay
             conf: boards/adafruit_feather_s3.conf
             sysbuild: true   # include --sysbuild
-          - name: rak3112/esp32s3/procpu
-            overlay: boards/rak_wireless_rak3312.overlay
-            conf: boards/rak_wireless_rak3312.conf
-            sysbuild: true  # no --sysbuild
 
     container:
       image: ghcr.io/furhadjidda/zephyr-dev:latest
@@ -41,11 +37,24 @@ jobs:
           fi
           west packages pip --install
 
+      - name: Checkout the v4.3 branch of Zephyr
+        shell: bash
+        run: |
+          . /opt/zephyr-venv/bin/activate
+          cd zephyr_workspace/zephyr
+          git checkout v4.3.0
+          west update --narrow
+
       - name: Build firmware
         shell: bash
         working-directory: zephyr_workspace/zephyr_sensor_node
         run: |
           . /opt/zephyr-venv/bin/activate
+          cmake --version
+          which cmake
+          /usr/bin/cmake --version
+          /usr/bin/cmake --system-information | grep CMAKE_ROOT
+
 
           # Build command with optional --sysbuild
           CMD="west build -p always -b '${{ matrix.board.name }}'"
