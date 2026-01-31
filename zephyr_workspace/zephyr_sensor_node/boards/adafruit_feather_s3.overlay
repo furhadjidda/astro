@@ -1,6 +1,7 @@
 / {
     aliases {
         my-led = &led0;
+        gnss = &gnssnode;
     };
 };
 
