@@ -187,7 +187,7 @@ static void imu_thread_entry(void* a, void* b, void* c) {
 #endif
     if (!device_is_ready(bno055_dev)) {
         LOG_ERR("Device %s is not ready\n", bno055_dev->name);
-        return -ENODEV;
+        return;
     }
     LOG_DBG("BNO055 Device %s is ready\n", bno055_dev->name);
 
@@ -197,7 +197,7 @@ static void imu_thread_entry(void* a, void* b, void* c) {
             struct sensor_value eul[3];
 
             sensor_sample_fetch(bno055_dev);
-            sensor_channel_get(bno055_dev, BNO055_SENSOR_CHAN_EULER_YRP, eul);
+            sensor_channel_get(bno055_dev, static_cast<sensor_channel>(BNO055_SENSOR_CHAN_EULER_YRP), eul);
             LOG_DBG(
                 "EULER: X(rad.s-1)[%d.%06d] Y(rad.s-1)[%d.%06d] "
                 "Z(rad.s-1)[%d.%06d]\n",
@@ -216,7 +216,7 @@ static void imu_thread_entry(void* a, void* b, void* c) {
             cfb_framebuffer_finalize(display_dev);
 
             struct sensor_value sys_status[3];
-            sensor_channel_get(bno055_dev, BNO055_SENSOR_CHAN_SYSTEM_STATUS, sys_status);
+            sensor_channel_get(bno055_dev, static_cast<sensor_channel>(BNO055_SENSOR_CHAN_SYSTEM_STATUS), sys_status);
             LOG_DBG("system status %d , self_test = %d system_error %d \n", sys_status[0].val1, sys_status[1].val1,
                     sys_status[2].val1);
 
@@ -274,17 +274,17 @@ int main(void) {
     // Starting display
     if (!device_is_ready(display_dev)) {
         LOG_ERR("Display device not ready\n");
-        return;
+        return -ENODEV;
     }
 
     if (display_set_pixel_format(display_dev, PIXEL_FORMAT_MONO01) != 0) {
         LOG_ERR("Failed to set required pixel format");
-        return;
+        return -ENOTSUP;
     }
 
     if (cfb_framebuffer_init(display_dev)) {
         LOG_ERR("Framebuffer init failed\n");
-        return;
+        return -EIO;
     }
 
     cfb_framebuffer_clear(display_dev, true);

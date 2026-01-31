@@ -13,7 +13,7 @@ if(CONFIG_PICOLIBC)
 endif()
 
 
-target_sources(app PRIVATE sensor_node_app/main.cpp)
+target_sources(app PRIVATE sensor_node_app/all_sensors_test.cpp)
 message(board name is ${BOARD} \n\n)
 if(BOARD STREQUAL "adafruit_feather_esp32s3")
     target_sources(app PRIVATE sensor_node_app/status_class.cpp)
