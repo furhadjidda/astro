@@ -55,7 +55,7 @@ jobs:
             CMD="$CMD --sysbuild"
           fi
 
-          CMD="$CMD zephyr_sensor_node -- -DDTC_OVERLAY_FILE='${{ matrix.board.overlay }}' -DEXTRA_CONF_FILE='${{ matrix.board.conf }}'"
+          CMD="$CMD sensor_node_app -- -DDTC_OVERLAY_FILE='${{ matrix.board.overlay }}' -DEXTRA_CONF_FILE='${{ matrix.board.conf }}'"
 
           echo "Running: $CMD"
           eval $CMD
