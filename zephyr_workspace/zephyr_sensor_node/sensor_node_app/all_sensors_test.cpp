@@ -290,7 +290,6 @@ int main(void) {
     cfb_framebuffer_clear(display_dev, true);
 
     display_blanking_off(display_dev);
-    display_set_orientation(display_dev, DISPLAY_ORIENTATION_ROTATED_180);
 
     rows = cfb_get_display_parameter(display_dev, CFB_DISPLAY_ROWS);
     ppt = cfb_get_display_parameter(display_dev, CFB_DISPLAY_PPT);
