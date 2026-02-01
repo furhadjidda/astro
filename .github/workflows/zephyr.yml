@@ -36,18 +36,11 @@ jobs:
           . /opt/zephyr-venv/bin/activate
           cd zephyr_workspace
           if [ ! -d ".west" ]; then
-            west init .
+            west init -l west
             west update --narrow
           fi
           west packages pip --install
 
-      - name: Checkout the v4.3 branch of Zephyr
-        shell: bash
-        run: |
-          . /opt/zephyr-venv/bin/activate
-          cd zephyr_workspace/zephyr
-          git checkout v4.3.0
-          west update --narrow
 
       - name: Build firmware
         shell: bash
