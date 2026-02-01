@@ -67,6 +67,8 @@
         prechargep = <0x22>;
         label = "SSD1306";
         ready-time-ms = <1000>;
+        segment-remap;
+        com-invdir;
     };
     gnssnode: gnss@10 {
         compatible = "mtk,mtk3333";
