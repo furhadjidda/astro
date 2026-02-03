@@ -1,3 +1,4 @@
+#include <zephyr/dt-bindings/led/led.h>
 / {
 	chosen {
 		zephyr,console = &usb_serial;
@@ -75,5 +76,19 @@
         reg = <0x10>;
         label = "GNSS_0";
         status = "okay";
+    };
+
+    ncp5623: ncp5623@38 {
+        compatible = "onnn,ncp5623";
+        reg = <0x38>;
+        status = "okay";
+		led_0 {
+			label = "RAKLED";
+			index = <0>;
+            color-mapping =
+                <LED_COLOR_ID_RED>,
+                <LED_COLOR_ID_GREEN>,
+                <LED_COLOR_ID_BLUE>;
+		};
     };
 };
