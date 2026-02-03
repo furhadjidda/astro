@@ -40,6 +40,12 @@
         output-high;
         line-name = "SENSOR_POWER_EN";
     };
+    io1_power: io1-power {
+        gpio-hog;
+        gpios = <6 GPIO_ACTIVE_HIGH>;
+        output-high;
+        line-name = "IO_POWER_EN";
+    };
 };
 
 
