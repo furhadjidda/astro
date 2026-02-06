@@ -49,7 +49,7 @@
 	status = "okay";
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
-	clock-frequency = <I2C_BITRATE_STANDARD>;
+	clock-frequency = <I2C_BITRATE_FAST>;
     bno055: bno055@28 {
         compatible = "bosch,bno055";
         reg = <0x28>;
@@ -77,20 +77,6 @@
         reg = <0x10>;
         label = "GNSS_0";
         status = "okay";
-    };
-
-    ncp5623: ncp5623@38 {
-        compatible = "onnn,ncp5623";
-        reg = <0x38>;
-        status = "okay";
-		led_0 {
-			label = "RAKLED";
-			index = <0>;
-            color-mapping =
-                <LED_COLOR_ID_RED>,
-                <LED_COLOR_ID_GREEN>,
-                <LED_COLOR_ID_BLUE>;
-		};
     };
 };
 
