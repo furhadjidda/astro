@@ -8,6 +8,7 @@
         my-green-led = &green_led;
         my-blue-led = &blue_led;
         gnss = &gnssnode;
+        ubloxgnss = &gnssublox;
     };
     leds {
 		compatible = "gpio-leds";
@@ -39,12 +40,6 @@
         gpios = <14 GPIO_ACTIVE_HIGH>;
         output-high;
         line-name = "SENSOR_POWER_EN";
-    };
-    io1_power: io1-power {
-        gpio-hog;
-        gpios = <6 GPIO_ACTIVE_HIGH>;
-        output-high;
-        line-name = "IO_POWER_EN";
     };
 };
 
@@ -96,5 +91,15 @@
                 <LED_COLOR_ID_GREEN>,
                 <LED_COLOR_ID_BLUE>;
 		};
+    };
+};
+
+&uart0 {
+    status = "okay";
+    current-speed = <9600>;
+    gnssublox: u_blox_m10 {
+        status = "okay";
+        compatible = "u-blox,m8";
+        initial-baudrate = <9600>;
     };
 };
