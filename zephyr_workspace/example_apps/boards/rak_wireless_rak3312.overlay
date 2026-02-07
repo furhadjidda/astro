@@ -56,6 +56,11 @@
         use_xtal;
         zephyr,deferred-init;
     };
+    iim42652: iim42652@69 {
+        compatible = "tdk,iim42652";
+        reg = <0x69>;
+        zephyr,deferred-init;
+    };
     ssd1306: ssd1306@3c {
         compatible = "solomon,ssd1306fb";
         reg = <0x3c>;
