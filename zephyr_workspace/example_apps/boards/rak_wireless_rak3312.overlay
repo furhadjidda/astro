@@ -1,8 +1,16 @@
 #include <zephyr/dt-bindings/led/led.h>
+#include <espressif/esp32s3/esp32s3_wroom_n16.dtsi>
+#include <espressif/partitions_0x0_amp.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/lora/sx126x.h>
+
+
 / {
 	chosen {
 		zephyr,console = &usb_serial;
 		zephyr,shell-uart = &usb_serial;
+        zephyr,flash = &flash0;
+        zephyr,code-partition = &slot0_partition;
 	};
     aliases {
         my-green-led = &green_led;
@@ -92,5 +100,18 @@
         status = "okay";
         compatible = "u-blox,m8";
         initial-baudrate = <9600>;
+    };
+};
+
+&flash0 {
+    partitions {
+        compatible = "fixed-partitions";
+        #address-cells = <1>;
+        #size-cells = <1>;
+
+        storage_partition: partition@3D0000 {
+            label = "storage";
+            reg = <0x003D0000 0x10000>;  // 64KB at 4MB-64KB offset
+        };
     };
 };
