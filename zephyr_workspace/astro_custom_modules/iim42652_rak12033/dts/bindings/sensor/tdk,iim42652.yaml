@@ -1,0 +1,20 @@
+# Copyright (c) 2024 CATIE
+# SPDX-License-Identifier: Apache-2.0
+
+description: TDK IIM42652 6-axis IMU
+
+compatible: "tdk,iim42652"
+
+include:
+  - name: sensor-device.yaml
+  - name: i2c-device.yaml
+
+properties:
+    irq-gpios:
+        type: phandle-array
+        description: Configures iim42652 interrupt signal.
+
+    use_xtal:
+        type: boolean
+        description: |
+            Enable the use of external crystal.

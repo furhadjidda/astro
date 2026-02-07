@@ -42,20 +42,40 @@ jobs:
           west packages pip --install
 
 
-      - name: Build firmware
+      - name: Build sensor node app
         shell: bash
-        working-directory: zephyr_workspace/zephyr_sensor_node
+        working-directory: zephyr_workspace
         run: |
           . /opt/zephyr-venv/bin/activate
 
           # Build command with optional --sysbuild
-          CMD="west build -p always -b '${{ matrix.board.name }}'"
+          CMD="west build -p always -b '${{ matrix.board.name }}' -d build/sensor_node_app"
 
           if [ "${{ matrix.board.sysbuild }}" = "true" ]; then
-            CMD="$CMD --sysbuild ."
+            CMD="$CMD --sysbuild"
           fi
 
-          CMD="$CMD -- -DDTC_OVERLAY_FILE='${{ matrix.board.overlay }}' -DEXTRA_CONF_FILE='${{ matrix.board.conf }}'"
+          CMD="$CMD sensor_node_app -- -DDTC_OVERLAY_FILE='${{ matrix.board.overlay }}' -DEXTRA_CONF_FILE='${{ matrix.board.conf }}'"
 
           echo "Running: $CMD"
           eval $CMD
+
+
+      - name: Build Example Apps
+        shell: bash
+        working-directory: zephyr_workspace
+        run: |
+          . /opt/zephyr-venv/bin/activate
+
+          # Build command with optional --sysbuild
+          CMD="west build -p always -b '${{ matrix.board.name }}' -d build/example_apps"
+
+          if [ "${{ matrix.board.sysbuild }}" = "true" ]; then
+            CMD="$CMD --sysbuild"
+          fi
+
+          CMD="$CMD example_apps -- -DDTC_OVERLAY_FILE='${{ matrix.board.overlay }}' -DEXTRA_CONF_FILE='${{ matrix.board.conf }}'"
+
+          echo "Running: $CMD"
+          eval $CMD
+
