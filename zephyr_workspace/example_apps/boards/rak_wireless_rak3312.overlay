@@ -1,8 +1,4 @@
 #include <zephyr/dt-bindings/led/led.h>
-#include <espressif/esp32s3/esp32s3_wroom_n16.dtsi>
-#include <espressif/partitions_0x0_amp.dtsi>
-#include <zephyr/dt-bindings/input/input-event-codes.h>
-#include <zephyr/dt-bindings/lora/sx126x.h>
 
 
 / {
@@ -10,7 +6,6 @@
 		zephyr,console = &usb_serial;
 		zephyr,shell-uart = &usb_serial;
         zephyr,flash = &flash0;
-        zephyr,code-partition = &slot0_partition;
 	};
     aliases {
         my-green-led = &green_led;

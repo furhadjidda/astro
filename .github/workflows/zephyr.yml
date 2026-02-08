@@ -16,11 +16,15 @@ jobs:
           - name: adafruit_feather_esp32s3/esp32s3/procpu
             overlay: boards/adafruit_feather_s3.overlay
             conf: boards/adafruit_feather_s3.conf
-            sysbuild: true   # include --sysbuild
+            sysbuild: true
+            flash: flash-4M
+            psram: psram-2M
           - name: rak3112/esp32s3/procpu
             overlay: boards/rak_wireless_rak3312.overlay
             conf: boards/rak_wireless_rak3312.conf
-            sysbuild: true  # no --sysbuild
+            sysbuild: true
+            flash: flash-16M
+            psram: psram-8M
 
     container:
       image: ghcr.io/furhadjidda/zephyr-dev:latest
@@ -68,7 +72,7 @@ jobs:
           . /opt/zephyr-venv/bin/activate
 
           # Build command with optional --sysbuild
-          CMD="west build -p always -b '${{ matrix.board.name }}' -d build/example_apps"
+          CMD="west build -p always -b '${{ matrix.board.name }}' -d build/example_apps -S ${{ matrix.board.flash }} -S ${{ matrix.board.psram }} "
 
           if [ "${{ matrix.board.sysbuild }}" = "true" ]; then
             CMD="$CMD --sysbuild"
