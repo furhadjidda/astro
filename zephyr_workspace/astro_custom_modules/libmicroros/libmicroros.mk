@@ -53,11 +53,11 @@ configure_colcon_meta: $(COMPONENT_PATH)/colcon.meta $(COMPONENT_PATH)/micro_ros
 configure_toolchain: $(COMPONENT_PATH)/zephyr_toolchain.cmake.in
 	rm -f $(COMPONENT_PATH)/zephyr_toolchain.cmake; \
 	cat $(COMPONENT_PATH)/zephyr_toolchain.cmake.in | \
-		sed "s/@CMAKE_C_COMPILER@/$(subst /,\/,$(X_CC))/g" | \
-		sed "s/@CMAKE_CXX_COMPILER@/$(subst /,\/,$(X_CXX))/g" | \
-		sed "s/@CMAKE_SYSROOT@/$(subst /,\/,$(COMPONENT_PATH))/g" | \
-		sed "s/@CFLAGS@/$(subst /,\/,$(CFLAGS_INTERNAL))/g" | \
-		sed "s/@CXXFLAGS@/$(subst /,\/,$(CXXFLAGS_INTERNAL))/g" \
+		sed "s|@CMAKE_C_COMPILER@|$(X_CC)|g" | \
+		sed "s|@CMAKE_CXX_COMPILER@|$(X_CXX)|g" | \
+		sed "s|@CMAKE_SYSROOT@|$(COMPONENT_PATH)|g" | \
+		sed "s|@CFLAGS@|$(CFLAGS_INTERNAL)|g" | \
+		sed "s|@CXXFLAGS@|$(CXXFLAGS_INTERNAL)|g" \
 		> $(COMPONENT_PATH)/zephyr_toolchain.cmake
 
 $(COMPONENT_PATH)/micro_ros_dev/install:
