@@ -10,7 +10,17 @@ manifest:
       remote: zephyrproject
       repo-path: zephyr
       revision: v4.3.0
-      import: true
+      import:
+        name-allowlist:
+          - hal_espressif
+          - cmsis
+          - mbedtls
+          - tinycrypt
+          - esp-idf
+          - fatfs
+          - mcuboot
+          - picolibc
+          - littlefs
 
   self:
     path: app

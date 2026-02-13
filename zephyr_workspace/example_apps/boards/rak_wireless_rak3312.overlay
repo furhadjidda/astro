@@ -1,8 +1,11 @@
 #include <zephyr/dt-bindings/led/led.h>
+
+
 / {
 	chosen {
 		zephyr,console = &usb_serial;
 		zephyr,shell-uart = &usb_serial;
+        zephyr,flash = &flash0;
 	};
     aliases {
         my-green-led = &green_led;
@@ -92,5 +95,18 @@
         status = "okay";
         compatible = "u-blox,m8";
         initial-baudrate = <9600>;
+    };
+};
+
+&flash0 {
+    partitions {
+        compatible = "fixed-partitions";
+        #address-cells = <1>;
+        #size-cells = <1>;
+
+        storage_partition: partition@3D0000 {
+            label = "storage";
+            reg = <0x003D0000 0x10000>;  // 64KB at 4MB-64KB offset
+        };
     };
 };
