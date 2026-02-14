@@ -60,7 +60,7 @@ static const struct device* const bno055_dev = DEVICE_DT_GET(DT_NODELABEL(bno055
 
 // IMU configuration
 static bool bno055_fusion = true;
-#define BNO055_TIMING_STARTUP 2000
+#define BNO055_TIMING_STARTUP 400
 
 /* =========================================================
  * Thread Configuration
