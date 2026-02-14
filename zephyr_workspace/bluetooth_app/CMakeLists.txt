@@ -9,14 +9,11 @@ list(APPEND ZEPHYR_EXTRA_MODULES ${PARENT_DIR}/astro_custom_modules/iim42652_rak
 list(APPEND ZEPHYR_EXTRA_MODULES ${PARENT_DIR}/astro_custom_modules/gnss)
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
-project(microros_node)
+project(example_apps)
 if(CONFIG_PICOLIBC)
     add_compile_definitions(__STDC_WANT_LIB_EXT1__=1)
 endif()
 
 
-target_sources(app PRIVATE src/node_main.cpp)
+target_sources(app PRIVATE src/bluetooth_app.c)
 message(board name is ${BOARD} \n\n)
-if(BOARD STREQUAL "adafruit_feather_esp32s3")
-    target_sources(app PRIVATE src/status_class.cpp)
-endif()
