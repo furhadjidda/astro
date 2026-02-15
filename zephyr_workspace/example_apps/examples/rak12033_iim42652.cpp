@@ -17,12 +17,22 @@
 
 #include <iim42652.h>
 #include <zephyr/device.h>
+#include <zephyr/display/cfb.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(sensor_module, LOG_LEVEL_DBG);
 static const struct device* const iim42652_dev = DEVICE_DT_GET(DT_NODELABEL(iim42652));
+// display driver
+static const struct device* display_dev = DEVICE_DT_GET(DT_NODELABEL(ssd1306));
+// Display parameters
+#define MAX_FONTS 42
+#define SELECTED_FONT_INDEX 0
+static uint16_t rows = 0;
+static uint8_t ppt = 0;
+static uint8_t font_width = 0;
+static uint8_t font_height = 0;
 
 #define IIM42652_TIMING_STARTUP 400  // 400ms
 int main(void) {
@@ -36,6 +46,40 @@ int main(void) {
         return -ENODEV;
     }
     LOG_DBG("IIM42652 Device %s is ready\n", iim42652_dev->name);
+    // Starting display
+    if (!device_is_ready(display_dev)) {
+        LOG_ERR("Display device not ready\n");
+        return -ENODEV;
+    }
+
+    if (display_set_pixel_format(display_dev, PIXEL_FORMAT_MONO01) != 0) {
+        LOG_ERR("Failed to set required pixel format");
+        return -ENOTSUP;
+    }
+
+    if (cfb_framebuffer_init(display_dev)) {
+        LOG_ERR("Framebuffer init failed\n");
+        return -EIO;
+    }
+
+    cfb_framebuffer_clear(display_dev, true);
+
+    display_blanking_off(display_dev);
+
+    rows = cfb_get_display_parameter(display_dev, CFB_DISPLAY_ROWS);
+    ppt = cfb_get_display_parameter(display_dev, CFB_DISPLAY_PPT);
+
+    for (int idx = 0; idx < MAX_FONTS; idx++) {
+        if (cfb_get_font_size(display_dev, idx, &font_width, &font_height)) {
+            break;  // end of font list, so exit loop.
+        }
+
+        LOG_DBG("index[%d] font width %d, font height %d", idx, font_width, font_height);
+    }
+
+    cfb_framebuffer_set_font(display_dev, SELECTED_FONT_INDEX);
+
+    cfb_framebuffer_invert(display_dev);  // Optional: Invert the display (bright text on dark background)
 
     while (1) {
         if (NULL != iim42652_dev) {
@@ -46,6 +90,11 @@ int main(void) {
             double ay = acc[1].val1 + acc[1].val2 / 1000000.0;
             double az = acc[2].val1 + acc[2].val2 / 1000000.0;
             LOG_DBG("Accel X: %.3f g, Y: %.3f g, Z: %.3f g", ax, ay, az);
+            char buffer[64];
+            snprintf(buffer, sizeof(buffer), "Accel X: %.3f g, Y: %.3f g, Z: %.3f g", ax, ay, az);
+
+            cfb_print(display_dev, buffer, 0, 0);  // Print at
+            cfb_framebuffer_finalize(display_dev);
         } else {
             LOG_ERR("IIM42652 device is NULL!\n");
         }

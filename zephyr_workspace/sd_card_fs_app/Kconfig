@@ -1,0 +1,17 @@
+
+
+config ZSN_STATUS_CLASS
+    bool "Enable status class"
+    default y if BOARD_ADAFRUIT_FEATHER_ESP32S3_ESP32S3_PROCPU || BOARD_ADAFRUIT_FEATHER_ESP32S3_ESP32S3_APPCPU
+    help
+    Enables the status class implementation for supported boards.
+
+config APP_PURGE_SD_ON_BOOT
+    bool "Purge SD card on boot"
+    default n
+    help
+    If enabled, all files and directories on the SD card
+    will be deleted at boot after mounting.
+
+
+source "Kconfig.zephyr"
