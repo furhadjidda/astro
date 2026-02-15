@@ -253,6 +253,58 @@ static void purge_sd_card(void) {
     LOG_WRN("=== SD CARD PURGE COMPLETE ===");
 }
 
+static int print_storage_stats(void) {
+    FATFS* fs;
+    DWORD free_clusters;
+    FRESULT fr;
+
+    fr = f_getfree(DISK_DRIVE_NAME, &free_clusters, &fs);
+    if (fr != FR_OK) {
+        LOG_ERR("f_getfree failed: %d", fr);
+        return -EIO;
+    }
+
+    /* Total usable clusters */
+    uint64_t total_clusters = (uint64_t)(fs->n_fatent - 2);
+
+    /* Sector size */
+#if FF_MAX_SS != FF_MIN_SS
+    uint32_t sector_size = fs->ssize;
+#else
+    uint32_t sector_size = FF_MAX_SS;
+#endif
+
+    uint64_t sectors_per_cluster = fs->csize;
+
+    uint64_t total_bytes = total_clusters * sectors_per_cluster * sector_size;
+
+    uint64_t free_bytes = (uint64_t)free_clusters * sectors_per_cluster * sector_size;
+
+    uint64_t used_bytes = total_bytes - free_bytes;
+
+    uint32_t used_percent = (total_bytes == 0) ? 0 : (uint32_t)((used_bytes * 100ULL) / total_bytes);
+
+    LOG_INF("=== SD Storage Statistics ===");
+    LOG_INF("Total: %llu KB", total_bytes / 1024);
+    LOG_INF("Used : %llu KB", used_bytes / 1024);
+    LOG_INF("Free : %llu KB", free_bytes / 1024);
+    LOG_INF("Usage: %u %%", used_percent);
+    LOG_INF("==============================");
+    char buffer[64];
+    snprintf(buffer, sizeof(buffer), "Total: %llu KB", total_bytes / 1024);
+    cfb_print(display_dev, buffer, 0, 0);  // Print at
+    memset(buffer, 0x00, sizeof(buffer));
+    snprintf(buffer, sizeof(buffer), "Used : %llu KB", used_bytes / 1024);
+    cfb_print(display_dev, buffer, 0, 30);  // Print at
+    memset(buffer, 0x00, sizeof(buffer));
+    snprintf(buffer, sizeof(buffer), "Usage: %u %%", used_percent);
+    cfb_print(display_dev, buffer, 0, 45);  // Print at
+    memset(buffer, 0x00, sizeof(buffer));
+    cfb_framebuffer_finalize(display_dev);
+
+    return 0;
+}
+
 int main(void) {
     int res;
     int boot_count = 0;
@@ -371,10 +423,7 @@ int main(void) {
     LOG_INF("Current boot count: %d", boot_count);
     LOG_INF("Reboot to see the counter increment");
 
-    char buffer[64];
-    snprintf(buffer, sizeof(buffer), "System ready. Current boot count: %d", boot_count);
-    cfb_print(display_dev, buffer, 0, 0);  // Print at
-    cfb_framebuffer_finalize(display_dev);
+    print_storage_stats();
 
     while (1) {
         k_sleep(K_MSEC(1000));
