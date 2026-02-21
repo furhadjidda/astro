@@ -86,6 +86,12 @@
         label = "GNSS_0";
         status = "okay";
     };
+    lps22hbnode: lps22hb@5c {
+        compatible = "st,lps22hb-press";
+        reg = <0x5c>;
+        label = "LPS22HB";
+        status = "okay";
+    };
 };
 
 &uart0 {
