@@ -5,8 +5,6 @@
 	chosen {
 		zephyr,console = &usb_serial;
 		zephyr,shell-uart = &usb_serial;
-        zephyr,flash = &flash0;
-        zephyr,code-partition = &slot0_partition;
 	};
     aliases {
         my-green-led = &green_led;
@@ -102,15 +100,23 @@
     };
 };
 
-&flash0 {
-    partitions {
-        compatible = "fixed-partitions";
-        #address-cells = <1>;
-        #size-cells = <1>;
+&spi3 {
+    status = "okay";
+    pinctrl-0 = <&spim3_default>;
+    pinctrl-names = "default";
+    /* Override address/size cells for proper SPI device addressing */
+    #address-cells = <1>;
+    #size-cells = <0>;
+    spi_sd_card: sdhc@0 {  /* Changed label from sdhc0 to spi_sd_card */
+        compatible = "zephyr,sdhc-spi-slot";
+        reg = <0>;
+        status = "okay";
+        spi-max-frequency = <4000000>;
 
-        storage_partition: partition@ff0000 {
-            label = "storage";
-            reg = <0x00FF0000 0x00010000>;  /* 64KB at end of 16MB flash */
+        mmc {
+            compatible = "zephyr,sdmmc-disk";
+            disk-name = "SD";
+            status = "okay";
         };
     };
 };

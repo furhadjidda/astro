@@ -42,7 +42,13 @@
 #include <rmw_microros/rmw_microros.h>
 #include <std_msgs/msg/int32.h>
 
+#include "storage.hpp"
+
 LOG_MODULE_REGISTER(all_sensors_module, LOG_LEVEL_DBG);
+
+// Storage instance
+Storage storage;
+
 // Display parameters
 #define MAX_FONTS 42
 #define SELECTED_FONT_INDEX 0
@@ -305,6 +311,8 @@ int main(void) {
     cfb_framebuffer_set_font(display_dev, SELECTED_FONT_INDEX);
 
     cfb_framebuffer_invert(display_dev);  // Optional: Invert the display (bright text on dark background)
+
+    storage.init();
 
     LOG_DBG("Starting GNSS test application\n");
     gnss_systems_t supported, enabled;
