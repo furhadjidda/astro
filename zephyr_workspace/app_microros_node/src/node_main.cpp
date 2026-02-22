@@ -40,6 +40,11 @@
 #include <rclc/executor.h>
 #include <rclc/rclc.h>
 #include <rmw_microros/rmw_microros.h>
+#include <rosidl_runtime_c/string_functions.h>
+#include <sensor_msgs/msg/imu.h>
+#include <sensor_msgs/msg/nav_sat_fix.h>
+#include <sensor_msgs/msg/nav_sat_status.h>
+#include <sensor_msgs/msg/range.h>
 #include <std_msgs/msg/int32.h>
 
 #include "storage.hpp"
@@ -72,16 +77,17 @@ static bool bno055_fusion = true;
  * Thread Configuration
  * ========================================================= */
 
-#define THREAD_STACK_SIZE 4096
-#define IMU_THREAD_PRIORITY 5
+#define THREAD_STACK_SIZE 8192
+#define IMU_THREAD_PRIORITY 6
 
-#define EXECUTOR_STACK_SIZE 4096
-#define TIME_SYNC_STACK_SIZE 1024
+#define EXECUTOR_STACK_SIZE 8192
+#define TIME_SYNC_STACK_SIZE 4096
 
-#define EXECUTOR_PRIORITY 5
-#define TIME_SYNC_PRIORITY 7 /* lower priority */
+#define EXECUTOR_PRIORITY 4
+#define TIME_SYNC_PRIORITY 5 /* lower priority */
 
 #define PUBLISH_PERIOD_MS 1000
+#define IMU_PUBLISH_PERIOD_MS 200
 #define TIME_SYNC_PERIOD_MS 1000
 
 /* =========================================================
@@ -114,9 +120,11 @@ static bool bno055_fusion = true;
 static rclc_support_t support;
 static rcl_node_t node;
 static rcl_publisher_t publisher;
+static rcl_publisher_t imu_publisher;
 static rcl_timer_t timer;
+static rcl_timer_t imu_timer;
 static rclc_executor_t executor;
-
+static sensor_msgs__msg__Imu imu_msg;
 static std_msgs__msg__Int32 msg;
 
 /* =========================================================
@@ -142,6 +150,13 @@ static void timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
     if (timer != NULL) {
         RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL));
         msg.data++;
+    }
+}
+
+static void imu_timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
+    ARG_UNUSED(last_call_time);
+    if (timer != NULL) {
+        RCSOFTCHECK(rcl_publish(&imu_publisher, &imu_msg, NULL));
     }
 }
 
@@ -277,6 +292,7 @@ GNSS_SATELLITES_CALLBACK_DEFINE(GNSS_MODEM, gnss_satellites_cb);
  * ========================================================= */
 
 int main(void) {
+    sensor_msgs__msg__Imu__init(&imu_msg);
     // Starting display
     if (!device_is_ready(display_dev)) {
         LOG_ERR("Display device not ready\n");
@@ -355,6 +371,14 @@ int main(void) {
     rmw_uros_set_custom_transport(true, NULL, zephyr_transport_open, zephyr_transport_close, zephyr_transport_write,
                                   zephyr_transport_read);
 
+    printk("Waiting for micro-ROS agent...\n");
+    while (rmw_uros_ping_agent(100, 10) != RMW_RET_OK) {
+        // 100ms timeout, 10 attempts per call
+        printk("Agent not reachable, retrying...\n");
+        k_sleep(K_MSEC(500));
+    }
+    printk("Agent connected!\n");
+
     /* Allocator */
     rcl_allocator_t allocator = rcl_get_default_allocator();
 
@@ -373,14 +397,18 @@ int main(void) {
     /* Publisher */
     RCCHECK(rclc_publisher_init_default(&publisher, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
                                         "/zephyr_int_publisher"));
+    RCCHECK(rclc_publisher_init_default(&imu_publisher, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, Imu),
+                                        "/imu_raw"));
 
     /* Timer */
     RCCHECK(rclc_timer_init_default(&timer, &support, RCL_MS_TO_NS(PUBLISH_PERIOD_MS), timer_callback));
+    RCCHECK(rclc_timer_init_default(&imu_timer, &support, RCL_MS_TO_NS(IMU_PUBLISH_PERIOD_MS), imu_timer_callback));
 
     /* Executor */
-    RCCHECK(rclc_executor_init(&executor, &support.context, 1, &allocator));
+    RCCHECK(rclc_executor_init(&executor, &support.context, 2, &allocator));
 
     RCCHECK(rclc_executor_add_timer(&executor, &timer));
+    RCCHECK(rclc_executor_add_timer(&executor, &imu_timer));
 
     msg.data = 0;
 
