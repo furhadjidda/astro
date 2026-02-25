@@ -7,10 +7,15 @@
 
 #include "bno055.h"
 
+#include <math.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/logging/log.h>
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846f
+#endif
 
 LOG_MODULE_REGISTER(BNO055, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -53,27 +58,9 @@ static int get_vector(const struct device* dev, const uint8_t data_register, str
     y = ((int16_t)buffer[2]) | (((int16_t)buffer[3]) << 8);
     z = ((int16_t)buffer[4]) | (((int16_t)buffer[5]) << 8);
 
-    /*!
-     * Convert the value to an appropriate range (section 3.6.4)
-     * and assign the value to the Vector type
-     */
-    double scale = 1.0;
-    switch (data_register) {
-        case VECTOR_MAGNETOMETER:
-        case VECTOR_GYROSCOPE:
-        case VECTOR_EULER:
-            scale = 16.0;
-            break;
-        case VECTOR_ACCELEROMETER:
-        case VECTOR_GRAVITY:
-        case VECTOR_LINEARACCEL:
-            scale = 100.0;
-            break;
-    }
-
-    data->x = ((int16_t)x) / scale;
-    data->y = ((int16_t)y) / scale;
-    data->z = ((int16_t)z) / scale;
+    data->x = x;
+    data->y = y;
+    data->z = z;
     return 0;
 }
 
@@ -94,13 +81,10 @@ static int get_quaternion(const struct device* dev, const uint8_t data_register,
     int16_t y = ((int16_t)buffer[4]) | (((int16_t)buffer[5]) << 8);
     int16_t z = ((int16_t)buffer[6]) | (((int16_t)buffer[7]) << 8);
 
-    // Scale the values to the range specified in the datasheet
-    const double scale = 1.0 / 16384.0;
-
-    data->w = w * scale;
-    data->x = x * scale;
-    data->y = y * scale;
-    data->z = z * scale;
+    data->w = w;
+    data->x = x;
+    data->y = y;
+    data->z = z;
 
     return 0;
 }
@@ -369,15 +353,27 @@ static bool is_valid_calibration_data(const struct device* dev, const uint8_t* c
 
 static int bno055_channel_get(const struct device* dev, enum sensor_channel chan, struct sensor_value* val) {
     struct bno055_data* data = dev->data;
+
     // LOG_DBG("Getting channel data for channel %d\n", chan);
 
     if (chan == (enum sensor_channel)BNO055_SENSOR_CHAN_EULER_YRP) {
-        (val)->val1 = data->eul.x;
-        (val)->val2 = 0;
-        (val + 1)->val1 = data->eul.y;
-        (val + 1)->val2 = 0;
-        (val + 2)->val1 = data->eul.z;
-        (val + 2)->val2 = 0;
+        // raw / 16 = degrees
+        // radians = degrees × (π / 180)
+        // radians = raw × (π / 2880)
+        double convert_to_radians = M_PI / 2880.0f;  // 1 radian = 2880 LSB
+        double rad_x = data->eul.x * convert_to_radians;
+        val[0].val1 = (int32_t)rad_x;
+        val[0].val2 = (int32_t)((rad_x - val[0].val1) * 1000000.0);
+
+        double rad_y = data->eul.y * convert_to_radians;
+        val[1].val1 = (int32_t)rad_y;
+        val[1].val2 = (int32_t)((rad_y - val[1].val1) * 1000000.0);
+
+        double rad_z = data->eul.z * convert_to_radians;
+        val[2].val1 = (int32_t)rad_z;
+        val[2].val2 = (int32_t)((rad_z - val[2].val1) * 1000000.0);
+
+        return 0;
         return 0;
     }
 
@@ -392,13 +388,18 @@ static int bno055_channel_get(const struct device* dev, enum sensor_channel chan
     }
 
     if (chan == (enum sensor_channel)BNO055_SENSOR_CHAN_QUATERNION_WXYZ) {
-        (val)->val1 = data->qua.w;
-        (val)->val2 = 0;
-        (val + 1)->val2 = 0;
-        (val + 2)->val1 = data->qua.y;
-        (val + 2)->val2 = 0;
-        (val + 3)->val1 = data->qua.z;
-        (val + 3)->val2 = 0;
+        (val)->val1 = data->qua.w / BNO055_QUATERNION_RESOLUTION;
+        (val)->val2 =
+            (1000000 / BNO055_QUATERNION_RESOLUTION) * (data->qua.w - (val)->val1 * BNO055_QUATERNION_RESOLUTION);
+        (val + 1)->val1 = data->qua.x / BNO055_QUATERNION_RESOLUTION;
+        (val + 1)->val2 =
+            (1000000 / BNO055_QUATERNION_RESOLUTION) * (data->qua.x - (val + 1)->val1 * BNO055_QUATERNION_RESOLUTION);
+        (val + 2)->val1 = data->qua.y / BNO055_QUATERNION_RESOLUTION;
+        (val + 2)->val2 =
+            (1000000 / BNO055_QUATERNION_RESOLUTION) * (data->qua.y - (val + 2)->val1 * BNO055_QUATERNION_RESOLUTION);
+        (val + 3)->val1 = data->qua.z / BNO055_QUATERNION_RESOLUTION;
+        (val + 3)->val2 =
+            (1000000 / BNO055_QUATERNION_RESOLUTION) * (data->qua.z - (val + 3)->val1 * BNO055_QUATERNION_RESOLUTION);
         return 0;
     }
 
@@ -450,6 +451,7 @@ static int bno055_sample_fetch(const struct device* dev, enum sensor_channel cha
         case OPERATION_MODE_NDOF:
             err = get_system_status(dev);
             err = get_vector(dev, VECTOR_EULER, &data->eul);
+            err = get_quaternion(dev, VECTOR_QUAT, &data->qua);
             is_fully_calibrated(dev);
             if (err < 0) {
                 return err;

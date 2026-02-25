@@ -42,14 +42,20 @@ int main(void) {
         if (NULL != bno055_dev) {
             sensor_sample_fetch(bno055_dev);
             struct sensor_value eul[3];
+            struct sensor_value quat[4];
             sensor_channel_get(bno055_dev, BNO055_SENSOR_CHAN_EULER_YRP, eul);
-            LOG_DBG(
+            sensor_channel_get(bno055_dev, BNO055_SENSOR_CHAN_QUATERNION_WXYZ, quat);
+            LOG_INF(
                 "EULER: X(rad.s-1)[%d.%06d] Y(rad.s-1)[%d.%06d] "
                 "Z(rad.s-1)[%d.%06d]\n",
                 eul[0].val1, eul[0].val2, eul[1].val1, eul[1].val2, eul[2].val1, eul[2].val2);
+            LOG_INF(
+                "quat: X(rad.s-1)[%d.%06d] Y(rad.s-1)[%d.%06d] "
+                "Z(rad.s-1)[%d.%06d]\n",
+                quat[0].val1, quat[0].val2, quat[1].val1, quat[1].val2, quat[2].val1, quat[2].val2);
             struct sensor_value sys_status[3];
             sensor_channel_get(bno055_dev, BNO055_SENSOR_CHAN_SYSTEM_STATUS, sys_status);
-            LOG_DBG("system status %d , self_test = %d system_error %d \n", sys_status[0].val1, sys_status[1].val1,
+            LOG_INF("system status %d , self_test = %d system_error %d \n", sys_status[0].val1, sys_status[1].val1,
                     sys_status[2].val1);
         } else {
             LOG_ERR("BNO055 device is NULL!\n");
