@@ -50,6 +50,7 @@
 #include "storage.hpp"
 
 LOG_MODULE_REGISTER(all_sensors_module, LOG_LEVEL_DBG);
+#define BNO055_TIMING_STARTUP 400  // 400ms
 
 // Storage instance
 Storage storage;
@@ -77,11 +78,11 @@ static bool bno055_fusion = true;
  * Thread Configuration
  * ========================================================= */
 
-#define THREAD_STACK_SIZE 8192
+#define THREAD_STACK_SIZE 4096
 #define IMU_THREAD_PRIORITY 6
 
-#define EXECUTOR_STACK_SIZE 8192
-#define TIME_SYNC_STACK_SIZE 4096
+#define EXECUTOR_STACK_SIZE 4096
+#define TIME_SYNC_STACK_SIZE 1024
 
 #define EXECUTOR_PRIORITY 4
 #define TIME_SYNC_PRIORITY 5 /* lower priority */
@@ -155,7 +156,66 @@ static void timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
 
 static void imu_timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
     ARG_UNUSED(last_call_time);
-    if (timer != NULL) {
+    char buffer[64];
+    snprintf(buffer, sizeof(buffer), "BNO:Ready");
+    cfb_print(display_dev, buffer, 0, 0);
+    cfb_framebuffer_finalize(display_dev);
+    if (timer != NULL && NULL != bno055_dev) {
+        double accel[3] = {0.0, 0.0, 0.0};
+        double gyro[3] = {0.0, 0.0, 0.0};
+        double mag[3] = {0.0, 0.0, 0.0};
+        struct sensor_value eul[3];
+        struct sensor_value accel_val[3];
+        struct sensor_value gyro_val[3];
+        struct sensor_value mag_val[3];
+        struct sensor_value quat[4];
+        quaternion_data q = {};
+        rcl_time_point_value_t now = rmw_uros_epoch_nanos();
+        sensor_sample_fetch(bno055_dev);
+        sensor_channel_get(bno055_dev, static_cast<sensor_channel>(BNO055_SENSOR_CHAN_EULER_YRP), eul);
+        sensor_channel_get(bno055_dev, static_cast<sensor_channel>(BNO055_SENSOR_CHAN_QUATERNION_WXYZ), quat);
+
+        // CORRECT - use integer arithmetic
+        imu_msg.header.stamp.sec = now / 1000000000LL;
+        imu_msg.header.stamp.nanosec = now % 1000000000LL;
+
+        // Fill accelerometer data
+        imu_msg.linear_acceleration.x = accel[0];
+        imu_msg.linear_acceleration.y = accel[1];
+        imu_msg.linear_acceleration.z = accel[2];
+
+        // Fill gyroscope data
+        imu_msg.angular_velocity.x = gyro[0];
+        imu_msg.angular_velocity.y = gyro[1];
+        imu_msg.angular_velocity.z = gyro[2];
+
+        // Fill orientation
+        imu_msg.orientation.w = 0.0;
+        imu_msg.orientation.x = quat[1].val1;
+        imu_msg.orientation.y = quat[2].val1;
+        imu_msg.orientation.z = quat[3].val1;
+
+        // Add covariance if needed
+        // For simplicity, leaving covariances as zero
+        for (int i = 0; i < 9; ++i) {
+            imu_msg.linear_acceleration_covariance[i] = 0.0;
+            imu_msg.angular_velocity_covariance[i] = 0.0;
+            imu_msg.orientation_covariance[i] = 0.0;
+        }
+
+        // Format for the screen
+        char buffer[64];
+        snprintf(buffer, sizeof(buffer), "X=%d.%02d", quat[0].val1, quat[0].val2);
+        cfb_print(display_dev, buffer, 0, 20);
+
+        snprintf(buffer, sizeof(buffer), "Y=%d.%02d", quat[1].val1, quat[1].val2);
+        cfb_print(display_dev, buffer, 0, 35);
+
+        snprintf(buffer, sizeof(buffer), "Z=%d.%02d", quat[2].val1, quat[2].val2);
+        cfb_print(display_dev, buffer, 0, 50);
+
+        cfb_framebuffer_finalize(display_dev);
+
         RCSOFTCHECK(rcl_publish(&imu_publisher, &imu_msg, NULL));
     }
 }
@@ -171,7 +231,7 @@ static void executor_thread_entry(void* a, void* b, void* c) {
 
     while (1) {
         rclc_executor_spin_some(&executor, RCL_MS_TO_NS(10));
-        k_sleep(K_MSEC(1));
+        k_sleep(K_MSEC(50));
     }
 }
 
@@ -211,6 +271,10 @@ static void imu_thread_entry(void* a, void* b, void* c) {
         return;
     }
     LOG_DBG("BNO055 Device %s is ready\n", bno055_dev->name);
+    char buffer[64];
+    snprintf(buffer, sizeof(buffer), "BNO:Ready");
+    cfb_print(display_dev, buffer, 0, 0);
+    cfb_framebuffer_finalize(display_dev);
 
     while (1) {
         if (NULL != bno055_dev) {
@@ -292,7 +356,13 @@ GNSS_SATELLITES_CALLBACK_DEFINE(GNSS_MODEM, gnss_satellites_cb);
  * ========================================================= */
 
 int main(void) {
+#if Z_DEVICE_DT_FLAGS(DT_NODELABEL(bno055)) & DEVICE_FLAG_INIT_DEFERRED
+    LOG_DBG("Deferred init enabled, sleeping for %d ms", BNO055_TIMING_STARTUP);
+    k_sleep(K_MSEC(BNO055_TIMING_STARTUP));
+    device_init(bno055_dev);
+#endif
     sensor_msgs__msg__Imu__init(&imu_msg);
+    rosidl_runtime_c__String__assign(&imu_msg.header.frame_id, "imu_frame");
     // Starting display
     if (!device_is_ready(display_dev)) {
         LOG_ERR("Display device not ready\n");
@@ -307,6 +377,11 @@ int main(void) {
     if (cfb_framebuffer_init(display_dev)) {
         LOG_ERR("Framebuffer init failed\n");
         return -EIO;
+    }
+
+    if (!device_is_ready(bno055_dev)) {
+        LOG_ERR("Device %s is not ready\n", bno055_dev->name);
+        return -ENODEV;
     }
 
     cfb_framebuffer_clear(display_dev, true);
@@ -413,10 +488,11 @@ int main(void) {
     msg.data = 0;
 
     /* Start thread */
-    k_thread_create(&imu_thread, imu_stack, THREAD_STACK_SIZE, imu_thread_entry, NULL, NULL, NULL, IMU_THREAD_PRIORITY,
-                    0, K_NO_WAIT);
+    // k_thread_create(&imu_thread, imu_stack, THREAD_STACK_SIZE, imu_thread_entry, NULL, NULL, NULL,
+    // IMU_THREAD_PRIORITY,
+    //                 0, K_NO_WAIT);
 
-    k_thread_name_set(&imu_thread, "imu_thread");
+    // k_thread_name_set(&imu_thread, "imu_thread");
 
     /* Start executor thread */
     k_thread_create(&executor_thread, executor_stack, EXECUTOR_STACK_SIZE, executor_thread_entry, NULL, NULL, NULL,
