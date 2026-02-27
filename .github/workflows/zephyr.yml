@@ -53,13 +53,13 @@ jobs:
           . /opt/zephyr-venv/bin/activate
 
           # Build command with optional --sysbuild
-          CMD="west build -p always -b '${{ matrix.board.name }}' -d build/sensor_node_app"
+          CMD="west build -p always -b '${{ matrix.board.name }}' -d build/app_sensor_node"
 
           if [ "${{ matrix.board.sysbuild }}" = "true" ]; then
             CMD="$CMD --sysbuild"
           fi
 
-          CMD="$CMD sensor_node_app -- -DDTC_OVERLAY_FILE='${{ matrix.board.overlay }}' -DEXTRA_CONF_FILE='${{ matrix.board.conf }}'"
+          CMD="$CMD app_sensor_node -- -DDTC_OVERLAY_FILE='${{ matrix.board.overlay }}' -DEXTRA_CONF_FILE='${{ matrix.board.conf }}'"
 
           echo "Running: $CMD"
           eval $CMD
@@ -72,13 +72,13 @@ jobs:
           . /opt/zephyr-venv/bin/activate
 
           # Build command with optional --sysbuild
-          CMD="west build -p always -b '${{ matrix.board.name }}' -d build/example_apps -S ${{ matrix.board.flash }} -S ${{ matrix.board.psram }} "
+          CMD="west build -p always -b '${{ matrix.board.name }}' -d build/app_examples -S ${{ matrix.board.flash }} -S ${{ matrix.board.psram }} "
 
           if [ "${{ matrix.board.sysbuild }}" = "true" ]; then
             CMD="$CMD --sysbuild"
           fi
 
-          CMD="$CMD example_apps -- -DDTC_OVERLAY_FILE='${{ matrix.board.overlay }}' -DEXTRA_CONF_FILE='${{ matrix.board.conf }}'"
+          CMD="$CMD app_examples -- -DDTC_OVERLAY_FILE='${{ matrix.board.overlay }}' -DEXTRA_CONF_FILE='${{ matrix.board.conf }}'"
 
           echo "Running: $CMD"
           eval $CMD

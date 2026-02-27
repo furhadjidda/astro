@@ -5,7 +5,6 @@
 	chosen {
 		zephyr,console = &usb_serial;
 		zephyr,shell-uart = &usb_serial;
-        zephyr,flash = &flash0;
 	};
     aliases {
         my-green-led = &green_led;
@@ -54,17 +53,20 @@
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_FAST>;
     bno055: bno055@28 {
+        status = "okay";
         compatible = "bosch,bno055";
         reg = <0x28>;
         use_xtal;
         zephyr,deferred-init;
     };
     iim42652: iim42652@69 {
+        status = "disabled";
         compatible = "tdk,iim42652";
         reg = <0x69>;
         zephyr,deferred-init;
     };
     ssd1306: ssd1306@3c {
+        status = "okay";
         compatible = "solomon,ssd1306fb";
         reg = <0x3c>;
         width = <128>;
@@ -98,15 +100,23 @@
     };
 };
 
-&flash0 {
-    partitions {
-        compatible = "fixed-partitions";
-        #address-cells = <1>;
-        #size-cells = <1>;
+&spi3 {
+    status = "okay";
+    pinctrl-0 = <&spim3_default>;
+    pinctrl-names = "default";
+    /* Override address/size cells for proper SPI device addressing */
+    #address-cells = <1>;
+    #size-cells = <0>;
+    spi_sd_card: sdhc@0 {  /* Changed label from sdhc0 to spi_sd_card */
+        compatible = "zephyr,sdhc-spi-slot";
+        reg = <0>;
+        status = "okay";
+        spi-max-frequency = <4000000>;
 
-        storage_partition: partition@3D0000 {
-            label = "storage";
-            reg = <0x003D0000 0x10000>;  // 64KB at 4MB-64KB offset
+        mmc {
+            compatible = "zephyr,sdmmc-disk";
+            disk-name = "SD";
+            status = "okay";
         };
     };
 };

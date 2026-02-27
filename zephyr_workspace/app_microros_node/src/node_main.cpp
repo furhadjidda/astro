@@ -40,9 +40,21 @@
 #include <rclc/executor.h>
 #include <rclc/rclc.h>
 #include <rmw_microros/rmw_microros.h>
+#include <rosidl_runtime_c/string_functions.h>
+#include <sensor_msgs/msg/imu.h>
+#include <sensor_msgs/msg/nav_sat_fix.h>
+#include <sensor_msgs/msg/nav_sat_status.h>
+#include <sensor_msgs/msg/range.h>
 #include <std_msgs/msg/int32.h>
 
+#include "storage.hpp"
+
 LOG_MODULE_REGISTER(all_sensors_module, LOG_LEVEL_DBG);
+#define BNO055_TIMING_STARTUP 400  // 400ms
+
+// Storage instance
+Storage storage;
+
 // Display parameters
 #define MAX_FONTS 42
 #define SELECTED_FONT_INDEX 0
@@ -67,15 +79,16 @@ static bool bno055_fusion = true;
  * ========================================================= */
 
 #define THREAD_STACK_SIZE 4096
-#define IMU_THREAD_PRIORITY 5
+#define IMU_THREAD_PRIORITY 6
 
 #define EXECUTOR_STACK_SIZE 4096
 #define TIME_SYNC_STACK_SIZE 1024
 
-#define EXECUTOR_PRIORITY 5
-#define TIME_SYNC_PRIORITY 7 /* lower priority */
+#define EXECUTOR_PRIORITY 4
+#define TIME_SYNC_PRIORITY 5 /* lower priority */
 
 #define PUBLISH_PERIOD_MS 1000
+#define IMU_PUBLISH_PERIOD_MS 200
 #define TIME_SYNC_PERIOD_MS 1000
 
 /* =========================================================
@@ -108,9 +121,11 @@ static bool bno055_fusion = true;
 static rclc_support_t support;
 static rcl_node_t node;
 static rcl_publisher_t publisher;
+static rcl_publisher_t imu_publisher;
 static rcl_timer_t timer;
+static rcl_timer_t imu_timer;
 static rclc_executor_t executor;
-
+static sensor_msgs__msg__Imu imu_msg;
 static std_msgs__msg__Int32 msg;
 
 /* =========================================================
@@ -139,6 +154,72 @@ static void timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
     }
 }
 
+static void imu_timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
+    ARG_UNUSED(last_call_time);
+    char buffer[64];
+    snprintf(buffer, sizeof(buffer), "BNO:Ready");
+    cfb_print(display_dev, buffer, 0, 0);
+    cfb_framebuffer_finalize(display_dev);
+    if (timer != NULL && NULL != bno055_dev) {
+        double accel[3] = {0.0, 0.0, 0.0};
+        double gyro[3] = {0.0, 0.0, 0.0};
+        double mag[3] = {0.0, 0.0, 0.0};
+        struct sensor_value eul[3];
+        struct sensor_value accel_val[3];
+        struct sensor_value gyro_val[3];
+        struct sensor_value mag_val[3];
+        struct sensor_value quat[4];
+        quaternion_data q = {};
+        rcl_time_point_value_t now = rmw_uros_epoch_nanos();
+        sensor_sample_fetch(bno055_dev);
+        sensor_channel_get(bno055_dev, static_cast<sensor_channel>(BNO055_SENSOR_CHAN_EULER_YRP), eul);
+        sensor_channel_get(bno055_dev, static_cast<sensor_channel>(BNO055_SENSOR_CHAN_QUATERNION_WXYZ), quat);
+
+        // CORRECT - use integer arithmetic
+        imu_msg.header.stamp.sec = now / 1000000000LL;
+        imu_msg.header.stamp.nanosec = now % 1000000000LL;
+
+        // Fill accelerometer data
+        imu_msg.linear_acceleration.x = accel[0];
+        imu_msg.linear_acceleration.y = accel[1];
+        imu_msg.linear_acceleration.z = accel[2];
+
+        // Fill gyroscope data
+        imu_msg.angular_velocity.x = gyro[0];
+        imu_msg.angular_velocity.y = gyro[1];
+        imu_msg.angular_velocity.z = gyro[2];
+
+        // Fill orientation
+        imu_msg.orientation.w = 0.0;
+        imu_msg.orientation.x = quat[1].val1;
+        imu_msg.orientation.y = quat[2].val1;
+        imu_msg.orientation.z = quat[3].val1;
+
+        // Add covariance if needed
+        // For simplicity, leaving covariances as zero
+        for (int i = 0; i < 9; ++i) {
+            imu_msg.linear_acceleration_covariance[i] = 0.0;
+            imu_msg.angular_velocity_covariance[i] = 0.0;
+            imu_msg.orientation_covariance[i] = 0.0;
+        }
+
+        // Format for the screen
+        char buffer[64];
+        snprintf(buffer, sizeof(buffer), "X=%d.%02d", quat[0].val1, quat[0].val2);
+        cfb_print(display_dev, buffer, 0, 20);
+
+        snprintf(buffer, sizeof(buffer), "Y=%d.%02d", quat[1].val1, quat[1].val2);
+        cfb_print(display_dev, buffer, 0, 35);
+
+        snprintf(buffer, sizeof(buffer), "Z=%d.%02d", quat[2].val1, quat[2].val2);
+        cfb_print(display_dev, buffer, 0, 50);
+
+        cfb_framebuffer_finalize(display_dev);
+
+        RCSOFTCHECK(rcl_publish(&imu_publisher, &imu_msg, NULL));
+    }
+}
+
 /* =========================================================
  * micro-ROS executor thread
  * ========================================================= */
@@ -150,7 +231,7 @@ static void executor_thread_entry(void* a, void* b, void* c) {
 
     while (1) {
         rclc_executor_spin_some(&executor, RCL_MS_TO_NS(10));
-        k_sleep(K_MSEC(1));
+        k_sleep(K_MSEC(50));
     }
 }
 
@@ -190,6 +271,10 @@ static void imu_thread_entry(void* a, void* b, void* c) {
         return;
     }
     LOG_DBG("BNO055 Device %s is ready\n", bno055_dev->name);
+    char buffer[64];
+    snprintf(buffer, sizeof(buffer), "BNO:Ready");
+    cfb_print(display_dev, buffer, 0, 0);
+    cfb_framebuffer_finalize(display_dev);
 
     while (1) {
         if (NULL != bno055_dev) {
@@ -271,6 +356,13 @@ GNSS_SATELLITES_CALLBACK_DEFINE(GNSS_MODEM, gnss_satellites_cb);
  * ========================================================= */
 
 int main(void) {
+#if Z_DEVICE_DT_FLAGS(DT_NODELABEL(bno055)) & DEVICE_FLAG_INIT_DEFERRED
+    LOG_DBG("Deferred init enabled, sleeping for %d ms", BNO055_TIMING_STARTUP);
+    k_sleep(K_MSEC(BNO055_TIMING_STARTUP));
+    device_init(bno055_dev);
+#endif
+    sensor_msgs__msg__Imu__init(&imu_msg);
+    rosidl_runtime_c__String__assign(&imu_msg.header.frame_id, "imu_frame");
     // Starting display
     if (!device_is_ready(display_dev)) {
         LOG_ERR("Display device not ready\n");
@@ -285,6 +377,11 @@ int main(void) {
     if (cfb_framebuffer_init(display_dev)) {
         LOG_ERR("Framebuffer init failed\n");
         return -EIO;
+    }
+
+    if (!device_is_ready(bno055_dev)) {
+        LOG_ERR("Device %s is not ready\n", bno055_dev->name);
+        return -ENODEV;
     }
 
     cfb_framebuffer_clear(display_dev, true);
@@ -305,6 +402,8 @@ int main(void) {
     cfb_framebuffer_set_font(display_dev, SELECTED_FONT_INDEX);
 
     cfb_framebuffer_invert(display_dev);  // Optional: Invert the display (bright text on dark background)
+
+    storage.init();
 
     LOG_DBG("Starting GNSS test application\n");
     gnss_systems_t supported, enabled;
@@ -347,6 +446,14 @@ int main(void) {
     rmw_uros_set_custom_transport(true, NULL, zephyr_transport_open, zephyr_transport_close, zephyr_transport_write,
                                   zephyr_transport_read);
 
+    printk("Waiting for micro-ROS agent...\n");
+    while (rmw_uros_ping_agent(100, 10) != RMW_RET_OK) {
+        // 100ms timeout, 10 attempts per call
+        printk("Agent not reachable, retrying...\n");
+        k_sleep(K_MSEC(500));
+    }
+    printk("Agent connected!\n");
+
     /* Allocator */
     rcl_allocator_t allocator = rcl_get_default_allocator();
 
@@ -365,22 +472,27 @@ int main(void) {
     /* Publisher */
     RCCHECK(rclc_publisher_init_default(&publisher, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
                                         "/zephyr_int_publisher"));
+    RCCHECK(rclc_publisher_init_default(&imu_publisher, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, Imu),
+                                        "/imu_raw"));
 
     /* Timer */
     RCCHECK(rclc_timer_init_default(&timer, &support, RCL_MS_TO_NS(PUBLISH_PERIOD_MS), timer_callback));
+    RCCHECK(rclc_timer_init_default(&imu_timer, &support, RCL_MS_TO_NS(IMU_PUBLISH_PERIOD_MS), imu_timer_callback));
 
     /* Executor */
-    RCCHECK(rclc_executor_init(&executor, &support.context, 1, &allocator));
+    RCCHECK(rclc_executor_init(&executor, &support.context, 2, &allocator));
 
     RCCHECK(rclc_executor_add_timer(&executor, &timer));
+    RCCHECK(rclc_executor_add_timer(&executor, &imu_timer));
 
     msg.data = 0;
 
     /* Start thread */
-    k_thread_create(&imu_thread, imu_stack, THREAD_STACK_SIZE, imu_thread_entry, NULL, NULL, NULL, IMU_THREAD_PRIORITY,
-                    0, K_NO_WAIT);
+    // k_thread_create(&imu_thread, imu_stack, THREAD_STACK_SIZE, imu_thread_entry, NULL, NULL, NULL,
+    // IMU_THREAD_PRIORITY,
+    //                 0, K_NO_WAIT);
 
-    k_thread_name_set(&imu_thread, "imu_thread");
+    // k_thread_name_set(&imu_thread, "imu_thread");
 
     /* Start executor thread */
     k_thread_create(&executor_thread, executor_stack, EXECUTOR_STACK_SIZE, executor_thread_entry, NULL, NULL, NULL,
