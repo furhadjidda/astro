@@ -230,6 +230,7 @@ typedef struct {
 } bno055_offsets_t;
 
 /** Operation mode settings **/
+#define BNO055_OPERATION_MODE_MASK 0x0F
 typedef enum {
     OPERATION_MODE_CONFIG = 0X00,
     OPERATION_MODE_ACCONLY = 0X01,
@@ -325,5 +326,28 @@ enum bno055_sensor_channel {
 #define BNO055_UTESLA_RESOLUTION 16
 #define BNO055_GYRO_RESOLUTION 900   // RPS
 #define BNO055_ACCEL_RESOLUTION 100  // MS_2
+
+/* Timings */
+#define BNO055_TIMING_STARTUP 400            // 400ms
+#define BNO055_TIMING_RESET_CONFIG 650       // 650ms
+#define BNO055_TIMING_SWITCH_FROM_CONFIG 10  // 7 ms
+#define BNO055_TIMING_SWITCH_FROM_ANY 20     // 19 ms
+
+/* BNO055 Configuration */
+#define BNO055_PAGE_ID_MASK 0xFF
+enum bno055_PageId { BNO055_PAGE_ZERO = 0x00, BNO055_PAGE_ONE = 0x01 };
+
+#define BNO055_POWER_MODE_MASK 0x03
+enum bno055_PowerMode {
+    BNO055_POWER_NORMAL = 0x00,
+    BNO055_POWER_LOW_POWER = 0x01,
+    BNO055_POWER_SUSPEND = 0x02,
+    BNO055_POWER_INVALID = 0x03
+};
+
+/* BNO055 Specific attibute */
+enum bno055_sensor_attribute {
+    BNO055_SENSOR_ATTR_POWER_MODE = SENSOR_ATTR_PRIV_START + 0,
+};
 
 #endif

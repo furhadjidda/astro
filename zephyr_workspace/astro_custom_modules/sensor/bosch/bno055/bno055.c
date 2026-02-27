@@ -43,6 +43,173 @@ struct bno055_data {
     struct bno055_system_status sys_status;
 };
 
+static int bno055_set_page(const struct device* dev, enum bno055_PageId page) {
+    const struct bno055_config* config = dev->config;
+    struct bno055_data* data = dev->data;
+    uint8_t reg;
+    int err;
+
+    LOG_DBG("FUNC PAGE[%d]", page);
+    err = i2c_reg_read_byte_dt(&config->i2c_bus, BNO055_PAGE_ID_ADDR, &reg);
+    if (err < 0) {
+        return err;
+    }
+
+    if (data->current_page != (reg & BNO055_PAGE_ID_MASK)) {
+        LOG_WRN("Update page index from I2C page register [%d]<-[%d]!!", data->current_page, reg & BNO055_PAGE_ID_MASK);
+        data->current_page = reg & BNO055_PAGE_ID_MASK;
+    }
+
+    if ((reg & BNO055_PAGE_ID_MASK) == page) {
+        LOG_DBG("I2C page register already good!!");
+        return 0;
+    }
+
+    /* Write PAGE */
+    err = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_PAGE_ID_ADDR, page);
+    if (err < 0) {
+        return err;
+    }
+
+    /* Read PAGE */
+    err = i2c_reg_read_byte_dt(&config->i2c_bus, BNO055_PAGE_ID_ADDR, &reg);
+    if (err < 0) {
+        return err;
+    }
+
+    if ((reg & BNO055_PAGE_ID_MASK) != page) {
+        LOG_ERR("I2C communication compromised [%d]!=[%d]!!", page, reg & BNO055_PAGE_ID_MASK);
+        return -ECANCELED;
+    }
+
+    data->current_page = reg & BNO055_PAGE_ID_MASK;
+    LOG_DBG("FUNC PAGE[%d]", page);
+    return 0;
+}
+
+static int bno055_set_config(const struct device* dev, bno055_opmode_t mode, bool fusion) {
+    const struct bno055_config* config = dev->config;
+    struct bno055_data* data = dev->data;
+    uint8_t reg;
+    int err;
+
+    LOG_DBG("FUNC MODE[%d]", mode);
+
+    /* Switch to Page 0 */
+    err = bno055_set_page(dev, BNO055_PAGE_ZERO);
+    if (err < 0) {
+        return err;
+    }
+
+    err = i2c_reg_read_byte_dt(&config->i2c_bus, BNO055_OPR_MODE_ADDR, &reg);
+    if (err < 0) {
+        return err;
+    }
+
+    if (data->mode != (reg & BNO055_OPERATION_MODE_MASK)) {
+        LOG_WRN("Update mode from I2C mode register [%d]<-[%d]!!", data->mode, reg & BNO055_OPERATION_MODE_MASK);
+        data->mode = reg & BNO055_OPERATION_MODE_MASK;
+    }
+
+    if ((reg & BNO055_OPERATION_MODE_MASK) != OPERATION_MODE_CONFIG) {
+        err = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_OPR_MODE_ADDR, OPERATION_MODE_CONFIG);
+        if (err < 0) {
+            return err;
+        }
+        LOG_DBG("MODE[%d]", OPERATION_MODE_CONFIG);
+        k_sleep(K_MSEC(BNO055_TIMING_SWITCH_FROM_ANY));
+    }
+
+    err = i2c_reg_read_byte_dt(&config->i2c_bus, BNO055_OPR_MODE_ADDR, &reg);
+    if (err < 0) {
+        return err;
+    }
+
+    if ((reg & BNO055_OPERATION_MODE_MASK) != OPERATION_MODE_CONFIG) {
+        LOG_ERR("I2C communication compromised [%d]!=[%d]!!", OPERATION_MODE_CONFIG, reg & BNO055_OPERATION_MODE_MASK);
+        return -ECANCELED;
+    }
+    data->mode = reg & BNO055_OPERATION_MODE_MASK;
+
+    if (mode == OPERATION_MODE_CONFIG) {
+        LOG_DBG("I2C mode register already good!!");
+        return 0;
+    }
+
+    err = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_OPR_MODE_ADDR, mode);
+    if (err < 0) {
+        return err;
+    }
+    k_sleep(K_MSEC(33 * BNO055_TIMING_SWITCH_FROM_CONFIG)); /* /!\ Datasheet not confrom WRONG DATASHEET */
+
+    err = i2c_reg_read_byte_dt(&config->i2c_bus, BNO055_OPR_MODE_ADDR, &reg);
+    if (err < 0) {
+        return err;
+    }
+
+    if ((reg & BNO055_PAGE_ID_MASK) != mode) {
+        LOG_ERR("I2C communication compromised [%d]!=[%d]!!", mode, reg & BNO055_OPERATION_MODE_MASK);
+        return -ECANCELED;
+    }
+
+    data->mode = reg & BNO055_OPERATION_MODE_MASK;
+    LOG_DBG("FUNC MODE[%d]", mode);
+    return 0;
+}
+
+static int bno055_set_power(const struct device* dev, bno055_powermode_t power) {
+    const struct bno055_config* config = dev->config;
+    struct bno055_data* data = dev->data;
+    uint8_t reg;
+    int err;
+
+    LOG_DBG("FUNC POWER[%d]", power);
+
+    bno055_opmode_t mode = data->mode;
+    err = bno055_set_config(dev, OPERATION_MODE_CONFIG, false);
+    if (err < 0) {
+        return err;
+    }
+
+    err = i2c_reg_read_byte_dt(&config->i2c_bus, BNO055_PWR_MODE_ADDR, &reg);
+    if (err < 0) {
+        return err;
+    }
+
+    if (data->power != (reg & BNO055_POWER_MODE_MASK)) {
+        LOG_WRN("Update power mode from I2C power register [%d]<-[%d]!!", data->power, reg & BNO055_POWER_MODE_MASK);
+        data->power = reg & BNO055_POWER_MODE_MASK;
+    }
+
+    if ((reg & BNO055_POWER_MODE_MASK) == power) {
+        LOG_DBG("I2C power register already good!!");
+    } else {
+        err = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_PWR_MODE_ADDR, power);
+        if (err < 0) {
+            return err;
+        }
+
+        err = i2c_reg_read_byte_dt(&config->i2c_bus, BNO055_PWR_MODE_ADDR, &power);
+        if (err < 0) {
+            return err;
+        }
+
+        if ((reg & BNO055_POWER_MODE_MASK) != mode) {
+            LOG_ERR("I2C communication compromised [%d]!=[%d]!!", mode, reg & BNO055_POWER_MODE_MASK);
+            return -ECANCELED;
+        }
+        data->power = reg & BNO055_POWER_MODE_MASK;
+    }
+
+    err = bno055_set_config(dev, mode, mode < OPERATION_MODE_IMUPLUS ? false : true);
+    if (err < 0) {
+        return err;
+    }
+
+    LOG_DBG("FUNC POWER[%d]", power);
+    return 0;
+}
+
 static int get_vector(const struct device* dev, const uint8_t data_register, struct bno055_vector3_data* data) {
     uint8_t buffer[6] = {0};
     const struct bno055_config* config = dev->config;
@@ -65,7 +232,7 @@ static int get_vector(const struct device* dev, const uint8_t data_register, str
 }
 
 // get vector 4
-static int get_quaternion(const struct device* dev, const uint8_t data_register, struct bno055_vector4_data* data) {
+static int get_vector4(const struct device* dev, const uint8_t data_register, struct bno055_vector4_data* data) {
     const struct bno055_config* config = dev->config;
     uint8_t buffer[8] = {0};  // Quaternion data is 8 bytes (4 components, 2 bytes each)
 
@@ -442,6 +609,169 @@ static int bno055_channel_get(const struct device* dev, enum sensor_channel chan
     return -ENOTSUP;
 }
 
+static int bno055_attr_set(const struct device* dev, enum sensor_channel chan, enum sensor_attribute attr,
+                           const struct sensor_value* val) {
+    int err;
+
+    switch (chan) {
+        case SENSOR_CHAN_ALL:
+            if (attr == SENSOR_ATTR_CONFIGURATION) {
+                LOG_INF("SET MODE[%d]", val->val1);
+                switch (val->val1) {
+                    case OPERATION_MODE_CONFIG:
+                        LOG_DBG("MODE OPERATION_MODE_CONFIG");
+                        err = bno055_set_config(dev, OPERATION_MODE_CONFIG, false);
+                        if (err < 0) {
+                            return err;
+                        }
+                        break;
+
+                    case OPERATION_MODE_ACCONLY:
+                        LOG_DBG("MODE OPERATION_MODE_ACCONLY");
+                        err = bno055_set_config(dev, OPERATION_MODE_ACCONLY, false);
+                        if (err < 0) {
+                            return err;
+                        }
+                        break;
+
+                    case OPERATION_MODE_MAGONLY:
+                        LOG_DBG("MODE OPERATION_MODE_MAGONLY");
+                        err = bno055_set_config(dev, OPERATION_MODE_MAGONLY, false);
+                        if (err < 0) {
+                            return err;
+                        }
+                        break;
+
+                    case OPERATION_MODE_GYRONLY:
+                        LOG_DBG("MODE OPERATION_MODE_GYRONLY");
+                        err = bno055_set_config(dev, OPERATION_MODE_GYRONLY, false);
+                        if (err < 0) {
+                            return err;
+                        }
+                        break;
+
+                    case OPERATION_MODE_ACCMAG:
+                        LOG_DBG("MODE OPERATION_MODE_ACCMAG");
+                        err = bno055_set_config(dev, OPERATION_MODE_ACCMAG, false);
+                        if (err < 0) {
+                            return err;
+                        }
+                        break;
+
+                    case OPERATION_MODE_ACCGYRO:
+                        LOG_DBG("MODE OPERATION_MODE_ACCGYRO");
+                        err = bno055_set_config(dev, OPERATION_MODE_ACCGYRO, false);
+                        if (err < 0) {
+                            return err;
+                        }
+                        break;
+
+                    case OPERATION_MODE_MAGGYRO:
+                        LOG_DBG("MODE OPERATION_MODE_MAGGYRO");
+                        err = bno055_set_config(dev, OPERATION_MODE_MAGGYRO, false);
+                        if (err < 0) {
+                            return err;
+                        }
+                        break;
+
+                    case OPERATION_MODE_AMG:
+                        LOG_DBG("MODE OPERATION_MODE_AMG");
+                        err = bno055_set_config(dev, OPERATION_MODE_AMG, false);
+                        if (err < 0) {
+                            return err;
+                        }
+                        break;
+
+                    case OPERATION_MODE_IMUPLUS:
+                        LOG_DBG("MODE OPERATION_MODE_IMUPLUS");
+                        err = bno055_set_config(dev, OPERATION_MODE_IMUPLUS, true);
+                        if (err < 0) {
+                            return err;
+                        }
+                        break;
+
+                    case OPERATION_MODE_COMPASS:
+                        LOG_DBG("MODE OPERATION_MODE_COMPASS");
+                        err = bno055_set_config(dev, OPERATION_MODE_COMPASS, true);
+                        if (err < 0) {
+                            return err;
+                        }
+                        break;
+
+                    case OPERATION_MODE_M4G:
+                        LOG_DBG("MODE OPERATION_MODE_M4G");
+                        err = bno055_set_config(dev, OPERATION_MODE_M4G, true);
+                        if (err < 0) {
+                            return err;
+                        }
+                        break;
+
+                    case OPERATION_MODE_NDOF_FMC_OFF:
+                        LOG_DBG("MODE OPERATION_MODE_NDOF_FMC_OFF");
+                        err = bno055_set_config(dev, OPERATION_MODE_NDOF_FMC_OFF, true);
+                        if (err < 0) {
+                            return err;
+                        }
+                        break;
+
+                    case OPERATION_MODE_NDOF:
+                        LOG_DBG("MODE OPERATION_MODE_NDOF");
+                        err = bno055_set_config(dev, OPERATION_MODE_NDOF, true);
+                        if (err < 0) {
+                            return err;
+                        }
+                        break;
+
+                    default:
+                        return -EINVAL;
+                }
+            } else if (attr == (enum sensor_attribute)BNO055_SENSOR_ATTR_POWER_MODE) {
+                LOG_INF("SET POWER[%d]", val->val1);
+                switch (val->val1) {
+                    case BNO055_POWER_NORMAL:
+                        LOG_DBG("POWER BNO055_POWER_NORMAL");
+                        err = bno055_set_power(dev, BNO055_POWER_NORMAL);
+                        if (err < 0) {
+                            return err;
+                        }
+                        break;
+
+                    case BNO055_POWER_LOW_POWER:
+                        LOG_DBG("POWER BNO055_POWER_LOW_POWER");
+                        err = bno055_set_power(dev, BNO055_POWER_LOW_POWER);
+                        if (err < 0) {
+                            return err;
+                        }
+                        break;
+
+                    case BNO055_POWER_SUSPEND:
+                        LOG_DBG("POWER BNO055_POWER_SUSPEND");
+                        err = bno055_set_power(dev, BNO055_POWER_SUSPEND);
+                        if (err < 0) {
+                            return err;
+                        }
+                        break;
+
+                    case BNO055_POWER_INVALID:
+                        LOG_DBG("POWER BNO055_POWER_INVALID");
+                        err = bno055_set_power(dev, BNO055_POWER_INVALID);
+                        if (err < 0) {
+                            return err;
+                        }
+                        break;
+
+                    default:
+                        return -EINVAL;
+                }
+            }
+            break;
+
+        default:
+            return -ENOTSUP;
+    }
+    return 0;
+}
+
 static int bno055_sample_fetch(const struct device* dev, enum sensor_channel chan) {
     struct bno055_data* data = dev->data;
     int err = 0;
@@ -451,7 +781,7 @@ static int bno055_sample_fetch(const struct device* dev, enum sensor_channel cha
         case OPERATION_MODE_NDOF:
             err = get_system_status(dev);
             err = get_vector(dev, VECTOR_EULER, &data->eul);
-            err = get_quaternion(dev, VECTOR_QUAT, &data->qua);
+            err = get_vector4(dev, VECTOR_QUAT, &data->qua);
             is_fully_calibrated(dev);
             if (err < 0) {
                 return err;
@@ -523,7 +853,7 @@ static int bno055_init(const struct device* dev) {
 }
 
 static const struct sensor_driver_api bno055_driver_api = {
-    //    .attr_set = bno055_attr_set,
+    .attr_set = bno055_attr_set,
     .sample_fetch = bno055_sample_fetch,
     .channel_get = bno055_channel_get,
 #if BNO055_USE_IRQ
