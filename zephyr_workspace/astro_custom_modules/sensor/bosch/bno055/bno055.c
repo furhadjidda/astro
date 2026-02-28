@@ -416,7 +416,6 @@ static int set_ext_crystal_use(const struct device* dev, bool usextal) {
         return err;
     }
     k_sleep(K_MSEC(25));
-    // bno055_write_register(BNO055_PAGE_ID_ADDR, 0);
     err = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_PAGE_ID_ADDR, 0x00);
     if (err < 0) {
         LOG_ERR("I2C communication failed %d", err);
@@ -438,7 +437,6 @@ static int set_ext_crystal_use(const struct device* dev, bool usextal) {
     }
     k_sleep(K_MSEC(10));
     /* Set the requested operating mode (see section 3.3) */
-    // bno055_write_register(BNO055_OPR_MODE_ADDR, OPERATION_MODE_NDOF);
     err = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_OPR_MODE_ADDR, OPERATION_MODE_NDOF);
     if (err < 0) {
         LOG_ERR("I2C communication failed %d", err);
@@ -809,10 +807,13 @@ static int bno055_init(const struct device* dev) {
     LOG_DBG("Initializing BNO055...\n");
 
     // Setting Page to 0
-    err = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_PAGE_ID_ADDR, 0x00);
+    err = bno055_set_page(dev, BNO055_PAGE_ZERO);
+    if (err < 0) {
+        return err;
+    }
 
     // reset the BNO055
-    err = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_SYS_TRIGGER_ADDR, 0x20);
+    err = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_SYS_TRIGGER_ADDR, BNO055_COMMAND_RESET);
     k_sleep(K_MSEC(650));  // Wait for the reset to complete
 
     // Check if the BNO055 is connected
@@ -829,24 +830,20 @@ static int bno055_init(const struct device* dev) {
     err = i2c_burst_read_dt(&config->i2c_bus, 0x04, soft, sizeof(soft));
     LOG_INF("SOFTWARE REV [%d][%d]", soft[1], soft[0]);
 
-    // Set the operating mode to CONFIG_MODE for initial setup
-    err = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_OPR_MODE_ADDR, OPERATION_MODE_CONFIG);
-    k_sleep(K_MSEC(30));
+    /* Configure Unit according to Zephyr */
+    uint8_t selection = (BNO055_ORIENTATION_WINDOWS << 7) | (BNO055_TEMP_UNIT_CELSIUS << 4) |
+                        (BNO055_EULER_UNIT_RADIANS << 2) | (BNO055_GYRO_UNIT_RPS << 1) | (BNO055_ACCEL_UNIT_MS_2 << 0);
+    err = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_UNIT_SEL_ADDR, selection);
+    if (err < 0) {
+        return err;
+    }
 
-    // Perform any necessary sensor configuration (e.g., power mode, unit
-    // selection) Example: Set the power mode to normal
-    err = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_PWR_MODE_ADDR, POWER_MODE_NORMAL);
-
-    k_sleep(K_MSEC(30));
-
-    err = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_PAGE_ID_ADDR, 0x00);
-    err = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_SYS_TRIGGER_ADDR, 0x00);
-    k_sleep(K_MSEC(10));
-    // Set the sensor to NDOF mode
-    err = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_OPR_MODE_ADDR, OPERATION_MODE_NDOF);
-    data->mode = OPERATION_MODE_NDOF;
-    k_sleep(K_MSEC(30));
-    set_ext_crystal_use(dev, config->use_xtal);
+    if (config->use_xtal) {
+        err = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_SYS_TRIGGER_ADDR, BNO055_COMMAND_XTAL);
+        if (err < 0) {
+            return err;
+        }
+    }
 
     printk("BNO055 initialization complete.\n");
     return 0;  // Initialization successful

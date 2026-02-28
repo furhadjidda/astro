@@ -38,6 +38,15 @@ int main(void) {
     }
     LOG_DBG("BNO055 Device %s is ready\n", bno055_dev->name);
 
+    struct sensor_value config = {
+        .val1 = (bno055_fusion) ? OPERATION_MODE_NDOF : OPERATION_MODE_M4G,
+        .val2 = 0,
+    };
+    sensor_attr_set(bno055_dev, SENSOR_CHAN_ALL, SENSOR_ATTR_CONFIGURATION, &config);
+    config.val1 = BNO055_POWER_NORMAL;
+    config.val2 = 0;
+    sensor_attr_set(bno055_dev, SENSOR_CHAN_ALL, BNO055_SENSOR_ATTR_POWER_MODE, &config);
+
     while (1) {
         if (NULL != bno055_dev) {
             sensor_sample_fetch(bno055_dev);
