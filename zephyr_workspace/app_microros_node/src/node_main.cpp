@@ -34,6 +34,7 @@
 #include <zephyr.h>
 #endif
 
+#include <bno055.h>
 #include <microros_transports.h>
 #include <rcl/error_handling.h>
 #include <rcl/rcl.h>
@@ -190,10 +191,10 @@ static void imu_timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
         imu_msg.angular_velocity.z = gyro[2];
 
         // Fill orientation
-        imu_msg.orientation.w = 0.0;
-        imu_msg.orientation.x = quat[1].val1;
-        imu_msg.orientation.y = quat[2].val1;
-        imu_msg.orientation.z = quat[3].val1;
+        imu_msg.orientation.w = sensor_value_to_double(&quat[0]);
+        imu_msg.orientation.x = sensor_value_to_double(&quat[1]);
+        imu_msg.orientation.y = sensor_value_to_double(&quat[2]);
+        imu_msg.orientation.z = sensor_value_to_double(&quat[3]);
 
         // Add covariance if needed
         // For simplicity, leaving covariances as zero
@@ -205,13 +206,13 @@ static void imu_timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
 
         // Format for the screen
         char buffer[64];
-        snprintf(buffer, sizeof(buffer), "X=%d.%02d", quat[0].val1, quat[0].val2);
+        snprintf(buffer, sizeof(buffer), "X=%.3f", imu_msg.orientation.x);
         cfb_print(display_dev, buffer, 0, 20);
 
-        snprintf(buffer, sizeof(buffer), "Y=%d.%02d", quat[1].val1, quat[1].val2);
+        snprintf(buffer, sizeof(buffer), "Y=%.3f", imu_msg.orientation.y);
         cfb_print(display_dev, buffer, 0, 35);
 
-        snprintf(buffer, sizeof(buffer), "Z=%d.%02d", quat[2].val1, quat[2].val2);
+        snprintf(buffer, sizeof(buffer), "Z=%.3f", imu_msg.orientation.z);
         cfb_print(display_dev, buffer, 0, 50);
 
         cfb_framebuffer_finalize(display_dev);
@@ -383,6 +384,15 @@ int main(void) {
         LOG_ERR("Device %s is not ready\n", bno055_dev->name);
         return -ENODEV;
     }
+
+    struct sensor_value config = {
+        .val1 = (bno055_fusion) ? OPERATION_MODE_NDOF : OPERATION_MODE_M4G,
+        .val2 = 0,
+    };
+    sensor_attr_set(bno055_dev, SENSOR_CHAN_ALL, SENSOR_ATTR_CONFIGURATION, &config);
+    config.val1 = BNO055_POWER_NORMAL;
+    config.val2 = 0;
+    sensor_attr_set(bno055_dev, SENSOR_CHAN_ALL, static_cast<sensor_attribute>(BNO055_SENSOR_ATTR_POWER_MODE), &config);
 
     cfb_framebuffer_clear(display_dev, true);
 
