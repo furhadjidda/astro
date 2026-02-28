@@ -24,7 +24,6 @@ static int mtk3333_send_command(const struct device* dev, const char* cmd, size_
     const struct mtk3333_config* cfg = dev->config;
 
     int ret = i2c_write_dt(&cfg->i2c_bus, cmd, len);
-    printk("MTK3333: Sent command '%s' to I2C\n", cmd);
     if (ret < 0) {
         LOG_ERR("Failed to send command to MTK3333: %d", ret);
         return ret;
@@ -109,25 +108,29 @@ static void mtk3333_poll_work(struct k_work* work) {
 
     if (data->rcvd_flag) {
         data->rcvd_flag = false;
+#ifdef CONFIG_MTK3333_VERBOSE_LOGGING
         LOG_DBG("Received NMEA: %s", data->last_line);
+#endif
 
         // parse_nmea(data->last_line, data);
         gnss_nmea_parse(data->last_line, &data->data);
 
         /* Publish the GNSS data */
         if (data->data.info.fix_status == GNSS_FIX_STATUS_GNSS_FIX) {
+#ifdef CONFIG_MTK3333_VERBOSE_LOGGING
             LOG_DBG("Published GNSS fix: Lat %lld, Lon %lld, Alt %d mm", data->data.nav_data.latitude,
                     data->data.nav_data.longitude, data->data.nav_data.altitude);
-            LOG_DBG("Satellites: %d, HDOP: %d", data->data.info.satellites_cnt, data->data.info.hdop);
-            LOG_DBG("Fix Status: %d, Fix Quality: %d", data->data.info.fix_status, data->data.info.fix_quality);
             LOG_DBG("Geoid Separation: %d mm", data->data.info.geoid_separation);
             LOG_DBG("UTC Time: %02d %02d:%02d", data->data.utc.month, data->data.utc.hour, data->data.utc.minute);
+#endif
+            LOG_INF("Satellites: %d, HDOP: %d", data->data.info.satellites_cnt, data->data.info.hdop);
+            LOG_INF("Fix Status: %d, Fix Quality: %d", data->data.info.fix_status, data->data.info.fix_quality);
         }
 
         gnss_publish_data(data->dev, &data->data);
     }
     /* Reschedule the poll work in 200 ms */
-    k_work_schedule(&data->poll_work, K_MSEC(50));
+    k_work_schedule(&data->poll_work, K_MSEC(10));
 }
 
 /* --------------------------- GNSS API Stubs ---------------------------- */
@@ -197,12 +200,12 @@ static DEVICE_API(gnss, mtk3333_gnss_api) = {
 static int mtk3333_init(const struct device* dev) {
     const struct mtk3333_config* cfg = dev->config;
     struct mtk3333_data* data = dev->data;
-    printk("Initializing MTK3333 simulated GNSS driver...\n");
+    LOG_INF("Initializing MTK3333 simulated GNSS driver...\n");
     if (!i2c_is_ready_dt(&cfg->i2c_bus)) {
         LOG_ERR("I2C bus not ready");
         return -ENODEV;
     }
-    k_msleep(1000);
+    k_msleep(500);
     data->read_buffer_index = 0;
 
     data->buff_max = -1;
@@ -243,7 +246,7 @@ static int mtk3333_init(const struct device* dev) {
     k_work_init_delayable(&data->poll_work, mtk3333_poll_work);
 
     /* Schedule first poll after 200 ms */
-    k_work_schedule(&data->poll_work, K_MSEC(50));
+    k_work_schedule(&data->poll_work, K_MSEC(10));
 
     LOG_INF("MTK3333 simulated GNSS driver initialized");
 
