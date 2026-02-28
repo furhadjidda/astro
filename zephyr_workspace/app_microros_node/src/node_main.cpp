@@ -157,10 +157,6 @@ static void timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
 
 static void imu_timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
     ARG_UNUSED(last_call_time);
-    char buffer[64];
-    snprintf(buffer, sizeof(buffer), "BNO:Ready");
-    cfb_print(display_dev, buffer, 0, 0);
-    cfb_framebuffer_finalize(display_dev);
     if (timer != NULL && NULL != bno055_dev) {
         double accel[3] = {0.0, 0.0, 0.0};
         double gyro[3] = {0.0, 0.0, 0.0};
@@ -254,62 +250,6 @@ static void time_sync_thread_entry(void* a, void* b, void* c) {
             printk("micro-ROS time sync failed\n");
         }
         k_sleep(K_MSEC(TIME_SYNC_PERIOD_MS));
-    }
-}
-
-static void imu_thread_entry(void* a, void* b, void* c) {
-    ARG_UNUSED(a);
-    ARG_UNUSED(b);
-    ARG_UNUSED(c);
-
-#if Z_DEVICE_DT_FLAGS(DT_NODELABEL(bno055)) & DEVICE_FLAG_INIT_DEFERRED
-    LOG_DBG("Deferred init enabled, sleeping for %d ms", BNO055_TIMING_STARTUP);
-    k_sleep(K_MSEC(BNO055_TIMING_STARTUP));
-    device_init(bno055_dev);
-#endif
-    if (!device_is_ready(bno055_dev)) {
-        LOG_ERR("Device %s is not ready\n", bno055_dev->name);
-        return;
-    }
-    LOG_DBG("BNO055 Device %s is ready\n", bno055_dev->name);
-    char buffer[64];
-    snprintf(buffer, sizeof(buffer), "BNO:Ready");
-    cfb_print(display_dev, buffer, 0, 0);
-    cfb_framebuffer_finalize(display_dev);
-
-    while (1) {
-        if (NULL != bno055_dev) {
-            char buffer[64];
-            struct sensor_value eul[3];
-
-            sensor_sample_fetch(bno055_dev);
-            sensor_channel_get(bno055_dev, static_cast<sensor_channel>(BNO055_SENSOR_CHAN_EULER_YRP), eul);
-            LOG_DBG(
-                "EULER: X(rad.s-1)[%d.%06d] Y(rad.s-1)[%d.%06d] "
-                "Z(rad.s-1)[%d.%06d]\n",
-                eul[0].val1, eul[0].val2, eul[1].val1, eul[1].val2, eul[2].val1, eul[2].val2);
-            // Format for the screen
-
-            snprintf(buffer, sizeof(buffer), "X=%d.%02d", eul[0].val1, eul[0].val2);
-            cfb_print(display_dev, buffer, 0, 20);
-
-            snprintf(buffer, sizeof(buffer), "Y=%d.%02d", eul[1].val1, eul[1].val2);
-            cfb_print(display_dev, buffer, 0, 35);
-
-            snprintf(buffer, sizeof(buffer), "Z=%d.%02d", eul[2].val1, eul[2].val2);
-            cfb_print(display_dev, buffer, 0, 50);
-
-            cfb_framebuffer_finalize(display_dev);
-
-            struct sensor_value sys_status[3];
-            sensor_channel_get(bno055_dev, static_cast<sensor_channel>(BNO055_SENSOR_CHAN_SYSTEM_STATUS), sys_status);
-            LOG_DBG("system status %d , self_test = %d system_error %d \n", sys_status[0].val1, sys_status[1].val1,
-                    sys_status[2].val1);
-
-        } else {
-            LOG_ERR("BNO055 device is NULL!\n");
-        }
-        k_sleep(K_MSEC(200));
     }
 }
 
@@ -496,13 +436,6 @@ int main(void) {
     RCCHECK(rclc_executor_add_timer(&executor, &imu_timer));
 
     msg.data = 0;
-
-    /* Start thread */
-    // k_thread_create(&imu_thread, imu_stack, THREAD_STACK_SIZE, imu_thread_entry, NULL, NULL, NULL,
-    // IMU_THREAD_PRIORITY,
-    //                 0, K_NO_WAIT);
-
-    // k_thread_name_set(&imu_thread, "imu_thread");
 
     /* Start executor thread */
     k_thread_create(&executor_thread, executor_stack, EXECUTOR_STACK_SIZE, executor_thread_entry, NULL, NULL, NULL,
