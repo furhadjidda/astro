@@ -213,6 +213,11 @@ From the host side you will need to use this in place of the ip address
     ```
 4. Connect your device so it’s ready for file transfer.
 
+# Zephyr Firmware
+
+For details, see the [Zephyr Firmware README](./zephyr_workspace/README.md).
+
+
 
 ## Other Imporatant Commands when needed
 ### Static transformations
@@ -230,6 +235,12 @@ ros2 launch sllidar_ros2 view_sllidar_a1_launch.py scan_mode:=Standard
 * https://www.thegeekpub.com/16265/using-xbox-one-controllers-on-a-raspberry-pi/
 * https://mjwhite8119.github.io/Robots/twr-model-part1
 * https://hackaday.io/project/167074-build-your-own-turtlebot-3-backbone/log/166955-motor-speed-control
+
+# Visualizing GNSS data using FoxGlove Studio
+* ros2 launch foxglove_bridge foxglove_bridge_launch.xml
+* Add the map panel
+![gnss_visual](images/foxglove_gnss.png)
+
 
 
 ## Nodes
