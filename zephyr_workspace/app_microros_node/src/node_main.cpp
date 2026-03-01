@@ -290,8 +290,9 @@ static void gnss_data_cb(const struct device* dev, const struct gnss_data* data)
         mtk3333_nav_sat_fix_msg.header.stamp.nanosec = now % 1000000000LL;
 
         // ── Position (Zephyr stores as millionths of degrees / mm) ───
-        mtk3333_nav_sat_fix_msg.latitude = data->nav_data.latitude / 1e7;  // nanodegrees → degrees
-        mtk3333_nav_sat_fix_msg.longitude = data->nav_data.longitude / 1e7;
+        mtk3333_nav_sat_fix_msg.latitude = (double)data->nav_data.latitude / 1e9;
+        mtk3333_nav_sat_fix_msg.longitude = (double)data->nav_data.longitude / 1e9;
+
         mtk3333_nav_sat_fix_msg.altitude = data->nav_data.altitude / 1e3;  // mm → meters
 
         // ── Fix Status ───────────────────────────────────────────────
@@ -363,8 +364,8 @@ static void ublox_gnss_data_cb(const struct device* dev, const struct gnss_data*
         ublox_nav_sat_fix_msg.header.stamp.nanosec = now % 1000000000LL;
 
         // ── Position (Zephyr stores as millionths of degrees / mm) ───
-        ublox_nav_sat_fix_msg.latitude = data->nav_data.latitude / 1e7;  // nanodegrees → degrees
-        ublox_nav_sat_fix_msg.longitude = data->nav_data.longitude / 1e7;
+        ublox_nav_sat_fix_msg.latitude = data->nav_data.latitude / 1e9;  // nanodegrees → degrees
+        ublox_nav_sat_fix_msg.longitude = data->nav_data.longitude / 1e9;
         ublox_nav_sat_fix_msg.altitude = data->nav_data.altitude / 1e3;  // mm → meters
 
         // ── Fix Status ───────────────────────────────────────────────
