@@ -69,7 +69,8 @@ static const struct device* display_dev = DEVICE_DT_GET(DT_NODELABEL(ssd1306));
 // imu driver
 static const struct device* const bno055_dev = DEVICE_DT_GET(DT_NODELABEL(bno055));
 // gnss driver
-#define GNSS_MODEM DEVICE_DT_GET(DT_ALIAS(gnss))
+#define mtk3333_gnss DEVICE_DT_GET(DT_ALIAS(gnss))
+#define ublox_gnss DEVICE_DT_GET(DT_ALIAS(ubloxgnss))
 
 // IMU configuration
 static bool bno055_fusion = true;
@@ -122,16 +123,19 @@ static bool bno055_fusion = true;
 static rclc_support_t support;
 static rcl_node_t node;
 // Publishers
-static rcl_publisher_t gnss_publisher;
+static rcl_publisher_t mtk3333_gnss_publisher;
+static rcl_publisher_t ublox_gnss_publisher;
 static rcl_publisher_t imu_publisher;
 // Timers
 static rcl_timer_t gnss_timer;
+static rcl_timer_t ublox_gnss_timer;
 static rcl_timer_t imu_timer;
 
 static rclc_executor_t executor;
 static sensor_msgs__msg__Imu imu_msg;
 static std_msgs__msg__Int32 msg;
-sensor_msgs__msg__NavSatFix nav_sat_fix_msg;
+sensor_msgs__msg__NavSatFix mtk3333_nav_sat_fix_msg;
+sensor_msgs__msg__NavSatFix ublox_nav_sat_fix_msg;
 
 /* =========================================================
  * Thread objects
@@ -155,9 +159,21 @@ static void gnss_timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
 
     if (timer != NULL) {
         // rcl_time_point_value_t now = rmw_uros_epoch_nanos();
-        // nav_sat_fix_msg.header.stamp.sec = now / 1000000000LL;
-        // nav_sat_fix_msg.header.stamp.nanosec = now % 1000000000LL;
-        // // RCSOFTCHECK(rcl_publish(&gnss_publisher, &nav_sat_fix_msg, NULL));
+        // mtk3333_nav_sat_fix_msg.header.stamp.sec = now / 1000000000LL;
+        // mtk3333_nav_sat_fix_msg.header.stamp.nanosec = now % 1000000000LL;
+        // // RCSOFTCHECK(rcl_publish(&mtk3333_gnss_publisher, &mtk3333_nav_sat_fix_msg, NULL));
+        // msg.data++;
+    }
+}
+
+static void ublox_gnss_timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
+    ARG_UNUSED(last_call_time);
+
+    if (timer != NULL) {
+        // rcl_time_point_value_t now = rmw_uros_epoch_nanos();
+        // ublox_nav_sat_fix_msg.header.stamp.sec = now / 1000000000LL;
+        // ublox_nav_sat_fix_msg.header.stamp.nanosec = now % 1000000000LL;
+        // // RCSOFTCHECK(rcl_publish(&ublox_gnss_publisher, &ublox_nav_sat_fix_msg, NULL));
         // msg.data++;
     }
 }
@@ -278,45 +294,45 @@ static void gnss_data_cb(const struct device* dev, const struct gnss_data* data)
         cfb_framebuffer_finalize(display_dev);
 
         rcl_time_point_value_t now = rmw_uros_epoch_nanos();
-        nav_sat_fix_msg.header.stamp.sec = now / 1000000000LL;
-        nav_sat_fix_msg.header.stamp.nanosec = now % 1000000000LL;
+        mtk3333_nav_sat_fix_msg.header.stamp.sec = now / 1000000000LL;
+        mtk3333_nav_sat_fix_msg.header.stamp.nanosec = now % 1000000000LL;
 
         // ── Position (Zephyr stores as millionths of degrees / mm) ───
-        nav_sat_fix_msg.latitude = data->nav_data.latitude / 1e7;  // nanodegrees → degrees
-        nav_sat_fix_msg.longitude = data->nav_data.longitude / 1e7;
-        nav_sat_fix_msg.altitude = data->nav_data.altitude / 1e3;  // mm → meters
+        mtk3333_nav_sat_fix_msg.latitude = data->nav_data.latitude / 1e7;  // nanodegrees → degrees
+        mtk3333_nav_sat_fix_msg.longitude = data->nav_data.longitude / 1e7;
+        mtk3333_nav_sat_fix_msg.altitude = data->nav_data.altitude / 1e3;  // mm → meters
 
         // ── Fix Status ───────────────────────────────────────────────
         switch (data->info.fix_status) {
             case GNSS_FIX_STATUS_GNSS_FIX:
-                nav_sat_fix_msg.status.status = sensor_msgs__msg__NavSatStatus__STATUS_FIX;
+                mtk3333_nav_sat_fix_msg.status.status = sensor_msgs__msg__NavSatStatus__STATUS_FIX;
                 break;
             case GNSS_FIX_STATUS_DGNSS_FIX:
-                nav_sat_fix_msg.status.status = sensor_msgs__msg__NavSatStatus__STATUS_SBAS_FIX;
+                mtk3333_nav_sat_fix_msg.status.status = sensor_msgs__msg__NavSatStatus__STATUS_SBAS_FIX;
                 break;
             default:
-                nav_sat_fix_msg.status.status = sensor_msgs__msg__NavSatStatus__STATUS_NO_FIX;
+                mtk3333_nav_sat_fix_msg.status.status = sensor_msgs__msg__NavSatStatus__STATUS_NO_FIX;
                 break;
         }
 
         // ── Service (which constellations) ───────────────────────────
-        nav_sat_fix_msg.status.service =
+        mtk3333_nav_sat_fix_msg.status.service =
             sensor_msgs__msg__NavSatStatus__SERVICE_GPS | sensor_msgs__msg__NavSatStatus__SERVICE_GLONASS;
 
         double hdop = data->info.hdop / 1e3;            // if available
         double variance = (hdop * 5.0) * (hdop * 5.0);  // rough estimate
 
-        memset(nav_sat_fix_msg.position_covariance, 0, sizeof(nav_sat_fix_msg.position_covariance));
+        memset(mtk3333_nav_sat_fix_msg.position_covariance, 0, sizeof(mtk3333_nav_sat_fix_msg.position_covariance));
 
-        nav_sat_fix_msg.position_covariance[0] = variance;        // East
-        nav_sat_fix_msg.position_covariance[4] = variance;        // North
-        nav_sat_fix_msg.position_covariance[8] = variance * 4.0;  // Up (typically worse)
-        nav_sat_fix_msg.position_covariance_type = sensor_msgs__msg__NavSatFix__COVARIANCE_TYPE_APPROXIMATED;
+        mtk3333_nav_sat_fix_msg.position_covariance[0] = variance;        // East
+        mtk3333_nav_sat_fix_msg.position_covariance[4] = variance;        // North
+        mtk3333_nav_sat_fix_msg.position_covariance[8] = variance * 4.0;  // Up (typically worse)
+        mtk3333_nav_sat_fix_msg.position_covariance_type = sensor_msgs__msg__NavSatFix__COVARIANCE_TYPE_APPROXIMATED;
 
-        RCSOFTCHECK(rcl_publish(&gnss_publisher, &nav_sat_fix_msg, NULL));
+        RCSOFTCHECK(rcl_publish(&mtk3333_gnss_publisher, &mtk3333_nav_sat_fix_msg, NULL));
     }
 }
-GNSS_DATA_CALLBACK_DEFINE(GNSS_MODEM, gnss_data_cb);
+GNSS_DATA_CALLBACK_DEFINE(mtk3333_gnss, gnss_data_cb);
 
 #if CONFIG_GNSS_SATELLITES
 static void gnss_satellites_cb(const struct device* dev, const struct gnss_satellite* satellites, uint16_t size) {
@@ -331,7 +347,80 @@ static void gnss_satellites_cb(const struct device* dev, const struct gnss_satel
            size > 1 ? "s" : "", tracked_count, corrected_count);
 }
 #endif
-GNSS_SATELLITES_CALLBACK_DEFINE(GNSS_MODEM, gnss_satellites_cb);
+GNSS_SATELLITES_CALLBACK_DEFINE(mtk3333_gnss, gnss_satellites_cb);
+
+static void ublox_gnss_data_cb(const struct device* dev, const struct gnss_data* data) {
+    uint64_t timepulse_ns;
+    k_ticks_t timepulse;
+
+    if (data->info.fix_status != GNSS_FIX_STATUS_NO_FIX) {
+        if (gnss_get_latest_timepulse(dev, &timepulse) == 0) {
+            timepulse_ns = k_ticks_to_ns_near64(timepulse);
+        }
+    }
+    if (data->info.fix_status == GNSS_FIX_STATUS_GNSS_FIX) {
+        char buffer[64];
+        LOG_DBG("UTC Time: %02d %02d:%02d", data->utc.month, data->utc.hour, data->utc.minute);
+        snprintf(buffer, sizeof(buffer), "%02d:%02d", data->utc.hour, data->utc.minute);
+
+        cfb_print(display_dev, buffer, 64, 0);  // Print at
+        cfb_framebuffer_finalize(display_dev);
+
+        rcl_time_point_value_t now = rmw_uros_epoch_nanos();
+        ublox_nav_sat_fix_msg.header.stamp.sec = now / 1000000000LL;
+        ublox_nav_sat_fix_msg.header.stamp.nanosec = now % 1000000000LL;
+
+        // ── Position (Zephyr stores as millionths of degrees / mm) ───
+        ublox_nav_sat_fix_msg.latitude = data->nav_data.latitude / 1e7;  // nanodegrees → degrees
+        ublox_nav_sat_fix_msg.longitude = data->nav_data.longitude / 1e7;
+        ublox_nav_sat_fix_msg.altitude = data->nav_data.altitude / 1e3;  // mm → meters
+
+        // ── Fix Status ───────────────────────────────────────────────
+        switch (data->info.fix_status) {
+            case GNSS_FIX_STATUS_GNSS_FIX:
+                ublox_nav_sat_fix_msg.status.status = sensor_msgs__msg__NavSatStatus__STATUS_FIX;
+                break;
+            case GNSS_FIX_STATUS_DGNSS_FIX:
+                ublox_nav_sat_fix_msg.status.status = sensor_msgs__msg__NavSatStatus__STATUS_SBAS_FIX;
+                break;
+            default:
+                ublox_nav_sat_fix_msg.status.status = sensor_msgs__msg__NavSatStatus__STATUS_NO_FIX;
+                break;
+        }
+
+        // ── Service (which constellations) ───────────────────────────
+        ublox_nav_sat_fix_msg.status.service =
+            sensor_msgs__msg__NavSatStatus__SERVICE_GPS | sensor_msgs__msg__NavSatStatus__SERVICE_GLONASS;
+
+        double hdop = data->info.hdop / 1e3;            // if available
+        double variance = (hdop * 5.0) * (hdop * 5.0);  // rough estimate
+
+        memset(ublox_nav_sat_fix_msg.position_covariance, 0, sizeof(ublox_nav_sat_fix_msg.position_covariance));
+
+        ublox_nav_sat_fix_msg.position_covariance[0] = variance;        // East
+        ublox_nav_sat_fix_msg.position_covariance[4] = variance;        // North
+        ublox_nav_sat_fix_msg.position_covariance[8] = variance * 4.0;  // Up (typically worse)
+        ublox_nav_sat_fix_msg.position_covariance_type = sensor_msgs__msg__NavSatFix__COVARIANCE_TYPE_APPROXIMATED;
+
+        RCSOFTCHECK(rcl_publish(&ublox_gnss_publisher, &ublox_nav_sat_fix_msg, NULL));
+    }
+}
+GNSS_DATA_CALLBACK_DEFINE(ublox_gnss, ublox_gnss_data_cb);
+
+#if CONFIG_GNSS_SATELLITES
+static void ublox_gnss_satellites_cb(const struct device* dev, const struct gnss_satellite* satellites, uint16_t size) {
+    unsigned int tracked_count = 0;
+    unsigned int corrected_count = 0;
+
+    for (unsigned int i = 0; i != size; ++i) {
+        tracked_count += satellites[i].is_tracked;
+        corrected_count += satellites[i].is_corrected;
+    }
+    printk("%u satellite%s reported (of which %u tracked, of which %u has RTK corrections)!\n", size,
+           size > 1 ? "s" : "", tracked_count, corrected_count);
+}
+#endif
+GNSS_SATELLITES_CALLBACK_DEFINE(ublox_gnss, ublox_gnss_satellites_cb);
 
 #define GNSS_SYSTEMS_PRINTF(define, supported, enabled)                                                     \
     printk("\t%20s: Supported: %3s Enabled: %3s\n", STRINGIFY(define), (supported & define) ? "Yes" : "No", \
@@ -349,8 +438,8 @@ int main(void) {
 #endif
     sensor_msgs__msg__Imu__init(&imu_msg);
     rosidl_runtime_c__String__assign(&imu_msg.header.frame_id, "imu_frame");
-    sensor_msgs__msg__NavSatFix__init(&nav_sat_fix_msg);
-    rosidl_runtime_c__String__assign(&nav_sat_fix_msg.header.frame_id, "gnss_frame");
+    sensor_msgs__msg__NavSatFix__init(&mtk3333_nav_sat_fix_msg);
+    rosidl_runtime_c__String__assign(&mtk3333_nav_sat_fix_msg.header.frame_id, "gnss_frame");
     // Starting display
     if (!device_is_ready(display_dev)) {
         LOG_ERR("Display device not ready\n");
@@ -407,12 +496,12 @@ int main(void) {
     uint32_t fix_interval;
     int rc;
 
-    rc = gnss_get_supported_systems(GNSS_MODEM, &supported);
+    rc = gnss_get_supported_systems(mtk3333_gnss, &supported);
     if (rc < 0) {
         LOG_ERR("Failed to query supported systems (%d)\n", rc);
         return rc;
     }
-    rc = gnss_get_enabled_systems(GNSS_MODEM, &enabled);
+    rc = gnss_get_enabled_systems(mtk3333_gnss, &enabled);
     if (rc < 0) {
         LOG_ERR("Failed to query enabled systems (%d)\n", rc);
         return rc;
@@ -427,7 +516,7 @@ int main(void) {
     GNSS_SYSTEMS_PRINTF(GNSS_SYSTEM_SBAS, supported, enabled);
     GNSS_SYSTEMS_PRINTF(GNSS_SYSTEM_IMES, supported, enabled);
 
-    rc = gnss_get_fix_rate(GNSS_MODEM, &fix_interval);
+    rc = gnss_get_fix_rate(mtk3333_gnss, &fix_interval);
     if (rc < 0) {
         LOG_ERR("Failed to query fix rate (%d)\n", rc);
         return rc;
@@ -467,19 +556,25 @@ int main(void) {
     RCCHECK(rclc_node_init_default(&node, "sensor_publisher", "", &support));
 
     /* Publisher */
-    RCCHECK(rclc_publisher_init_default(&gnss_publisher, &node,
+    RCCHECK(rclc_publisher_init_default(&mtk3333_gnss_publisher, &node,
                                         ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, NavSatFix), "/gnss_raw"));
+    RCCHECK(rclc_publisher_init_default(&ublox_gnss_publisher, &node,
+                                        ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, NavSatFix), "/ublox_gnss_raw"));
+
     RCCHECK(rclc_publisher_init_default(&imu_publisher, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, Imu),
                                         "/imu_raw"));
 
     /* Timer */
     RCCHECK(rclc_timer_init_default(&gnss_timer, &support, RCL_MS_TO_NS(GNSS_PUBLISH_PERIOD_MS), gnss_timer_callback));
+    RCCHECK(rclc_timer_init_default(&ublox_gnss_timer, &support, RCL_MS_TO_NS(GNSS_PUBLISH_PERIOD_MS),
+                                    ublox_gnss_timer_callback));
     RCCHECK(rclc_timer_init_default(&imu_timer, &support, RCL_MS_TO_NS(IMU_PUBLISH_PERIOD_MS), imu_timer_callback));
 
     /* Executor */
-    RCCHECK(rclc_executor_init(&executor, &support.context, 2, &allocator));
+    RCCHECK(rclc_executor_init(&executor, &support.context, 3, &allocator));
 
     RCCHECK(rclc_executor_add_timer(&executor, &gnss_timer));
+    RCCHECK(rclc_executor_add_timer(&executor, &ublox_gnss_timer));
     RCCHECK(rclc_executor_add_timer(&executor, &imu_timer));
 
     msg.data = 0;
