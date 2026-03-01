@@ -88,7 +88,7 @@ static bool bno055_fusion = true;
 #define EXECUTOR_PRIORITY 4
 #define TIME_SYNC_PRIORITY 5 /* lower priority */
 
-#define PUBLISH_PERIOD_MS 1000
+#define GNSS_PUBLISH_PERIOD_MS 1000
 #define IMU_PUBLISH_PERIOD_MS 200
 #define TIME_SYNC_PERIOD_MS 1000
 
@@ -121,13 +121,17 @@ static bool bno055_fusion = true;
 
 static rclc_support_t support;
 static rcl_node_t node;
-static rcl_publisher_t publisher;
+// Publishers
+static rcl_publisher_t gnss_publisher;
 static rcl_publisher_t imu_publisher;
-static rcl_timer_t timer;
+// Timers
+static rcl_timer_t gnss_timer;
 static rcl_timer_t imu_timer;
+
 static rclc_executor_t executor;
 static sensor_msgs__msg__Imu imu_msg;
 static std_msgs__msg__Int32 msg;
+sensor_msgs__msg__NavSatFix nav_sat_fix_msg;
 
 /* =========================================================
  * Thread objects
@@ -146,12 +150,15 @@ static struct k_thread time_sync_thread;
  * Timer callback (runs inside executor thread)
  * ========================================================= */
 
-static void timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
+static void gnss_timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
     ARG_UNUSED(last_call_time);
 
     if (timer != NULL) {
-        RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL));
-        msg.data++;
+        // rcl_time_point_value_t now = rmw_uros_epoch_nanos();
+        // nav_sat_fix_msg.header.stamp.sec = now / 1000000000LL;
+        // nav_sat_fix_msg.header.stamp.nanosec = now % 1000000000LL;
+        // // RCSOFTCHECK(rcl_publish(&gnss_publisher, &nav_sat_fix_msg, NULL));
+        // msg.data++;
     }
 }
 
@@ -269,6 +276,44 @@ static void gnss_data_cb(const struct device* dev, const struct gnss_data* data)
 
         cfb_print(display_dev, buffer, 0, 0);  // Print at
         cfb_framebuffer_finalize(display_dev);
+
+        rcl_time_point_value_t now = rmw_uros_epoch_nanos();
+        nav_sat_fix_msg.header.stamp.sec = now / 1000000000LL;
+        nav_sat_fix_msg.header.stamp.nanosec = now % 1000000000LL;
+
+        // ── Position (Zephyr stores as millionths of degrees / mm) ───
+        nav_sat_fix_msg.latitude = data->nav_data.latitude / 1e7;  // nanodegrees → degrees
+        nav_sat_fix_msg.longitude = data->nav_data.longitude / 1e7;
+        nav_sat_fix_msg.altitude = data->nav_data.altitude / 1e3;  // mm → meters
+
+        // ── Fix Status ───────────────────────────────────────────────
+        switch (data->info.fix_status) {
+            case GNSS_FIX_STATUS_GNSS_FIX:
+                nav_sat_fix_msg.status.status = sensor_msgs__msg__NavSatStatus__STATUS_FIX;
+                break;
+            case GNSS_FIX_STATUS_DGNSS_FIX:
+                nav_sat_fix_msg.status.status = sensor_msgs__msg__NavSatStatus__STATUS_SBAS_FIX;
+                break;
+            default:
+                nav_sat_fix_msg.status.status = sensor_msgs__msg__NavSatStatus__STATUS_NO_FIX;
+                break;
+        }
+
+        // ── Service (which constellations) ───────────────────────────
+        nav_sat_fix_msg.status.service =
+            sensor_msgs__msg__NavSatStatus__SERVICE_GPS | sensor_msgs__msg__NavSatStatus__SERVICE_GLONASS;
+
+        double hdop = data->info.hdop / 1e3;            // if available
+        double variance = (hdop * 5.0) * (hdop * 5.0);  // rough estimate
+
+        memset(nav_sat_fix_msg.position_covariance, 0, sizeof(nav_sat_fix_msg.position_covariance));
+
+        nav_sat_fix_msg.position_covariance[0] = variance;        // East
+        nav_sat_fix_msg.position_covariance[4] = variance;        // North
+        nav_sat_fix_msg.position_covariance[8] = variance * 4.0;  // Up (typically worse)
+        nav_sat_fix_msg.position_covariance_type = sensor_msgs__msg__NavSatFix__COVARIANCE_TYPE_APPROXIMATED;
+
+        RCSOFTCHECK(rcl_publish(&gnss_publisher, &nav_sat_fix_msg, NULL));
     }
 }
 GNSS_DATA_CALLBACK_DEFINE(GNSS_MODEM, gnss_data_cb);
@@ -304,6 +349,8 @@ int main(void) {
 #endif
     sensor_msgs__msg__Imu__init(&imu_msg);
     rosidl_runtime_c__String__assign(&imu_msg.header.frame_id, "imu_frame");
+    sensor_msgs__msg__NavSatFix__init(&nav_sat_fix_msg);
+    rosidl_runtime_c__String__assign(&nav_sat_fix_msg.header.frame_id, "gnss_frame");
     // Starting display
     if (!device_is_ready(display_dev)) {
         LOG_ERR("Display device not ready\n");
@@ -417,22 +464,22 @@ int main(void) {
 
     /* Node */
     node = rcl_get_zero_initialized_node();
-    RCCHECK(rclc_node_init_default(&node, "zephyr_publisher", "", &support));
+    RCCHECK(rclc_node_init_default(&node, "sensor_publisher", "", &support));
 
     /* Publisher */
-    RCCHECK(rclc_publisher_init_default(&publisher, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
-                                        "/zephyr_int_publisher"));
+    RCCHECK(rclc_publisher_init_default(&gnss_publisher, &node,
+                                        ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, NavSatFix), "/gnss_raw"));
     RCCHECK(rclc_publisher_init_default(&imu_publisher, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, Imu),
                                         "/imu_raw"));
 
     /* Timer */
-    RCCHECK(rclc_timer_init_default(&timer, &support, RCL_MS_TO_NS(PUBLISH_PERIOD_MS), timer_callback));
+    RCCHECK(rclc_timer_init_default(&gnss_timer, &support, RCL_MS_TO_NS(GNSS_PUBLISH_PERIOD_MS), gnss_timer_callback));
     RCCHECK(rclc_timer_init_default(&imu_timer, &support, RCL_MS_TO_NS(IMU_PUBLISH_PERIOD_MS), imu_timer_callback));
 
     /* Executor */
     RCCHECK(rclc_executor_init(&executor, &support.context, 2, &allocator));
 
-    RCCHECK(rclc_executor_add_timer(&executor, &timer));
+    RCCHECK(rclc_executor_add_timer(&executor, &gnss_timer));
     RCCHECK(rclc_executor_add_timer(&executor, &imu_timer));
 
     msg.data = 0;
