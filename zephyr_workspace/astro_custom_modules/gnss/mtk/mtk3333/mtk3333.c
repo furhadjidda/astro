@@ -32,69 +32,38 @@ static int mtk3333_send_command(const struct device* dev, const char* cmd, size_
     return 0;
 }
 
-static char mtk3333_read_data(const struct device* dev) {
-    const struct mtk3333_config* cfg = dev->config;
-    struct mtk3333_data* data = dev->data;
-    static uint32_t firstChar = 0;        // first character received in current sentence
-    uint32_t tStart = k_uptime_get_32();  // as close as we can get to time char was sent
-    char c = 0;
+static void mtk3333_process_char(struct mtk3333_data* data, char c, struct gnss_data* gnss_out, bool* publish) {
+    if (c == '\0' || (c == 0x0A && data->last_char != 0x0D)) {
+        return;
+    }
+    data->last_char = c;
 
-    if (data->read_buffer_index <= data->buff_max) {
-        c = data->i2c_buffer[data->read_buffer_index];
-        data->read_buffer_index++;
+    if (data->line_index < MAXLINELENGTH - 1) {
+        data->current_line[data->line_index++] = c;
+    }
+
+    if (c != '\n') {
+        return;
+    }
+
+    /* ── Complete sentence ── */
+    data->current_line[data->line_index] = '\0';
+    data->line_index = 0;
+
+    if (data->current_line == data->buffer_line1) {
+        data->last_line = data->buffer_line1;
+        data->current_line = data->buffer_line2;
     } else {
-        uint8_t buffer[GPS_MAX_I2C_TRANSFER];
-        int ret = i2c_read_dt(&cfg->i2c_bus, buffer, GPS_MAX_I2C_TRANSFER);
-        if (ret == 0) {
-            // Got data!
-
-            data->buff_max = 0;
-            char curr_char = 0;
-            for (int i = 0; i < GPS_MAX_I2C_TRANSFER; i++) {
-                curr_char = buffer[i];
-                if ((curr_char == 0x0A) && (data->last_char != 0x0D)) {
-                    // Skip duplicate 0x0A's - but keep as part of a CRLF
-                    continue;
-                }
-                data->last_char = curr_char;
-                data->i2c_buffer[data->buff_max] = curr_char;
-                data->buff_max++;
-            }
-            data->buff_max--;  // Back up to the last valid slot
-            if ((data->buff_max == 0) && (data->i2c_buffer[0] == 0x0A)) {
-                data->buff_max = -1;  // Ahh there was nothing to read after all
-            }
-            data->read_buffer_index = 0;
-        }
-        return c;
+        data->last_line = data->buffer_line2;
+        data->current_line = data->buffer_line1;
     }
 
-    data->current_line[data->line_index] = c;
-    data->line_index = data->line_index + 1;
-    if (data->line_index >= MAXLINELENGTH)
-        data->line_index = MAXLINELENGTH - 1;  // ensure there is someplace to put the next received character
-
-    if (c == '\n') {
-        data->current_line[data->line_index] = 0;
-
-        if (data->current_line == data->buffer_line1) {
-            data->current_line = data->buffer_line2;
-            data->last_line = data->buffer_line1;
-        } else {
-            data->current_line = data->buffer_line1;
-            data->last_line = data->buffer_line2;
-        }
-
-        data->line_index = 0;
-        data->rcvd_flag = true;
-        data->rcvd_time = k_uptime_get_32();  // time we got the end of the string
-        data->sent_time = firstChar;
-        firstChar = 0;  // there are no characters yet
-        return c;       // wait until next character to set time
+    memset(gnss_out, 0, sizeof(struct gnss_data));
+    gnss_nmea_parse(data->last_line, gnss_out);
+    // LOG_INF("Received NMEA sentence: %s", data->last_line);
+    if (strncmp(data->last_line, "$GNGGA", 6) == 0) {
+        *publish = true;
     }
-
-    if (firstChar == 0) firstChar = tStart;
-    return c;
 }
 
 /* -------------------------- Poll Work Handler -------------------------- */
@@ -102,33 +71,29 @@ static char mtk3333_read_data(const struct device* dev) {
 static void mtk3333_poll_work(struct k_work* work) {
     struct k_work_delayable* dwork = k_work_delayable_from_work(work);
     struct mtk3333_data* data = CONTAINER_OF(dwork, struct mtk3333_data, poll_work);
-    memset(&data->data, 0, sizeof(struct gnss_data));
+    const struct mtk3333_config* cfg = data->dev->config;
 
-    char c = mtk3333_read_data(data->dev);
-
-    if (data->rcvd_flag) {
-        data->rcvd_flag = false;
-#ifdef CONFIG_MTK3333_VERBOSE_LOGGING
-        LOG_DBG("Received NMEA: %s", data->last_line);
-#endif
-
-        // parse_nmea(data->last_line, data);
-        gnss_nmea_parse(data->last_line, &data->data);
-
-        /* Publish the GNSS data */
-        if (data->data.info.fix_status == GNSS_FIX_STATUS_GNSS_FIX) {
-#ifdef CONFIG_MTK3333_VERBOSE_LOGGING
-            LOG_DBG("Published GNSS fix: Lat %lld, Lon %lld, Alt %d mm", data->data.nav_data.latitude,
-                    data->data.nav_data.longitude, data->data.nav_data.altitude);
-            LOG_DBG("Geoid Separation: %d mm", data->data.info.geoid_separation);
-            LOG_DBG("UTC Time: %02d %02d:%02d", data->data.utc.month, data->data.utc.hour, data->data.utc.minute);
-#endif
-            LOG_INF("Satellites: %d, HDOP: %d", data->data.info.satellites_cnt, data->data.info.hdop);
-            LOG_INF("Fix Status: %d, Fix Quality: %d", data->data.info.fix_status, data->data.info.fix_quality);
-        }
-
-        gnss_publish_data(data->dev, &data->data);
+    uint8_t raw[GPS_MAX_I2C_TRANSFER];
+    int ret = i2c_read_dt(&cfg->i2c_bus, raw, GPS_MAX_I2C_TRANSFER);
+    if (ret < 0) {
+        LOG_ERR("I2C read failed: %d", ret);
+        goto reschedule;
     }
+
+    for (int i = 0; i < GPS_MAX_I2C_TRANSFER; i++) {
+        bool publish = false;
+        struct gnss_data gnss_out = {0};
+
+        mtk3333_process_char(data, (char)raw[i], &gnss_out, &publish);
+
+        if (publish) {
+            LOG_INF("Satellites: %d HDOP: %d Fix: %d", gnss_out.info.satellites_cnt, gnss_out.info.hdop,
+                    gnss_out.info.fix_status);
+            gnss_publish_data(data->dev, &gnss_out);
+        }
+    }
+
+reschedule:
     k_work_schedule(&data->poll_work, K_MSEC(5));
 }
 
@@ -187,7 +152,7 @@ static gnss_systems_t mtk3333_get_supported_systems(const struct device* dev) {
 static DEVICE_API(gnss, mtk3333_gnss_api) = {
     .set_fix_rate = mtk3333_set_fix_rate,
     .get_fix_rate = mtk3333_get_fix_rate,
-    .set_navigation_mode = mtk3333_get_navigation_mode,
+    .set_navigation_mode = mtk3333_set_navigation_mode,
     .get_navigation_mode = mtk3333_get_navigation_mode,
     .set_enabled_systems = mtk3333_set_enabled_systems,
     .get_enabled_systems = mtk3333_get_enabled_systems,
@@ -224,7 +189,7 @@ static int mtk3333_init(const struct device* dev) {
     data->dev = dev;
     data->current_line = data->buffer_line1;
     data->last_line = data->buffer_line2;
-    mtk3333_send_command(dev, (const uint8_t*)PMTK_SET_NMEA_OUTPUT_ALLDATA, strlen(PMTK_SET_NMEA_OUTPUT_ALLDATA));
+    mtk3333_send_command(dev, (const uint8_t*)PMTK_SET_NMEA_OUTPUT_RMCGGA, strlen(PMTK_SET_NMEA_OUTPUT_RMCGGA));
     // uncomment this line to turn on only the "minimum recommended" data
     // GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCONLY);
     // For parsing data, we don't suggest using anything but either RMC only or
