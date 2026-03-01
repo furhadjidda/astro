@@ -16,24 +16,6 @@
  */
 
 #include <bno055.h>  // Required for custom SENSOR_CHAN_*
-#include <string.h>
-#include <version.h>
-#include <zephyr/device.h>
-#include <zephyr/display/cfb.h>
-#include <zephyr/drivers/gnss.h>
-#include <zephyr/drivers/gpio.h>
-#include <zephyr/drivers/sensor.h>
-#include <zephyr/kernel.h>
-#include <zephyr/logging/log.h>
-
-#if ZEPHYR_VERSION_CODE >= ZEPHYR_VERSION(3, 1, 0)
-#include <zephyr/kernel.h>
-#include <zephyr/sys/printk.h>
-#else
-#include <sys/printk.h>
-#include <zephyr.h>
-#endif
-
 #include <bno055.h>
 #include <microros_transports.h>
 #include <rcl/error_handling.h>
@@ -47,6 +29,16 @@
 #include <sensor_msgs/msg/nav_sat_status.h>
 #include <sensor_msgs/msg/range.h>
 #include <std_msgs/msg/int32.h>
+#include <string.h>
+#include <version.h>
+#include <zephyr/device.h>
+#include <zephyr/display/cfb.h>
+#include <zephyr/drivers/gnss.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/printk.h>
 
 #include "storage.hpp"
 
@@ -97,23 +89,23 @@ static bool bno055_fusion = true;
  * Error handling macros
  * ========================================================= */
 
-#define RCCHECK(fn)                                            \
-    do {                                                       \
-        rcl_ret_t rc = (fn);                                   \
-        if (rc != RCL_RET_OK) {                                \
-            printk("RCL error %d at line %d\n", rc, __LINE__); \
-            for (;;) {                                         \
-                k_sleep(K_FOREVER);                            \
-            }                                                  \
-        }                                                      \
+#define RCCHECK(fn)                                             \
+    do {                                                        \
+        rcl_ret_t rc = (fn);                                    \
+        if (rc != RCL_RET_OK) {                                 \
+            LOG_DBG("RCL error %d at line %d\n", rc, __LINE__); \
+            for (;;) {                                          \
+                k_sleep(K_FOREVER);                             \
+            }                                                   \
+        }                                                       \
     } while (0)
 
-#define RCSOFTCHECK(fn)                                          \
-    do {                                                         \
-        rcl_ret_t rc = (fn);                                     \
-        if (rc != RCL_RET_OK) {                                  \
-            printk("RCL warning %d at line %d\n", rc, __LINE__); \
-        }                                                        \
+#define RCSOFTCHECK(fn)                                           \
+    do {                                                          \
+        rcl_ret_t rc = (fn);                                      \
+        if (rc != RCL_RET_OK) {                                   \
+            LOG_DBG("RCL warning %d at line %d\n", rc, __LINE__); \
+        }                                                         \
     } while (0)
 
 /* =========================================================
@@ -270,7 +262,7 @@ static void time_sync_thread_entry(void* a, void* b, void* c) {
         bool ok = rmw_uros_sync_session(50); /* 50 ms timeout */
 
         if (!ok) {
-            printk("micro-ROS time sync failed\n");
+            LOG_DBG("micro-ROS time sync failed\n");
         }
         k_sleep(K_MSEC(TIME_SYNC_PERIOD_MS));
     }
@@ -288,7 +280,7 @@ static void gnss_data_cb(const struct device* dev, const struct gnss_data* data)
     if (data->info.fix_status == GNSS_FIX_STATUS_GNSS_FIX) {
         char buffer[64];
         LOG_DBG("UTC Time: %02d %02d:%02d", data->utc.month, data->utc.hour, data->utc.minute);
-        snprintf(buffer, sizeof(buffer), "Time:%02d:%02d", data->utc.hour, data->utc.minute);
+        snprintf(buffer, sizeof(buffer), "%02d:%02d", data->utc.hour, data->utc.minute);
 
         cfb_print(display_dev, buffer, 0, 0);  // Print at
         cfb_framebuffer_finalize(display_dev);
@@ -343,8 +335,8 @@ static void gnss_satellites_cb(const struct device* dev, const struct gnss_satel
         tracked_count += satellites[i].is_tracked;
         corrected_count += satellites[i].is_corrected;
     }
-    printk("%u satellite%s reported (of which %u tracked, of which %u has RTK corrections)!\n", size,
-           size > 1 ? "s" : "", tracked_count, corrected_count);
+    LOG_DBG("%u satellite%s reported (of which %u tracked, of which %u has RTK corrections)!\n", size,
+            size > 1 ? "s" : "", tracked_count, corrected_count);
 }
 #endif
 GNSS_SATELLITES_CALLBACK_DEFINE(mtk3333_gnss, gnss_satellites_cb);
@@ -416,15 +408,15 @@ static void ublox_gnss_satellites_cb(const struct device* dev, const struct gnss
         tracked_count += satellites[i].is_tracked;
         corrected_count += satellites[i].is_corrected;
     }
-    printk("%u satellite%s reported (of which %u tracked, of which %u has RTK corrections)!\n", size,
-           size > 1 ? "s" : "", tracked_count, corrected_count);
+    LOG_DBG("%u satellite%s reported (of which %u tracked, of which %u has RTK corrections)!\n", size,
+            size > 1 ? "s" : "", tracked_count, corrected_count);
 }
 #endif
 GNSS_SATELLITES_CALLBACK_DEFINE(ublox_gnss, ublox_gnss_satellites_cb);
 
-#define GNSS_SYSTEMS_PRINTF(define, supported, enabled)                                                     \
-    printk("\t%20s: Supported: %3s Enabled: %3s\n", STRINGIFY(define), (supported & define) ? "Yes" : "No", \
-           (enabled & define) ? "Yes" : "No");
+#define GNSS_SYSTEMS_PRINTF(define, supported, enabled)                                                      \
+    LOG_DBG("\t%20s: Supported: %3s Enabled: %3s\n", STRINGIFY(define), (supported & define) ? "Yes" : "No", \
+            (enabled & define) ? "Yes" : "No");
 
 /* =========================================================
  * main()
@@ -524,7 +516,7 @@ int main(void) {
     LOG_DBG("Fix rate = %d ms\n", fix_interval);
 
     // Micro-ROS initialization
-    printk("Zephyr micro-ROS example starting\n");
+    LOG_DBG("Zephyr micro-ROS example starting\n");
 
     k_sleep(K_MSEC(10)); /* allow rail to stabilize */
 
@@ -532,13 +524,20 @@ int main(void) {
     rmw_uros_set_custom_transport(true, NULL, zephyr_transport_open, zephyr_transport_close, zephyr_transport_write,
                                   zephyr_transport_read);
 
-    printk("Waiting for micro-ROS agent...\n");
+    char waiting_message[64];
+    snprintf(waiting_message, sizeof(waiting_message), "Waiting for ROS Agent");
+
+    cfb_print(display_dev, waiting_message, 0, 0);  // Print at
+    cfb_framebuffer_finalize(display_dev);
+
+    LOG_DBG("Waiting for micro-ROS agent...\n");
     while (rmw_uros_ping_agent(100, 10) != RMW_RET_OK) {
         // 100ms timeout, 10 attempts per call
-        printk("Agent not reachable, retrying...\n");
-        k_sleep(K_MSEC(500));
+        LOG_DBG("Agent not reachable, retrying...\n");
+        k_sleep(K_MSEC(1000));
     }
-    printk("Agent connected!\n");
+    LOG_DBG("Agent connected!\n");
+    cfb_framebuffer_clear(display_dev, true);
 
     /* Allocator */
     rcl_allocator_t allocator = rcl_get_default_allocator();
@@ -591,7 +590,7 @@ int main(void) {
 
     k_thread_name_set(&time_sync_thread, "uros_time_sync");
 
-    printk("micro-ROS threads started\n");
+    LOG_DBG("micro-ROS threads started\n");
 
     /* main thread does nothing further */
     while (1) {
