@@ -319,6 +319,13 @@ enum bno055_sensor_channel {
     BNO055_SENSOR_CHAN_SYSTEM_STATUS = SENSOR_CHAN_PRIV_START + 22
 };
 
+/* Unit Selection Configuration */
+#define BNO055_ORIENTATION_WINDOWS 0x00  // clockwise pitch
+#define BNO055_TEMP_UNIT_CELSIUS 0x00    // CELSIUS
+#define BNO055_EULER_UNIT_RADIANS 0x01   // RADIANS
+#define BNO055_GYRO_UNIT_RPS 0x01        // RPS
+#define BNO055_ACCEL_UNIT_MS_2 0x00      // MS_2
+
 /* Unit Resolution */
 #define BNO055_EULER_RESOLUTION 900         // RADIANS
 #define BNO055_QUATERNION_RESOLUTION 16384  // Unitless
@@ -349,5 +356,9 @@ enum bno055_PowerMode {
 enum bno055_sensor_attribute {
     BNO055_SENSOR_ATTR_POWER_MODE = SENSOR_ATTR_PRIV_START + 0,
 };
+
+/* Command Register */
+#define BNO055_COMMAND_RESET 0x20
+#define BNO055_COMMAND_XTAL 0x80
 
 #endif

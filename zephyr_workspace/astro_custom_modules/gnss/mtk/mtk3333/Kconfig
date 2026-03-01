@@ -10,3 +10,17 @@ menuconfig MTK3333
 	select GNSS_NMEA0183_MATCH
 	help
 	  Enable driver for MTK3333 GNSS i2c driver.
+
+if MTK3333
+
+config MTK3333_VERBOSE_LOGGING
+    bool "Enable verbose logging for MTK3333"
+    default n
+    depends on MTK3333
+    help
+      Enable verbose debug logging for the MTK3333 GNSS driver.
+      This will output detailed I2C transactions, NMEA sentences,
+      and internal state information to the log.
+      If unsure, say N.
+
+endif # MTK3333

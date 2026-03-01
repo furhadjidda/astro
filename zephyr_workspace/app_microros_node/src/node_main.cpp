@@ -16,24 +16,7 @@
  */
 
 #include <bno055.h>  // Required for custom SENSOR_CHAN_*
-#include <string.h>
-#include <version.h>
-#include <zephyr/device.h>
-#include <zephyr/display/cfb.h>
-#include <zephyr/drivers/gnss.h>
-#include <zephyr/drivers/gpio.h>
-#include <zephyr/drivers/sensor.h>
-#include <zephyr/kernel.h>
-#include <zephyr/logging/log.h>
-
-#if ZEPHYR_VERSION_CODE >= ZEPHYR_VERSION(3, 1, 0)
-#include <zephyr/kernel.h>
-#include <zephyr/sys/printk.h>
-#else
-#include <sys/printk.h>
-#include <zephyr.h>
-#endif
-
+#include <bno055.h>
 #include <microros_transports.h>
 #include <rcl/error_handling.h>
 #include <rcl/rcl.h>
@@ -46,6 +29,16 @@
 #include <sensor_msgs/msg/nav_sat_status.h>
 #include <sensor_msgs/msg/range.h>
 #include <std_msgs/msg/int32.h>
+#include <string.h>
+#include <version.h>
+#include <zephyr/device.h>
+#include <zephyr/display/cfb.h>
+#include <zephyr/drivers/gnss.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/printk.h>
 
 #include "storage.hpp"
 
@@ -68,7 +61,8 @@ static const struct device* display_dev = DEVICE_DT_GET(DT_NODELABEL(ssd1306));
 // imu driver
 static const struct device* const bno055_dev = DEVICE_DT_GET(DT_NODELABEL(bno055));
 // gnss driver
-#define GNSS_MODEM DEVICE_DT_GET(DT_ALIAS(gnss))
+#define mtk3333_gnss DEVICE_DT_GET(DT_ALIAS(gnss))
+#define ublox_gnss DEVICE_DT_GET(DT_ALIAS(ubloxgnss))
 
 // IMU configuration
 static bool bno055_fusion = true;
@@ -87,7 +81,7 @@ static bool bno055_fusion = true;
 #define EXECUTOR_PRIORITY 4
 #define TIME_SYNC_PRIORITY 5 /* lower priority */
 
-#define PUBLISH_PERIOD_MS 1000
+#define GNSS_PUBLISH_PERIOD_MS 1000
 #define IMU_PUBLISH_PERIOD_MS 200
 #define TIME_SYNC_PERIOD_MS 1000
 
@@ -95,23 +89,23 @@ static bool bno055_fusion = true;
  * Error handling macros
  * ========================================================= */
 
-#define RCCHECK(fn)                                            \
-    do {                                                       \
-        rcl_ret_t rc = (fn);                                   \
-        if (rc != RCL_RET_OK) {                                \
-            printk("RCL error %d at line %d\n", rc, __LINE__); \
-            for (;;) {                                         \
-                k_sleep(K_FOREVER);                            \
-            }                                                  \
-        }                                                      \
+#define RCCHECK(fn)                                             \
+    do {                                                        \
+        rcl_ret_t rc = (fn);                                    \
+        if (rc != RCL_RET_OK) {                                 \
+            LOG_DBG("RCL error %d at line %d\n", rc, __LINE__); \
+            for (;;) {                                          \
+                k_sleep(K_FOREVER);                             \
+            }                                                   \
+        }                                                       \
     } while (0)
 
-#define RCSOFTCHECK(fn)                                          \
-    do {                                                         \
-        rcl_ret_t rc = (fn);                                     \
-        if (rc != RCL_RET_OK) {                                  \
-            printk("RCL warning %d at line %d\n", rc, __LINE__); \
-        }                                                        \
+#define RCSOFTCHECK(fn)                                           \
+    do {                                                          \
+        rcl_ret_t rc = (fn);                                      \
+        if (rc != RCL_RET_OK) {                                   \
+            LOG_DBG("RCL warning %d at line %d\n", rc, __LINE__); \
+        }                                                         \
     } while (0)
 
 /* =========================================================
@@ -120,13 +114,20 @@ static bool bno055_fusion = true;
 
 static rclc_support_t support;
 static rcl_node_t node;
-static rcl_publisher_t publisher;
+// Publishers
+static rcl_publisher_t mtk3333_gnss_publisher;
+static rcl_publisher_t ublox_gnss_publisher;
 static rcl_publisher_t imu_publisher;
-static rcl_timer_t timer;
+// Timers
+static rcl_timer_t gnss_timer;
+static rcl_timer_t ublox_gnss_timer;
 static rcl_timer_t imu_timer;
+
 static rclc_executor_t executor;
 static sensor_msgs__msg__Imu imu_msg;
 static std_msgs__msg__Int32 msg;
+sensor_msgs__msg__NavSatFix mtk3333_nav_sat_fix_msg;
+sensor_msgs__msg__NavSatFix ublox_nav_sat_fix_msg;
 
 /* =========================================================
  * Thread objects
@@ -145,21 +146,32 @@ static struct k_thread time_sync_thread;
  * Timer callback (runs inside executor thread)
  * ========================================================= */
 
-static void timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
+static void gnss_timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
     ARG_UNUSED(last_call_time);
 
     if (timer != NULL) {
-        RCSOFTCHECK(rcl_publish(&publisher, &msg, NULL));
-        msg.data++;
+        // rcl_time_point_value_t now = rmw_uros_epoch_nanos();
+        // mtk3333_nav_sat_fix_msg.header.stamp.sec = now / 1000000000LL;
+        // mtk3333_nav_sat_fix_msg.header.stamp.nanosec = now % 1000000000LL;
+        // // RCSOFTCHECK(rcl_publish(&mtk3333_gnss_publisher, &mtk3333_nav_sat_fix_msg, NULL));
+        // msg.data++;
+    }
+}
+
+static void ublox_gnss_timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
+    ARG_UNUSED(last_call_time);
+
+    if (timer != NULL) {
+        // rcl_time_point_value_t now = rmw_uros_epoch_nanos();
+        // ublox_nav_sat_fix_msg.header.stamp.sec = now / 1000000000LL;
+        // ublox_nav_sat_fix_msg.header.stamp.nanosec = now % 1000000000LL;
+        // // RCSOFTCHECK(rcl_publish(&ublox_gnss_publisher, &ublox_nav_sat_fix_msg, NULL));
+        // msg.data++;
     }
 }
 
 static void imu_timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
     ARG_UNUSED(last_call_time);
-    char buffer[64];
-    snprintf(buffer, sizeof(buffer), "BNO:Ready");
-    cfb_print(display_dev, buffer, 0, 0);
-    cfb_framebuffer_finalize(display_dev);
     if (timer != NULL && NULL != bno055_dev) {
         double accel[3] = {0.0, 0.0, 0.0};
         double gyro[3] = {0.0, 0.0, 0.0};
@@ -190,10 +202,10 @@ static void imu_timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
         imu_msg.angular_velocity.z = gyro[2];
 
         // Fill orientation
-        imu_msg.orientation.w = 0.0;
-        imu_msg.orientation.x = quat[1].val1;
-        imu_msg.orientation.y = quat[2].val1;
-        imu_msg.orientation.z = quat[3].val1;
+        imu_msg.orientation.w = sensor_value_to_double(&quat[0]);
+        imu_msg.orientation.x = sensor_value_to_double(&quat[1]);
+        imu_msg.orientation.y = sensor_value_to_double(&quat[2]);
+        imu_msg.orientation.z = sensor_value_to_double(&quat[3]);
 
         // Add covariance if needed
         // For simplicity, leaving covariances as zero
@@ -205,13 +217,13 @@ static void imu_timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
 
         // Format for the screen
         char buffer[64];
-        snprintf(buffer, sizeof(buffer), "X=%d.%02d", quat[0].val1, quat[0].val2);
+        snprintf(buffer, sizeof(buffer), "X=%.3f", imu_msg.orientation.x);
         cfb_print(display_dev, buffer, 0, 20);
 
-        snprintf(buffer, sizeof(buffer), "Y=%d.%02d", quat[1].val1, quat[1].val2);
+        snprintf(buffer, sizeof(buffer), "Y=%.3f", imu_msg.orientation.y);
         cfb_print(display_dev, buffer, 0, 35);
 
-        snprintf(buffer, sizeof(buffer), "Z=%d.%02d", quat[2].val1, quat[2].val2);
+        snprintf(buffer, sizeof(buffer), "Z=%.3f", imu_msg.orientation.z);
         cfb_print(display_dev, buffer, 0, 50);
 
         cfb_framebuffer_finalize(display_dev);
@@ -250,65 +262,9 @@ static void time_sync_thread_entry(void* a, void* b, void* c) {
         bool ok = rmw_uros_sync_session(50); /* 50 ms timeout */
 
         if (!ok) {
-            printk("micro-ROS time sync failed\n");
+            LOG_DBG("micro-ROS time sync failed\n");
         }
         k_sleep(K_MSEC(TIME_SYNC_PERIOD_MS));
-    }
-}
-
-static void imu_thread_entry(void* a, void* b, void* c) {
-    ARG_UNUSED(a);
-    ARG_UNUSED(b);
-    ARG_UNUSED(c);
-
-#if Z_DEVICE_DT_FLAGS(DT_NODELABEL(bno055)) & DEVICE_FLAG_INIT_DEFERRED
-    LOG_DBG("Deferred init enabled, sleeping for %d ms", BNO055_TIMING_STARTUP);
-    k_sleep(K_MSEC(BNO055_TIMING_STARTUP));
-    device_init(bno055_dev);
-#endif
-    if (!device_is_ready(bno055_dev)) {
-        LOG_ERR("Device %s is not ready\n", bno055_dev->name);
-        return;
-    }
-    LOG_DBG("BNO055 Device %s is ready\n", bno055_dev->name);
-    char buffer[64];
-    snprintf(buffer, sizeof(buffer), "BNO:Ready");
-    cfb_print(display_dev, buffer, 0, 0);
-    cfb_framebuffer_finalize(display_dev);
-
-    while (1) {
-        if (NULL != bno055_dev) {
-            char buffer[64];
-            struct sensor_value eul[3];
-
-            sensor_sample_fetch(bno055_dev);
-            sensor_channel_get(bno055_dev, static_cast<sensor_channel>(BNO055_SENSOR_CHAN_EULER_YRP), eul);
-            LOG_DBG(
-                "EULER: X(rad.s-1)[%d.%06d] Y(rad.s-1)[%d.%06d] "
-                "Z(rad.s-1)[%d.%06d]\n",
-                eul[0].val1, eul[0].val2, eul[1].val1, eul[1].val2, eul[2].val1, eul[2].val2);
-            // Format for the screen
-
-            snprintf(buffer, sizeof(buffer), "X=%d.%02d", eul[0].val1, eul[0].val2);
-            cfb_print(display_dev, buffer, 0, 20);
-
-            snprintf(buffer, sizeof(buffer), "Y=%d.%02d", eul[1].val1, eul[1].val2);
-            cfb_print(display_dev, buffer, 0, 35);
-
-            snprintf(buffer, sizeof(buffer), "Z=%d.%02d", eul[2].val1, eul[2].val2);
-            cfb_print(display_dev, buffer, 0, 50);
-
-            cfb_framebuffer_finalize(display_dev);
-
-            struct sensor_value sys_status[3];
-            sensor_channel_get(bno055_dev, static_cast<sensor_channel>(BNO055_SENSOR_CHAN_SYSTEM_STATUS), sys_status);
-            LOG_DBG("system status %d , self_test = %d system_error %d \n", sys_status[0].val1, sys_status[1].val1,
-                    sys_status[2].val1);
-
-        } else {
-            LOG_ERR("BNO055 device is NULL!\n");
-        }
-        k_sleep(K_MSEC(200));
     }
 }
 
@@ -324,13 +280,51 @@ static void gnss_data_cb(const struct device* dev, const struct gnss_data* data)
     if (data->info.fix_status == GNSS_FIX_STATUS_GNSS_FIX) {
         char buffer[64];
         LOG_DBG("UTC Time: %02d %02d:%02d", data->utc.month, data->utc.hour, data->utc.minute);
-        snprintf(buffer, sizeof(buffer), "Time:%02d:%02d", data->utc.hour, data->utc.minute);
+        snprintf(buffer, sizeof(buffer), "%02d:%02d", data->utc.hour, data->utc.minute);
 
         cfb_print(display_dev, buffer, 0, 0);  // Print at
         cfb_framebuffer_finalize(display_dev);
+
+        rcl_time_point_value_t now = rmw_uros_epoch_nanos();
+        mtk3333_nav_sat_fix_msg.header.stamp.sec = now / 1000000000LL;
+        mtk3333_nav_sat_fix_msg.header.stamp.nanosec = now % 1000000000LL;
+
+        // ── Position (Zephyr stores as millionths of degrees / mm) ───
+        mtk3333_nav_sat_fix_msg.latitude = data->nav_data.latitude / 1e7;  // nanodegrees → degrees
+        mtk3333_nav_sat_fix_msg.longitude = data->nav_data.longitude / 1e7;
+        mtk3333_nav_sat_fix_msg.altitude = data->nav_data.altitude / 1e3;  // mm → meters
+
+        // ── Fix Status ───────────────────────────────────────────────
+        switch (data->info.fix_status) {
+            case GNSS_FIX_STATUS_GNSS_FIX:
+                mtk3333_nav_sat_fix_msg.status.status = sensor_msgs__msg__NavSatStatus__STATUS_FIX;
+                break;
+            case GNSS_FIX_STATUS_DGNSS_FIX:
+                mtk3333_nav_sat_fix_msg.status.status = sensor_msgs__msg__NavSatStatus__STATUS_SBAS_FIX;
+                break;
+            default:
+                mtk3333_nav_sat_fix_msg.status.status = sensor_msgs__msg__NavSatStatus__STATUS_NO_FIX;
+                break;
+        }
+
+        // ── Service (which constellations) ───────────────────────────
+        mtk3333_nav_sat_fix_msg.status.service =
+            sensor_msgs__msg__NavSatStatus__SERVICE_GPS | sensor_msgs__msg__NavSatStatus__SERVICE_GLONASS;
+
+        double hdop = data->info.hdop / 1e3;            // if available
+        double variance = (hdop * 5.0) * (hdop * 5.0);  // rough estimate
+
+        memset(mtk3333_nav_sat_fix_msg.position_covariance, 0, sizeof(mtk3333_nav_sat_fix_msg.position_covariance));
+
+        mtk3333_nav_sat_fix_msg.position_covariance[0] = variance;        // East
+        mtk3333_nav_sat_fix_msg.position_covariance[4] = variance;        // North
+        mtk3333_nav_sat_fix_msg.position_covariance[8] = variance * 4.0;  // Up (typically worse)
+        mtk3333_nav_sat_fix_msg.position_covariance_type = sensor_msgs__msg__NavSatFix__COVARIANCE_TYPE_APPROXIMATED;
+
+        RCSOFTCHECK(rcl_publish(&mtk3333_gnss_publisher, &mtk3333_nav_sat_fix_msg, NULL));
     }
 }
-GNSS_DATA_CALLBACK_DEFINE(GNSS_MODEM, gnss_data_cb);
+GNSS_DATA_CALLBACK_DEFINE(mtk3333_gnss, gnss_data_cb);
 
 #if CONFIG_GNSS_SATELLITES
 static void gnss_satellites_cb(const struct device* dev, const struct gnss_satellite* satellites, uint16_t size) {
@@ -341,15 +335,88 @@ static void gnss_satellites_cb(const struct device* dev, const struct gnss_satel
         tracked_count += satellites[i].is_tracked;
         corrected_count += satellites[i].is_corrected;
     }
-    printk("%u satellite%s reported (of which %u tracked, of which %u has RTK corrections)!\n", size,
-           size > 1 ? "s" : "", tracked_count, corrected_count);
+    LOG_DBG("%u satellite%s reported (of which %u tracked, of which %u has RTK corrections)!\n", size,
+            size > 1 ? "s" : "", tracked_count, corrected_count);
 }
 #endif
-GNSS_SATELLITES_CALLBACK_DEFINE(GNSS_MODEM, gnss_satellites_cb);
+GNSS_SATELLITES_CALLBACK_DEFINE(mtk3333_gnss, gnss_satellites_cb);
 
-#define GNSS_SYSTEMS_PRINTF(define, supported, enabled)                                                     \
-    printk("\t%20s: Supported: %3s Enabled: %3s\n", STRINGIFY(define), (supported & define) ? "Yes" : "No", \
-           (enabled & define) ? "Yes" : "No");
+static void ublox_gnss_data_cb(const struct device* dev, const struct gnss_data* data) {
+    uint64_t timepulse_ns;
+    k_ticks_t timepulse;
+
+    if (data->info.fix_status != GNSS_FIX_STATUS_NO_FIX) {
+        if (gnss_get_latest_timepulse(dev, &timepulse) == 0) {
+            timepulse_ns = k_ticks_to_ns_near64(timepulse);
+        }
+    }
+    if (data->info.fix_status == GNSS_FIX_STATUS_GNSS_FIX) {
+        char buffer[64];
+        LOG_DBG("UTC Time: %02d %02d:%02d", data->utc.month, data->utc.hour, data->utc.minute);
+        snprintf(buffer, sizeof(buffer), "%02d:%02d", data->utc.hour, data->utc.minute);
+
+        cfb_print(display_dev, buffer, 64, 0);  // Print at
+        cfb_framebuffer_finalize(display_dev);
+
+        rcl_time_point_value_t now = rmw_uros_epoch_nanos();
+        ublox_nav_sat_fix_msg.header.stamp.sec = now / 1000000000LL;
+        ublox_nav_sat_fix_msg.header.stamp.nanosec = now % 1000000000LL;
+
+        // ── Position (Zephyr stores as millionths of degrees / mm) ───
+        ublox_nav_sat_fix_msg.latitude = data->nav_data.latitude / 1e7;  // nanodegrees → degrees
+        ublox_nav_sat_fix_msg.longitude = data->nav_data.longitude / 1e7;
+        ublox_nav_sat_fix_msg.altitude = data->nav_data.altitude / 1e3;  // mm → meters
+
+        // ── Fix Status ───────────────────────────────────────────────
+        switch (data->info.fix_status) {
+            case GNSS_FIX_STATUS_GNSS_FIX:
+                ublox_nav_sat_fix_msg.status.status = sensor_msgs__msg__NavSatStatus__STATUS_FIX;
+                break;
+            case GNSS_FIX_STATUS_DGNSS_FIX:
+                ublox_nav_sat_fix_msg.status.status = sensor_msgs__msg__NavSatStatus__STATUS_SBAS_FIX;
+                break;
+            default:
+                ublox_nav_sat_fix_msg.status.status = sensor_msgs__msg__NavSatStatus__STATUS_NO_FIX;
+                break;
+        }
+
+        // ── Service (which constellations) ───────────────────────────
+        ublox_nav_sat_fix_msg.status.service =
+            sensor_msgs__msg__NavSatStatus__SERVICE_GPS | sensor_msgs__msg__NavSatStatus__SERVICE_GLONASS;
+
+        double hdop = data->info.hdop / 1e3;            // if available
+        double variance = (hdop * 5.0) * (hdop * 5.0);  // rough estimate
+
+        memset(ublox_nav_sat_fix_msg.position_covariance, 0, sizeof(ublox_nav_sat_fix_msg.position_covariance));
+
+        ublox_nav_sat_fix_msg.position_covariance[0] = variance;        // East
+        ublox_nav_sat_fix_msg.position_covariance[4] = variance;        // North
+        ublox_nav_sat_fix_msg.position_covariance[8] = variance * 4.0;  // Up (typically worse)
+        ublox_nav_sat_fix_msg.position_covariance_type = sensor_msgs__msg__NavSatFix__COVARIANCE_TYPE_APPROXIMATED;
+
+        RCSOFTCHECK(rcl_publish(&ublox_gnss_publisher, &ublox_nav_sat_fix_msg, NULL));
+    }
+}
+GNSS_DATA_CALLBACK_DEFINE(ublox_gnss, ublox_gnss_data_cb);
+
+#if CONFIG_GNSS_SATELLITES
+static void ublox_gnss_satellites_cb(const struct device* dev, const struct gnss_satellite* satellites, uint16_t size) {
+    unsigned int tracked_count = 0;
+    unsigned int corrected_count = 0;
+
+    for (unsigned int i = 0; i != size; ++i) {
+        tracked_count += satellites[i].is_tracked;
+        corrected_count += satellites[i].is_corrected;
+    }
+    LOG_DBG("%u satellite%s reported (of which %u tracked, of which %u has RTK corrections)!\n", size,
+            size > 1 ? "s" : "", tracked_count, corrected_count);
+}
+#endif
+GNSS_SATELLITES_CALLBACK_DEFINE(ublox_gnss, ublox_gnss_satellites_cb);
+
+#define GNSS_SYSTEMS_PRINTF(define, supported, enabled)                                                      \
+    LOG_DBG("\t%20s: Supported: %3s Enabled: %3s\n", STRINGIFY(define), (supported & define) ? "Yes" : "No", \
+            (enabled & define) ? "Yes" : "No");
 
 /* =========================================================
  * main()
@@ -362,7 +429,11 @@ int main(void) {
     device_init(bno055_dev);
 #endif
     sensor_msgs__msg__Imu__init(&imu_msg);
-    rosidl_runtime_c__String__assign(&imu_msg.header.frame_id, "imu_frame");
+    rosidl_runtime_c__String__assign(&imu_msg.header.frame_id, "bno055_imu_frame");
+    sensor_msgs__msg__NavSatFix__init(&mtk3333_nav_sat_fix_msg);
+    rosidl_runtime_c__String__assign(&mtk3333_nav_sat_fix_msg.header.frame_id, "mtk3333_gnss_frame");
+    sensor_msgs__msg__NavSatFix__init(&ublox_nav_sat_fix_msg);
+    rosidl_runtime_c__String__assign(&ublox_nav_sat_fix_msg.header.frame_id, "ublox_gnss_frame");
     // Starting display
     if (!device_is_ready(display_dev)) {
         LOG_ERR("Display device not ready\n");
@@ -383,6 +454,15 @@ int main(void) {
         LOG_ERR("Device %s is not ready\n", bno055_dev->name);
         return -ENODEV;
     }
+
+    struct sensor_value config = {
+        .val1 = (bno055_fusion) ? OPERATION_MODE_NDOF : OPERATION_MODE_M4G,
+        .val2 = 0,
+    };
+    sensor_attr_set(bno055_dev, SENSOR_CHAN_ALL, SENSOR_ATTR_CONFIGURATION, &config);
+    config.val1 = BNO055_POWER_NORMAL;
+    config.val2 = 0;
+    sensor_attr_set(bno055_dev, SENSOR_CHAN_ALL, static_cast<sensor_attribute>(BNO055_SENSOR_ATTR_POWER_MODE), &config);
 
     cfb_framebuffer_clear(display_dev, true);
 
@@ -410,12 +490,12 @@ int main(void) {
     uint32_t fix_interval;
     int rc;
 
-    rc = gnss_get_supported_systems(GNSS_MODEM, &supported);
+    rc = gnss_get_supported_systems(mtk3333_gnss, &supported);
     if (rc < 0) {
         LOG_ERR("Failed to query supported systems (%d)\n", rc);
         return rc;
     }
-    rc = gnss_get_enabled_systems(GNSS_MODEM, &enabled);
+    rc = gnss_get_enabled_systems(mtk3333_gnss, &enabled);
     if (rc < 0) {
         LOG_ERR("Failed to query enabled systems (%d)\n", rc);
         return rc;
@@ -430,7 +510,7 @@ int main(void) {
     GNSS_SYSTEMS_PRINTF(GNSS_SYSTEM_SBAS, supported, enabled);
     GNSS_SYSTEMS_PRINTF(GNSS_SYSTEM_IMES, supported, enabled);
 
-    rc = gnss_get_fix_rate(GNSS_MODEM, &fix_interval);
+    rc = gnss_get_fix_rate(mtk3333_gnss, &fix_interval);
     if (rc < 0) {
         LOG_ERR("Failed to query fix rate (%d)\n", rc);
         return rc;
@@ -438,7 +518,7 @@ int main(void) {
     LOG_DBG("Fix rate = %d ms\n", fix_interval);
 
     // Micro-ROS initialization
-    printk("Zephyr micro-ROS example starting\n");
+    LOG_DBG("Zephyr micro-ROS example starting\n");
 
     k_sleep(K_MSEC(10)); /* allow rail to stabilize */
 
@@ -446,13 +526,20 @@ int main(void) {
     rmw_uros_set_custom_transport(true, NULL, zephyr_transport_open, zephyr_transport_close, zephyr_transport_write,
                                   zephyr_transport_read);
 
-    printk("Waiting for micro-ROS agent...\n");
+    char waiting_message[64];
+    snprintf(waiting_message, sizeof(waiting_message), "Waiting for ROS Agent");
+
+    cfb_print(display_dev, waiting_message, 0, 0);  // Print at
+    cfb_framebuffer_finalize(display_dev);
+
+    LOG_DBG("Waiting for micro-ROS agent...\n");
     while (rmw_uros_ping_agent(100, 10) != RMW_RET_OK) {
         // 100ms timeout, 10 attempts per call
-        printk("Agent not reachable, retrying...\n");
-        k_sleep(K_MSEC(500));
+        LOG_DBG("Agent not reachable, retrying...\n");
+        k_sleep(K_MSEC(1000));
     }
-    printk("Agent connected!\n");
+    LOG_DBG("Agent connected!\n");
+    cfb_framebuffer_clear(display_dev, true);
 
     /* Allocator */
     rcl_allocator_t allocator = rcl_get_default_allocator();
@@ -467,32 +554,31 @@ int main(void) {
 
     /* Node */
     node = rcl_get_zero_initialized_node();
-    RCCHECK(rclc_node_init_default(&node, "zephyr_publisher", "", &support));
+    RCCHECK(rclc_node_init_default(&node, "sensor_publisher", "", &support));
 
     /* Publisher */
-    RCCHECK(rclc_publisher_init_default(&publisher, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
-                                        "/zephyr_int_publisher"));
+    RCCHECK(rclc_publisher_init_default(&mtk3333_gnss_publisher, &node,
+                                        ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, NavSatFix), "/gnss_raw"));
+    RCCHECK(rclc_publisher_init_default(&ublox_gnss_publisher, &node,
+                                        ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, NavSatFix), "/ublox_gnss_raw"));
+
     RCCHECK(rclc_publisher_init_default(&imu_publisher, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, Imu),
                                         "/imu_raw"));
 
     /* Timer */
-    RCCHECK(rclc_timer_init_default(&timer, &support, RCL_MS_TO_NS(PUBLISH_PERIOD_MS), timer_callback));
+    RCCHECK(rclc_timer_init_default(&gnss_timer, &support, RCL_MS_TO_NS(GNSS_PUBLISH_PERIOD_MS), gnss_timer_callback));
+    RCCHECK(rclc_timer_init_default(&ublox_gnss_timer, &support, RCL_MS_TO_NS(GNSS_PUBLISH_PERIOD_MS),
+                                    ublox_gnss_timer_callback));
     RCCHECK(rclc_timer_init_default(&imu_timer, &support, RCL_MS_TO_NS(IMU_PUBLISH_PERIOD_MS), imu_timer_callback));
 
     /* Executor */
-    RCCHECK(rclc_executor_init(&executor, &support.context, 2, &allocator));
+    RCCHECK(rclc_executor_init(&executor, &support.context, 3, &allocator));
 
-    RCCHECK(rclc_executor_add_timer(&executor, &timer));
+    RCCHECK(rclc_executor_add_timer(&executor, &gnss_timer));
+    RCCHECK(rclc_executor_add_timer(&executor, &ublox_gnss_timer));
     RCCHECK(rclc_executor_add_timer(&executor, &imu_timer));
 
     msg.data = 0;
-
-    /* Start thread */
-    // k_thread_create(&imu_thread, imu_stack, THREAD_STACK_SIZE, imu_thread_entry, NULL, NULL, NULL,
-    // IMU_THREAD_PRIORITY,
-    //                 0, K_NO_WAIT);
-
-    // k_thread_name_set(&imu_thread, "imu_thread");
 
     /* Start executor thread */
     k_thread_create(&executor_thread, executor_stack, EXECUTOR_STACK_SIZE, executor_thread_entry, NULL, NULL, NULL,
@@ -506,7 +592,7 @@ int main(void) {
 
     k_thread_name_set(&time_sync_thread, "uros_time_sync");
 
-    printk("micro-ROS threads started\n");
+    LOG_DBG("micro-ROS threads started\n");
 
     /* main thread does nothing further */
     while (1) {
