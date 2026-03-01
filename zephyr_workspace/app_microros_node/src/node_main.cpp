@@ -429,9 +429,11 @@ int main(void) {
     device_init(bno055_dev);
 #endif
     sensor_msgs__msg__Imu__init(&imu_msg);
-    rosidl_runtime_c__String__assign(&imu_msg.header.frame_id, "imu_frame");
+    rosidl_runtime_c__String__assign(&imu_msg.header.frame_id, "bno055_imu_frame");
     sensor_msgs__msg__NavSatFix__init(&mtk3333_nav_sat_fix_msg);
-    rosidl_runtime_c__String__assign(&mtk3333_nav_sat_fix_msg.header.frame_id, "gnss_frame");
+    rosidl_runtime_c__String__assign(&mtk3333_nav_sat_fix_msg.header.frame_id, "mtk3333_gnss_frame");
+    sensor_msgs__msg__NavSatFix__init(&ublox_nav_sat_fix_msg);
+    rosidl_runtime_c__String__assign(&ublox_nav_sat_fix_msg.header.frame_id, "ublox_gnss_frame");
     // Starting display
     if (!device_is_ready(display_dev)) {
         LOG_ERR("Display device not ready\n");

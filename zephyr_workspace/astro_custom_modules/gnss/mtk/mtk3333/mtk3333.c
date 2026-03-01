@@ -129,8 +129,7 @@ static void mtk3333_poll_work(struct k_work* work) {
 
         gnss_publish_data(data->dev, &data->data);
     }
-    /* Reschedule the poll work in 200 ms */
-    k_work_schedule(&data->poll_work, K_MSEC(10));
+    k_work_schedule(&data->poll_work, K_MSEC(5));
 }
 
 /* --------------------------- GNSS API Stubs ---------------------------- */
@@ -240,13 +239,13 @@ static int mtk3333_init(const struct device* dev) {
     // Request updates on mAntenna status, comment out to keep quiet
     mtk3333_send_command(dev, (const uint8_t*)PGCMD_ANTENNA, strlen(PGCMD_ANTENNA));
 
-    k_msleep(1000);
+    k_msleep(500);
 
     /* Initialize delayable work */
     k_work_init_delayable(&data->poll_work, mtk3333_poll_work);
 
     /* Schedule first poll after 200 ms */
-    k_work_schedule(&data->poll_work, K_MSEC(10));
+    k_work_schedule(&data->poll_work, K_MSEC(5));
 
     LOG_INF("MTK3333 simulated GNSS driver initialized");
 
