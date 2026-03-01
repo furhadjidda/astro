@@ -58,10 +58,10 @@ static void mtk3333_process_char(struct mtk3333_data* data, char c, struct gnss_
         data->current_line = data->buffer_line1;
     }
 
-    memset(gnss_out, 0, sizeof(struct gnss_data));
     gnss_nmea_parse(data->last_line, gnss_out);
     // LOG_INF("Received NMEA sentence: %s", data->last_line);
-    if (strncmp(data->last_line, "$GNGGA", 6) == 0) {
+    if (strncmp(data->last_line, "$GPRMC", 6) == 0 || strncmp(data->last_line, "$GNRMC", 6) == 0 ||
+        strncmp(data->last_line, "$GNGGA", 6) == 0) {
         *publish = true;
     }
 }
