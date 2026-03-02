@@ -494,12 +494,12 @@ int main(void) {
 
     /* Publisher */
     RCCHECK(rclc_publisher_init_default(&mtk3333_gnss_publisher, &node,
-                                        ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, NavSatFix), "/gnss_raw"));
+                                        ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, NavSatFix), "/mtk3333_gnss_raw"));
     RCCHECK(rclc_publisher_init_default(&ublox_gnss_publisher, &node,
                                         ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, NavSatFix), "/ublox_gnss_raw"));
 
     RCCHECK(rclc_publisher_init_default(&bno055_imu_publisher, &node,
-                                        ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, Imu), "/imu_raw"));
+                                        ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, Imu), "/bno055_imu_raw"));
 
     /* Timer */
     RCCHECK(
