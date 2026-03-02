@@ -111,14 +111,12 @@ static rcl_node_t node;
 // Publishers
 static rcl_publisher_t mtk3333_gnss_publisher;
 static rcl_publisher_t ublox_gnss_publisher;
-static rcl_publisher_t imu_publisher;
+static rcl_publisher_t bno055_imu_publisher;
 // Timers
-static rcl_timer_t gnss_timer;
-static rcl_timer_t ublox_gnss_timer;
 static rcl_timer_t imu_timer;
 
 static rclc_executor_t executor;
-static sensor_msgs__msg__Imu imu_msg;
+static sensor_msgs__msg__Imu bno055_imu_msg;
 static std_msgs__msg__Int32 msg;
 sensor_msgs__msg__NavSatFix mtk3333_nav_sat_fix_msg;
 sensor_msgs__msg__NavSatFix ublox_nav_sat_fix_msg;
@@ -140,31 +138,7 @@ static struct k_thread time_sync_thread;
  * Timer callback (runs inside executor thread)
  * ========================================================= */
 
-static void gnss_timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
-    ARG_UNUSED(last_call_time);
-
-    if (timer != NULL) {
-        // rcl_time_point_value_t now = rmw_uros_epoch_nanos();
-        // mtk3333_nav_sat_fix_msg.header.stamp.sec = now / 1000000000LL;
-        // mtk3333_nav_sat_fix_msg.header.stamp.nanosec = now % 1000000000LL;
-        // // RCSOFTCHECK(rcl_publish(&mtk3333_gnss_publisher, &mtk3333_nav_sat_fix_msg, NULL));
-        // msg.data++;
-    }
-}
-
-static void ublox_gnss_timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
-    ARG_UNUSED(last_call_time);
-
-    if (timer != NULL) {
-        // rcl_time_point_value_t now = rmw_uros_epoch_nanos();
-        // ublox_nav_sat_fix_msg.header.stamp.sec = now / 1000000000LL;
-        // ublox_nav_sat_fix_msg.header.stamp.nanosec = now % 1000000000LL;
-        // // RCSOFTCHECK(rcl_publish(&ublox_gnss_publisher, &ublox_nav_sat_fix_msg, NULL));
-        // msg.data++;
-    }
-}
-
-static void imu_timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
+static void bno055_imu_timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
     ARG_UNUSED(last_call_time);
     if (timer != NULL && NULL != bno055_dev) {
         double accel[3] = {0.0, 0.0, 0.0};
@@ -182,47 +156,47 @@ static void imu_timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
         sensor_channel_get(bno055_dev, static_cast<sensor_channel>(BNO055_SENSOR_CHAN_QUATERNION_WXYZ), quat);
 
         // CORRECT - use integer arithmetic
-        imu_msg.header.stamp.sec = now / 1000000000LL;
-        imu_msg.header.stamp.nanosec = now % 1000000000LL;
+        bno055_imu_msg.header.stamp.sec = now / 1000000000LL;
+        bno055_imu_msg.header.stamp.nanosec = now % 1000000000LL;
 
         // Fill accelerometer data
-        imu_msg.linear_acceleration.x = accel[0];
-        imu_msg.linear_acceleration.y = accel[1];
-        imu_msg.linear_acceleration.z = accel[2];
+        bno055_imu_msg.linear_acceleration.x = accel[0];
+        bno055_imu_msg.linear_acceleration.y = accel[1];
+        bno055_imu_msg.linear_acceleration.z = accel[2];
 
         // Fill gyroscope data
-        imu_msg.angular_velocity.x = gyro[0];
-        imu_msg.angular_velocity.y = gyro[1];
-        imu_msg.angular_velocity.z = gyro[2];
+        bno055_imu_msg.angular_velocity.x = gyro[0];
+        bno055_imu_msg.angular_velocity.y = gyro[1];
+        bno055_imu_msg.angular_velocity.z = gyro[2];
 
         // Fill orientation
-        imu_msg.orientation.w = sensor_value_to_double(&quat[0]);
-        imu_msg.orientation.x = sensor_value_to_double(&quat[1]);
-        imu_msg.orientation.y = sensor_value_to_double(&quat[2]);
-        imu_msg.orientation.z = sensor_value_to_double(&quat[3]);
+        bno055_imu_msg.orientation.w = sensor_value_to_double(&quat[0]);
+        bno055_imu_msg.orientation.x = sensor_value_to_double(&quat[1]);
+        bno055_imu_msg.orientation.y = sensor_value_to_double(&quat[2]);
+        bno055_imu_msg.orientation.z = sensor_value_to_double(&quat[3]);
 
         // Add covariance if needed
         // For simplicity, leaving covariances as zero
         for (int i = 0; i < 9; ++i) {
-            imu_msg.linear_acceleration_covariance[i] = 0.0;
-            imu_msg.angular_velocity_covariance[i] = 0.0;
-            imu_msg.orientation_covariance[i] = 0.0;
+            bno055_imu_msg.linear_acceleration_covariance[i] = 0.0;
+            bno055_imu_msg.angular_velocity_covariance[i] = 0.0;
+            bno055_imu_msg.orientation_covariance[i] = 0.0;
         }
 
         // Format for the screen
         char buffer[64];
-        snprintf(buffer, sizeof(buffer), "X=%.3f", imu_msg.orientation.x);
+        snprintf(buffer, sizeof(buffer), "X=%.3f", bno055_imu_msg.orientation.x);
         oled.print(buffer, 0, 20);
 
-        snprintf(buffer, sizeof(buffer), "Y=%.3f", imu_msg.orientation.y);
+        snprintf(buffer, sizeof(buffer), "Y=%.3f", bno055_imu_msg.orientation.y);
         oled.print(buffer, 0, 35);
 
-        snprintf(buffer, sizeof(buffer), "Z=%.3f", imu_msg.orientation.z);
+        snprintf(buffer, sizeof(buffer), "Z=%.3f", bno055_imu_msg.orientation.z);
         oled.print(buffer, 0, 50);
 
         oled.finalize();
 
-        RCSOFTCHECK(rcl_publish(&imu_publisher, &imu_msg, NULL));
+        RCSOFTCHECK(rcl_publish(&bno055_imu_publisher, &bno055_imu_msg, NULL));
     }
 }
 
@@ -262,7 +236,7 @@ static void time_sync_thread_entry(void* a, void* b, void* c) {
     }
 }
 
-static void gnss_data_cb(const struct device* dev, const struct gnss_data* data) {
+static void mtk3333_gnss_data_cb(const struct device* dev, const struct gnss_data* data) {
     uint64_t timepulse_ns;
     k_ticks_t timepulse;
 
@@ -319,7 +293,7 @@ static void gnss_data_cb(const struct device* dev, const struct gnss_data* data)
         RCSOFTCHECK(rcl_publish(&mtk3333_gnss_publisher, &mtk3333_nav_sat_fix_msg, NULL));
     }
 }
-GNSS_DATA_CALLBACK_DEFINE(mtk3333_gnss, gnss_data_cb);
+GNSS_DATA_CALLBACK_DEFINE(mtk3333_gnss, mtk3333_gnss_data_cb);
 
 #if CONFIG_GNSS_SATELLITES
 static void gnss_satellites_cb(const struct device* dev, const struct gnss_satellite* satellites, uint16_t size) {
@@ -423,8 +397,8 @@ int main(void) {
     k_sleep(K_MSEC(BNO055_TIMING_STARTUP));
     device_init(bno055_dev);
 #endif
-    sensor_msgs__msg__Imu__init(&imu_msg);
-    rosidl_runtime_c__String__assign(&imu_msg.header.frame_id, "bno055_imu_frame");
+    sensor_msgs__msg__Imu__init(&bno055_imu_msg);
+    rosidl_runtime_c__String__assign(&bno055_imu_msg.header.frame_id, "bno055_imu_frame");
     sensor_msgs__msg__NavSatFix__init(&mtk3333_nav_sat_fix_msg);
     rosidl_runtime_c__String__assign(&mtk3333_nav_sat_fix_msg.header.frame_id, "mtk3333_gnss_frame");
     sensor_msgs__msg__NavSatFix__init(&ublox_nav_sat_fix_msg);
@@ -524,20 +498,16 @@ int main(void) {
     RCCHECK(rclc_publisher_init_default(&ublox_gnss_publisher, &node,
                                         ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, NavSatFix), "/ublox_gnss_raw"));
 
-    RCCHECK(rclc_publisher_init_default(&imu_publisher, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, Imu),
-                                        "/imu_raw"));
+    RCCHECK(rclc_publisher_init_default(&bno055_imu_publisher, &node,
+                                        ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, Imu), "/imu_raw"));
 
     /* Timer */
-    RCCHECK(rclc_timer_init_default(&gnss_timer, &support, RCL_MS_TO_NS(GNSS_PUBLISH_PERIOD_MS), gnss_timer_callback));
-    RCCHECK(rclc_timer_init_default(&ublox_gnss_timer, &support, RCL_MS_TO_NS(GNSS_PUBLISH_PERIOD_MS),
-                                    ublox_gnss_timer_callback));
-    RCCHECK(rclc_timer_init_default(&imu_timer, &support, RCL_MS_TO_NS(IMU_PUBLISH_PERIOD_MS), imu_timer_callback));
+    RCCHECK(
+        rclc_timer_init_default(&imu_timer, &support, RCL_MS_TO_NS(IMU_PUBLISH_PERIOD_MS), bno055_imu_timer_callback));
 
     /* Executor */
-    RCCHECK(rclc_executor_init(&executor, &support.context, 3, &allocator));
+    RCCHECK(rclc_executor_init(&executor, &support.context, 1, &allocator));
 
-    RCCHECK(rclc_executor_add_timer(&executor, &gnss_timer));
-    RCCHECK(rclc_executor_add_timer(&executor, &ublox_gnss_timer));
     RCCHECK(rclc_executor_add_timer(&executor, &imu_timer));
 
     msg.data = 0;
