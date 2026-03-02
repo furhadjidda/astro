@@ -15,7 +15,7 @@ if(CONFIG_PICOLIBC)
 endif()
 
 
-target_sources(app PRIVATE src/node_main.cpp src/storage.cpp)
+target_sources(app PRIVATE src/node_main.cpp src/storage.cpp src/oled_wrapper.cpp)
 message(board name is ${BOARD} \n\n)
 if(BOARD STREQUAL "adafruit_feather_esp32s3")
     target_sources(app PRIVATE src/status_class.cpp)

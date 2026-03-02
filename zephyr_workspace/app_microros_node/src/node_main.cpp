@@ -40,6 +40,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/printk.h>
 
+#include "oled_wrapper.hpp"
 #include "storage.hpp"
 
 LOG_MODULE_REGISTER(all_sensors_module, LOG_LEVEL_DBG);
@@ -48,16 +49,9 @@ LOG_MODULE_REGISTER(all_sensors_module, LOG_LEVEL_DBG);
 // Storage instance
 Storage storage;
 
-// Display parameters
-#define MAX_FONTS 42
-#define SELECTED_FONT_INDEX 0
-static uint16_t rows = 0;
-static uint8_t ppt = 0;
-static uint8_t font_width = 0;
-static uint8_t font_height = 0;
-
 // display driver
 static const struct device* display_dev = DEVICE_DT_GET(DT_NODELABEL(ssd1306));
+OLEDWrapper oled(display_dev);
 // imu driver
 static const struct device* const bno055_dev = DEVICE_DT_GET(DT_NODELABEL(bno055));
 // gnss driver
@@ -218,15 +212,15 @@ static void imu_timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
         // Format for the screen
         char buffer[64];
         snprintf(buffer, sizeof(buffer), "X=%.3f", imu_msg.orientation.x);
-        cfb_print(display_dev, buffer, 0, 20);
+        oled.print(buffer, 0, 20);
 
         snprintf(buffer, sizeof(buffer), "Y=%.3f", imu_msg.orientation.y);
-        cfb_print(display_dev, buffer, 0, 35);
+        oled.print(buffer, 0, 35);
 
         snprintf(buffer, sizeof(buffer), "Z=%.3f", imu_msg.orientation.z);
-        cfb_print(display_dev, buffer, 0, 50);
+        oled.print(buffer, 0, 50);
 
-        cfb_framebuffer_finalize(display_dev);
+        oled.finalize();
 
         RCSOFTCHECK(rcl_publish(&imu_publisher, &imu_msg, NULL));
     }
@@ -282,8 +276,8 @@ static void gnss_data_cb(const struct device* dev, const struct gnss_data* data)
         LOG_DBG("UTC Time: %02d %02d:%02d", data->utc.month, data->utc.hour, data->utc.minute);
         snprintf(buffer, sizeof(buffer), "%02d:%02d", data->utc.hour, data->utc.minute);
 
-        cfb_print(display_dev, buffer, 0, 0);  // Print at
-        cfb_framebuffer_finalize(display_dev);
+        oled.print(buffer, 0, 0);  // Print at
+        oled.finalize();
 
         rcl_time_point_value_t now = rmw_uros_epoch_nanos();
         mtk3333_nav_sat_fix_msg.header.stamp.sec = now / 1000000000LL;
@@ -356,8 +350,8 @@ static void ublox_gnss_data_cb(const struct device* dev, const struct gnss_data*
         LOG_DBG("UTC Time: %02d %02d:%02d", data->utc.month, data->utc.hour, data->utc.minute);
         snprintf(buffer, sizeof(buffer), "%02d:%02d", data->utc.hour, data->utc.minute);
 
-        cfb_print(display_dev, buffer, 64, 0);  // Print at
-        cfb_framebuffer_finalize(display_dev);
+        oled.print(buffer, 64, 0);  // Print at
+        oled.finalize();
 
         rcl_time_point_value_t now = rmw_uros_epoch_nanos();
         ublox_nav_sat_fix_msg.header.stamp.sec = now / 1000000000LL;
@@ -435,21 +429,6 @@ int main(void) {
     rosidl_runtime_c__String__assign(&mtk3333_nav_sat_fix_msg.header.frame_id, "mtk3333_gnss_frame");
     sensor_msgs__msg__NavSatFix__init(&ublox_nav_sat_fix_msg);
     rosidl_runtime_c__String__assign(&ublox_nav_sat_fix_msg.header.frame_id, "ublox_gnss_frame");
-    // Starting display
-    if (!device_is_ready(display_dev)) {
-        LOG_ERR("Display device not ready\n");
-        return -ENODEV;
-    }
-
-    if (display_set_pixel_format(display_dev, PIXEL_FORMAT_MONO01) != 0) {
-        LOG_ERR("Failed to set required pixel format");
-        return -ENOTSUP;
-    }
-
-    if (cfb_framebuffer_init(display_dev)) {
-        LOG_ERR("Framebuffer init failed\n");
-        return -EIO;
-    }
 
     if (!device_is_ready(bno055_dev)) {
         LOG_ERR("Device %s is not ready\n", bno055_dev->name);
@@ -464,26 +443,8 @@ int main(void) {
     config.val1 = BNO055_POWER_NORMAL;
     config.val2 = 0;
     sensor_attr_set(bno055_dev, SENSOR_CHAN_ALL, static_cast<sensor_attribute>(BNO055_SENSOR_ATTR_POWER_MODE), &config);
-
-    cfb_framebuffer_clear(display_dev, true);
-
-    display_blanking_off(display_dev);
-
-    rows = cfb_get_display_parameter(display_dev, CFB_DISPLAY_ROWS);
-    ppt = cfb_get_display_parameter(display_dev, CFB_DISPLAY_PPT);
-
-    for (int idx = 0; idx < MAX_FONTS; idx++) {
-        if (cfb_get_font_size(display_dev, idx, &font_width, &font_height)) {
-            break;  // end of font list, so exit loop.
-        }
-
-        LOG_DBG("index[%d] font width %d, font height %d", idx, font_width, font_height);
-    }
-
-    cfb_framebuffer_set_font(display_dev, SELECTED_FONT_INDEX);
-
-    cfb_framebuffer_invert(display_dev);  // Optional: Invert the display (bright text on dark background)
-
+    // Starting display
+    oled.init();
     storage.init();
 
     LOG_DBG("Starting GNSS test application\n");
@@ -530,8 +491,8 @@ int main(void) {
     char waiting_message[64];
     snprintf(waiting_message, sizeof(waiting_message), "Waiting for ROS Agent");
 
-    cfb_print(display_dev, waiting_message, 0, 0);  // Print at
-    cfb_framebuffer_finalize(display_dev);
+    oled.print(waiting_message, 0, 0);  // Print at
+    oled.finalize();
 
     LOG_DBG("Waiting for micro-ROS agent...\n");
     while (rmw_uros_ping_agent(100, 10) != RMW_RET_OK) {
@@ -540,7 +501,7 @@ int main(void) {
         k_sleep(K_MSEC(1000));
     }
     LOG_DBG("Agent connected!\n");
-    cfb_framebuffer_clear(display_dev, true);
+    oled.clear();
 
     /* Allocator */
     rcl_allocator_t allocator = rcl_get_default_allocator();
