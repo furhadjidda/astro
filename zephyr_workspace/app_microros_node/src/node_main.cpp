@@ -30,6 +30,7 @@
 #include <sensor_msgs/msg/range.h>
 #include <std_msgs/msg/int32.h>
 #include <string.h>
+#include <time.h>
 #include <version.h>
 #include <zephyr/device.h>
 #include <zephyr/display/cfb.h>
@@ -38,10 +39,12 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/printk.h>
 
 #include "oled_wrapper.hpp"
 #include "storage.hpp"
+static ATOMIC_DEFINE(init_complete, 1);  // single-bit flag, starts 0
 
 LOG_MODULE_REGISTER(all_sensors_module, LOG_LEVEL_DBG);
 #define BNO055_TIMING_STARTUP 400  // 400ms
@@ -232,14 +235,25 @@ static void time_sync_thread_entry(void* a, void* b, void* c) {
         if (!ok) {
             LOG_DBG("micro-ROS time sync failed\n");
         }
+
+        int64_t epoch_ms = rmw_uros_epoch_millis();
+        if (epoch_ms <= 0) {
+            printk("[TIME] Invalid epoch from agent.\n");
+            return;
+        }
+
+        struct timespec ts = {.tv_sec = (time_t)(epoch_ms / 1000), .tv_nsec = (long)((epoch_ms % 1000) * 1000000L)};
+
+        clock_settime(CLOCK_REALTIME, &ts);
         k_sleep(K_MSEC(TIME_SYNC_PERIOD_MS));
     }
 }
 
 static void mtk3333_gnss_data_cb(const struct device* dev, const struct gnss_data* data) {
+    if (!atomic_test_bit(init_complete, 0)) return;
     uint64_t timepulse_ns;
     k_ticks_t timepulse;
-
+    storage.log_write("Received MTK3333 GNSS data\n");
     if (data->info.fix_status != GNSS_FIX_STATUS_NO_FIX) {
         if (gnss_get_latest_timepulse(dev, &timepulse) == 0) {
             timepulse_ns = k_ticks_to_ns_near64(timepulse);
@@ -311,8 +325,11 @@ static void gnss_satellites_cb(const struct device* dev, const struct gnss_satel
 GNSS_SATELLITES_CALLBACK_DEFINE(mtk3333_gnss, gnss_satellites_cb);
 
 static void ublox_gnss_data_cb(const struct device* dev, const struct gnss_data* data) {
+    if (!atomic_test_bit(init_complete, 0)) return;
     uint64_t timepulse_ns;
     k_ticks_t timepulse;
+
+    storage.log_write("Received ublox GNSS data\n");
 
     if (data->info.fix_status != GNSS_FIX_STATUS_NO_FIX) {
         if (gnss_get_latest_timepulse(dev, &timepulse) == 0) {
@@ -525,9 +542,12 @@ int main(void) {
     k_thread_name_set(&time_sync_thread, "uros_time_sync");
 
     LOG_DBG("micro-ROS threads started\n");
+    atomic_set_bit(init_complete, 0);  // ← open the gate
 
     /* main thread does nothing further */
     while (1) {
         k_sleep(K_FOREVER);
     }
+
+    storage.log_write("ending writes\n");
 }

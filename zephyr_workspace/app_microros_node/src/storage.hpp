@@ -18,7 +18,7 @@
 #include <ff.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+#include <time.h>
 #include <zephyr/device.h>
 #include <zephyr/display/cfb.h>
 #include <zephyr/fs/fs.h>
@@ -29,21 +29,30 @@
 #include <zephyr/usb/class/usbd_msc.h>  // Mass Storage Class
 #include <zephyr/usb/usbd.h>            // NEW USB stack
 
+#include <string>
+
 #ifndef STORAGE_HPP
 #define STORAGE_HPP
 
 class Storage {
    public:
+    Storage();
+    ~Storage();
     int init();
     int list_directory(const char* path);
     int read_and_display_file(const char* filepath);
     int print_storage_stats();
+    int log_write(const char* message);
+    int dt_write(int value);
+    int dt_read(time_t& value);
 
    private:
     int read_boot_count(int* count);
     int write_boot_count(int count);
     int append_boot_log(int boot_num);
-    void sample_fix_code_triple(struct usbd_context* uds_ctx, const enum usbd_speed speed);
+    std::string _current_log_file;
+    struct fs_file_t _current_log_file_handle;
+    struct timespec _ts;
 };
 
 #endif /* STORAGE_HPP */

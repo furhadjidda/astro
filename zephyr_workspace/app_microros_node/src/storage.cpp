@@ -20,6 +20,7 @@
 #define DISK_DRIVE_NAME "SD"
 #define DISK_MOUNT_PT "/SD:"
 #define BOOT_COUNT_FILE "/SD:/count.txt"
+#define DATE_AND_TIME_FILE "/SD:/date_and_time.txt"
 #define BOOT_LOG_FILE "/SD:/boot_log.txt"
 
 LOG_MODULE_REGISTER(storage);
@@ -50,11 +51,29 @@ static const uint8_t attributes = (IS_ENABLED(CONFIG_SAMPLE_USBD_SELF_POWERED) ?
 
 /* doc configuration instantiation end */
 
+// ─────────────────────────────────────────────
+// CONFIG
+// ─────────────────────────────────────────────
+#define UTC_OFFSET_SECONDS (0)        // e.g. 3600 for UTC+1
+#define MIN_VALID_EPOCH 1700000000UL  // Nov 2023 — sanity check
+#define DISPLAY_INTERVAL_MS 1000
+#define SYNC_TIMEOUT_MS 5000
+
 /* By default, do not register the USB DFU class DFU mode instance. */
 static const char* const blocklist[] = {
     "dfu_dfu",
     NULL,
 };
+
+Storage::Storage() : _current_log_file("") {
+    // Constructor can be used for any necessary initialization
+}
+
+Storage::~Storage() {
+    // Destructor can be used for cleanup if necessary
+    fs_sync(&_current_log_file_handle);
+    fs_close(&_current_log_file_handle);
+}
 
 int Storage::init() {
     int res = 0;
@@ -97,6 +116,16 @@ int Storage::init() {
     list_directory(DISK_MOUNT_PT);
     read_and_display_file(BOOT_LOG_FILE);
     print_storage_stats();
+    _current_log_file = DISK_MOUNT_PT + std::string("/") + std::to_string(boot_count) + std::string("_log.txt");
+
+    fs_file_t_init(&_current_log_file_handle);
+    res = fs_open(&_current_log_file_handle, _current_log_file.c_str(), FS_O_CREATE | FS_O_WRITE | FS_O_APPEND);
+    if (res != 0) {
+        LOG_ERR("Failed to open log file: %d", res);
+        return res;
+    }
+
+    dt_read(_ts.tv_sec);
 
     return 0;
 }
@@ -159,6 +188,109 @@ int Storage::write_boot_count(int count) {
 
     LOG_INF("Boot count updated to %d", count);
     return 0;
+}
+
+int Storage::log_write(const char* message) {
+    int res;
+    ssize_t written;
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+
+    if ((uint32_t)ts.tv_sec < MIN_VALID_EPOCH) {
+        printk("[TIME] Waiting for valid time...\n");
+        return -EINVAL;
+    }
+    // Apply UTC offset
+    time_t local_sec = ts.tv_sec + UTC_OFFSET_SECONDS;
+    struct tm* t = gmtime(&local_sec);
+
+    if (_current_log_file_handle.filep == nullptr || _current_log_file_handle.mp == nullptr) {
+        LOG_ERR("Log file not open");
+        return -EBADF;
+    }
+
+    std::string message_with_timestamp = "[" + std::to_string(t->tm_year + 1900) + "-" + std::to_string(t->tm_mon + 1) +
+                                         "-" + std::to_string(t->tm_mday) + " " + std::to_string(t->tm_hour) + ":" +
+                                         std::to_string(t->tm_min) + ":" + std::to_string(t->tm_sec) + "] " +
+                                         std::string(message);
+    written = fs_write(&_current_log_file_handle, message_with_timestamp.c_str(), message_with_timestamp.length());
+    if (written < 0) {
+        LOG_ERR("Failed to write log: %d", (int)written);
+        return (int)written;
+    }
+    // Flush to SD card immediately
+    res = fs_sync(&_current_log_file_handle);
+    if (res != 0) {
+        LOG_ERR("Sync failed: %d", res);
+        return res;
+    }
+
+    return (written > 0) ? 0 : (int)written;
+}
+
+int Storage::dt_write(int value) {
+    struct fs_file_t file;
+    char buf[32];
+    int res;
+    ssize_t written;
+    size_t len;
+
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    if ((uint32_t)ts.tv_sec < MIN_VALID_EPOCH) {
+        log_write("[TIME] Clock not valid — skipping SD write.\n");
+        LOG_ERR("[TIME] Clock not valid — skipping SD write.\n");
+        return -EINVAL;
+    }
+
+    fs_file_t_init(&file);
+
+    res = fs_open(&file, DATE_AND_TIME_FILE, FS_O_CREATE | FS_O_WRITE | FS_O_TRUNC);
+    if (res != 0) {
+        LOG_ERR("Failed to open date and time file: %d", res);
+        return res;
+    }
+    uint32_t epoch = (uint32_t)ts.tv_sec;
+    written = fs_write(&file, &epoch, sizeof(epoch));
+
+    if (written != (ssize_t)sizeof(epoch)) {
+        LOG_ERR("Write mismatch");
+        fs_close(&file);
+        return -EIO;
+    }
+
+    fs_sync(&file);
+    fs_close(&file);
+
+    LOG_INF("Date and time updated to %d", value);
+    return 0;
+}
+
+int Storage::dt_read(time_t& value) {
+    struct fs_file_t file;
+    char buf[32] = {0};
+    ssize_t bytes_read;
+    int res;
+    uint32_t epoch = 0;
+
+    fs_file_t_init(&file);
+
+    res = fs_open(&file, DATE_AND_TIME_FILE, FS_O_READ);
+    if (res != 0) {
+        LOG_WRN("Date and time file not found");
+        value = 0;
+        return -ENOENT;
+    }
+
+    bytes_read = fs_read(&file, &epoch, sizeof(epoch));
+    fs_close(&file);
+
+    if (bytes_read == sizeof(epoch)) {
+        value = (time_t)epoch;
+        LOG_INF("Read date and time: %ld", value);
+        return 0;
+    }
+    return -EIO;
 }
 
 int Storage::append_boot_log(int boot_num) {
