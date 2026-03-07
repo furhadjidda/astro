@@ -198,6 +198,10 @@ static void bno055_imu_timer_callback(rcl_timer_t* timer, int64_t last_call_time
         oled.print(buffer, 0, 50);
 
         oled.finalize();
+        memset(buffer, 0, sizeof(buffer));
+        snprintf(buffer, sizeof(buffer), "X=%.3f Y=%.3f Z=%.3f", bno055_imu_msg.orientation.x,
+                 bno055_imu_msg.orientation.y, bno055_imu_msg.orientation.z);
+        storage.log_write(buffer);
 
         RCSOFTCHECK(rcl_publish(&bno055_imu_publisher, &bno055_imu_msg, NULL));
     }
@@ -253,14 +257,13 @@ static void mtk3333_gnss_data_cb(const struct device* dev, const struct gnss_dat
     if (!atomic_test_bit(init_complete, 0)) return;
     uint64_t timepulse_ns;
     k_ticks_t timepulse;
-    storage.log_write("Received MTK3333 GNSS data\n");
     if (data->info.fix_status != GNSS_FIX_STATUS_NO_FIX) {
         if (gnss_get_latest_timepulse(dev, &timepulse) == 0) {
             timepulse_ns = k_ticks_to_ns_near64(timepulse);
         }
     }
     if (data->info.fix_status == GNSS_FIX_STATUS_GNSS_FIX) {
-        char buffer[64];
+        char buffer[128] = {0};
         LOG_DBG("UTC Time: %02d %02d:%02d", data->utc.month, data->utc.hour, data->utc.minute);
         snprintf(buffer, sizeof(buffer), "%02d:%02d", data->utc.hour, data->utc.minute);
 
@@ -303,6 +306,10 @@ static void mtk3333_gnss_data_cb(const struct device* dev, const struct gnss_dat
         mtk3333_nav_sat_fix_msg.position_covariance[4] = variance;        // North
         mtk3333_nav_sat_fix_msg.position_covariance[8] = variance * 4.0;  // Up (typically worse)
         mtk3333_nav_sat_fix_msg.position_covariance_type = sensor_msgs__msg__NavSatFix__COVARIANCE_TYPE_APPROXIMATED;
+        memset(buffer, 0, sizeof(buffer));
+        snprintf(buffer, sizeof(buffer), "MTK3333: Lat=%.6f Lon=%.6f Alt=%.2f Fix=%d", mtk3333_nav_sat_fix_msg.latitude,
+                 mtk3333_nav_sat_fix_msg.longitude, mtk3333_nav_sat_fix_msg.altitude, GNSS_FIX_STATUS_GNSS_FIX);
+        storage.log_write(buffer);
 
         RCSOFTCHECK(rcl_publish(&mtk3333_gnss_publisher, &mtk3333_nav_sat_fix_msg, NULL));
     }
@@ -329,15 +336,13 @@ static void ublox_gnss_data_cb(const struct device* dev, const struct gnss_data*
     uint64_t timepulse_ns;
     k_ticks_t timepulse;
 
-    storage.log_write("Received ublox GNSS data\n");
-
     if (data->info.fix_status != GNSS_FIX_STATUS_NO_FIX) {
         if (gnss_get_latest_timepulse(dev, &timepulse) == 0) {
             timepulse_ns = k_ticks_to_ns_near64(timepulse);
         }
     }
     if (data->info.fix_status == GNSS_FIX_STATUS_GNSS_FIX) {
-        char buffer[64];
+        char buffer[128] = {0};
         LOG_DBG("UTC Time: %02d %02d:%02d", data->utc.month, data->utc.hour, data->utc.minute);
         snprintf(buffer, sizeof(buffer), "%02d:%02d", data->utc.hour, data->utc.minute);
 
@@ -379,6 +384,10 @@ static void ublox_gnss_data_cb(const struct device* dev, const struct gnss_data*
         ublox_nav_sat_fix_msg.position_covariance[4] = variance;        // North
         ublox_nav_sat_fix_msg.position_covariance[8] = variance * 4.0;  // Up (typically worse)
         ublox_nav_sat_fix_msg.position_covariance_type = sensor_msgs__msg__NavSatFix__COVARIANCE_TYPE_APPROXIMATED;
+        memset(buffer, 0, sizeof(buffer));
+        snprintf(buffer, sizeof(buffer), "Ublox: Lat=%.6f Lon=%.6f Alt=%.2f Fix=%d", ublox_nav_sat_fix_msg.latitude,
+                 ublox_nav_sat_fix_msg.longitude, ublox_nav_sat_fix_msg.altitude, GNSS_FIX_STATUS_GNSS_FIX);
+        storage.log_write(buffer);
 
         RCSOFTCHECK(rcl_publish(&ublox_gnss_publisher, &ublox_nav_sat_fix_msg, NULL));
     }
@@ -437,6 +446,8 @@ int main(void) {
     // Starting display
     oled.init();
     storage.init();
+
+    storage.print_storage_stats();
 
     LOG_DBG("Starting GNSS test application\n");
     gnss_systems_t supported, enabled;
@@ -548,6 +559,4 @@ int main(void) {
     while (1) {
         k_sleep(K_FOREVER);
     }
-
-    storage.log_write("ending writes\n");
 }

@@ -50,6 +50,7 @@ class Storage {
     int read_boot_count(int* count);
     int write_boot_count(int count);
     int append_boot_log(int boot_num);
+    int log_write_wo_time(const char* message);
     std::string _current_log_file;
     struct fs_file_t _current_log_file_handle;
     struct timespec _ts;

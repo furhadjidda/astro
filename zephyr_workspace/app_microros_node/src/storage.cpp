@@ -103,7 +103,7 @@ int Storage::init() {
     LOG_INF("SD card mounted successfully!");
 
     /* Boot counter */
-    list_directory(DISK_MOUNT_PT);
+    // list_directory(DISK_MOUNT_PT);
     read_boot_count(&boot_count);
     boot_count++;
     LOG_INF("=== BOOT #%d ===", boot_count);
@@ -115,7 +115,6 @@ int Storage::init() {
 
     list_directory(DISK_MOUNT_PT);
     read_and_display_file(BOOT_LOG_FILE);
-    print_storage_stats();
     _current_log_file = DISK_MOUNT_PT + std::string("/") + std::to_string(boot_count) + std::string("_log.txt");
 
     fs_file_t_init(&_current_log_file_handle);
@@ -126,6 +125,18 @@ int Storage::init() {
     }
 
     dt_read(_ts.tv_sec);
+    // Apply the stored epoch to CLOCK_REALTIME so log_write's guard passes
+    if (_ts.tv_sec >= MIN_VALID_EPOCH) {
+        struct timespec ts_to_set = {.tv_sec = _ts.tv_sec, .tv_nsec = 0};
+        clock_settime(CLOCK_REALTIME, &ts_to_set);
+        LOG_INF("System clock restored from SD: %ld", _ts.tv_sec);
+    } else {
+        LOG_WRN("Stored epoch invalid (%ld), skipping clock restore", _ts.tv_sec);
+    }
+
+    print_storage_stats();
+
+    log_write("Storage initialized successfully");
 
     return 0;
 }
@@ -212,7 +223,32 @@ int Storage::log_write(const char* message) {
     std::string message_with_timestamp = "[" + std::to_string(t->tm_year + 1900) + "-" + std::to_string(t->tm_mon + 1) +
                                          "-" + std::to_string(t->tm_mday) + " " + std::to_string(t->tm_hour) + ":" +
                                          std::to_string(t->tm_min) + ":" + std::to_string(t->tm_sec) + "] " +
-                                         std::string(message);
+                                         std::string(message) + "\n";
+    written = fs_write(&_current_log_file_handle, message_with_timestamp.c_str(), message_with_timestamp.length());
+    if (written < 0) {
+        LOG_ERR("Failed to write log: %d", (int)written);
+        return (int)written;
+    }
+    // Flush to SD card immediately
+    res = fs_sync(&_current_log_file_handle);
+    if (res != 0) {
+        LOG_ERR("Sync failed: %d", res);
+        return res;
+    }
+
+    return (written > 0) ? 0 : (int)written;
+}
+
+int Storage::log_write_wo_time(const char* message) {
+    int res;
+    ssize_t written;
+
+    if (_current_log_file_handle.filep == nullptr || _current_log_file_handle.mp == nullptr) {
+        LOG_ERR("Log file not open");
+        return -EBADF;
+    }
+
+    std::string message_with_timestamp = std::string(message) + "\n";
     written = fs_write(&_current_log_file_handle, message_with_timestamp.c_str(), message_with_timestamp.length());
     if (written < 0) {
         LOG_ERR("Failed to write log: %d", (int)written);
@@ -412,6 +448,11 @@ int Storage::print_storage_stats(void) {
     LOG_INF("Free : %llu KB", free_bytes / 1024);
     LOG_INF("Usage: %u %%", used_percent);
     LOG_INF("==============================");
+
+    char buffer[128];
+    snprintf(buffer, sizeof(buffer), "Storage Stats - Total: %llu KB, Used: %llu KB, Free: %llu KB, Usage: %u%%",
+             total_bytes / 1024, used_bytes / 1024, free_bytes / 1024, used_percent);
+    log_write_wo_time(buffer);
 
     return 0;
 }
