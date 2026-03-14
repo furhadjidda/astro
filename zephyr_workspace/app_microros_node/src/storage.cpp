@@ -29,6 +29,13 @@ LOG_MODULE_REGISTER(storage);
 static FATFS fat_fs;
 static struct fs_mount_t mp;
 
+/* Control how often log writes are flushed to the SD card.
+ * A value of 1 retains the original behavior (sync on every write).
+ * Higher values reduce blocking and SD wear by batching writes.
+ */
+static constexpr uint32_t LOG_SYNC_INTERVAL = 10U;
+static uint32_t log_write_pending_sync_count = 0U;
+
 /* ========== NEW USB STACK CONFIGURATION ========== */
 
 USBD_DEVICE_DEFINE(sample_usbd, DEVICE_DT_GET(DT_NODELABEL(usb_serial)), 0x2fe3, 0x0100);
@@ -234,11 +241,18 @@ int Storage::log_write(const char* message) {
         LOG_ERR("Failed to write log: %d", (int)written);
         return (int)written;
     }
-    // Flush to SD card immediately
-    res = fs_sync(&_current_log_file_handle);
-    if (res != 0) {
-        LOG_ERR("Sync failed: %d", res);
-        return res;
+
+    /* Periodically flush buffered log data to the SD card to
+     * reduce blocking and SD wear, instead of syncing on every write.
+     */
+    log_write_pending_sync_count++;
+    if (log_write_pending_sync_count >= LOG_SYNC_INTERVAL) {
+        res = fs_sync(&_current_log_file_handle);
+        if (res != 0) {
+            LOG_ERR("Sync failed: %d", res);
+            return res;
+        }
+        log_write_pending_sync_count = 0U;
     }
 
     return (written > 0) ? 0 : (int)written;
@@ -259,11 +273,18 @@ int Storage::log_write_wo_time(const char* message) {
         LOG_ERR("Failed to write log: %d", (int)written);
         return (int)written;
     }
-    // Flush to SD card immediately
-    res = fs_sync(&_current_log_file_handle);
-    if (res != 0) {
-        LOG_ERR("Sync failed: %d", res);
-        return res;
+
+    /* Periodically flush buffered log data to the SD card, sharing the same
+     * batching mechanism as log_write().
+     */
+    log_write_pending_sync_count++;
+    if (log_write_pending_sync_count >= LOG_SYNC_INTERVAL) {
+        res = fs_sync(&_current_log_file_handle);
+        if (res != 0) {
+            LOG_ERR("Sync failed: %d", res);
+            return res;
+        }
+        log_write_pending_sync_count = 0U;
     }
 
     return (written > 0) ? 0 : (int)written;
