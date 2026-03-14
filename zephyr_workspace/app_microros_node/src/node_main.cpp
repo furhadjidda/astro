@@ -438,8 +438,6 @@ static void mtk3333_gnss_data_cb(const struct device* dev, const struct gnss_dat
         if (gnss_get_latest_timepulse(dev, &timepulse) == 0) {
             timepulse_ns = k_ticks_to_ns_near64(timepulse);
         }
-    }
-    {
         char buffer[128] = {0};
         LOG_DBG("UTC Time: %02d %02d:%02d", data->utc.month, data->utc.hour, data->utc.minute);
         snprintf(buffer, sizeof(buffer), "%02d:%02d", data->utc.hour, data->utc.minute);
