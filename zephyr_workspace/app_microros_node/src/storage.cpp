@@ -16,6 +16,7 @@
  */
 
 #include "storage.hpp"
+#include <errno.h>
 
 #define DISK_DRIVE_NAME "SD"
 #define DISK_MOUNT_PT "/SD:"
@@ -128,8 +129,12 @@ int Storage::init() {
     // Apply the stored epoch to CLOCK_REALTIME so log_write's guard passes
     if (_ts.tv_sec >= MIN_VALID_EPOCH) {
         struct timespec ts_to_set = {.tv_sec = _ts.tv_sec, .tv_nsec = 0};
-        clock_settime(CLOCK_REALTIME, &ts_to_set);
-        LOG_INF("System clock restored from SD: %ld", _ts.tv_sec);
+        if (clock_settime(CLOCK_REALTIME, &ts_to_set) == -1) {
+            int err = errno;
+            LOG_ERR("Failed to restore system clock from SD (epoch %ld), errno: %d", _ts.tv_sec, err);
+        } else {
+            LOG_INF("System clock restored from SD: %ld", _ts.tv_sec);
+        }
     } else {
         LOG_WRN("Stored epoch invalid (%ld), skipping clock restore", _ts.tv_sec);
     }
