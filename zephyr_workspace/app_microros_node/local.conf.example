@@ -1,0 +1,12 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# Private Zephyr overlay — copy to local.conf and fill in your values.
+# local.conf is git-ignored and will never be committed.
+# ──────────────────────────────────────────────────────────────────────────────
+
+# micro-ROS agent reachable from the device
+CONFIG_MICROROS_AGENT_IP="192.168.1.100"
+CONFIG_MICROROS_AGENT_PORT="8888"
+
+# Wi-Fi credentials
+CONFIG_MICROROS_WIFI_SSID="your_ssid_here"
+CONFIG_MICROROS_WIFI_PASSWORD="your_password_here"
