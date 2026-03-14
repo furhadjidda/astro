@@ -15,15 +15,21 @@
 #ifndef _MICROROS_CLIENT_ZEPHYR_TRANSPORT_H_
 #define _MICROROS_CLIENT_ZEPHYR_TRANSPORT_H_
 
-#include <unistd.h>
+#include <version.h>
 
-#include <sys/types.h>
-#include <posix/sys/socket.h>
+#if ZEPHYR_VERSION_CODE >= ZEPHYR_VERSION(3, 1, 0)
+#include <zephyr/posix/poll.h>
+#include <zephyr/posix/sys/socket.h>
+#include <zephyr/posix/unistd.h>
+#else
 #include <posix/poll.h>
+#include <posix/sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h>
+#endif
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 typedef struct {
@@ -33,15 +39,15 @@ typedef struct {
 } zephyr_transport_params_t;
 
 #define MICRO_ROS_FRAMING_REQUIRED false
-static zephyr_transport_params_t default_params = {{0,0,0}, "192.168.1.100", "8888"};
+static zephyr_transport_params_t default_params = {{0, 0, 0}, "192.168.1.100", "8888"};
 
-bool zephyr_transport_open(struct uxrCustomTransport * transport);
-bool zephyr_transport_close(struct uxrCustomTransport * transport);
-size_t zephyr_transport_write(struct uxrCustomTransport* transport, const uint8_t * buf, size_t len, uint8_t * err);
+bool zephyr_transport_open(struct uxrCustomTransport* transport);
+bool zephyr_transport_close(struct uxrCustomTransport* transport);
+size_t zephyr_transport_write(struct uxrCustomTransport* transport, const uint8_t* buf, size_t len, uint8_t* err);
 size_t zephyr_transport_read(struct uxrCustomTransport* transport, uint8_t* buf, size_t len, int timeout, uint8_t* err);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif //_MICROROS_CLIENT_ZEPHYR_TRANSPORT_H_
+#endif  //_MICROROS_CLIENT_ZEPHYR_TRANSPORT_H_

@@ -14,6 +14,12 @@ if(CONFIG_PICOLIBC)
     add_compile_definitions(__STDC_WANT_LIB_EXT1__=1)
 endif()
 
+# The ESP32 WiFi adapter (libzephyr) and picolibc both define random().
+# Allow the linker to pick the first definition (ESP32's) and ignore the duplicate.
+if(CONFIG_WIFI_ESP32 AND CONFIG_PICOLIBC)
+    zephyr_link_libraries(-Wl,--allow-multiple-definition)
+endif()
+
 
 target_sources(app PRIVATE src/node_main.cpp src/storage.cpp src/oled_wrapper.cpp)
 message(board name is ${BOARD} \n\n)

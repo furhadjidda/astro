@@ -46,7 +46,11 @@ configure_colcon_meta: $(COMPONENT_PATH)/colcon.meta $(COMPONENT_PATH)/micro_ros
 	update_meta "microxrcedds_client" "UCLIENT_PROFILE_UDP=OFF"; \
 	update_meta "microxrcedds_client" "UCLIENT_PROFILE_TCP=OFF"; \
 	update_meta "microxrcedds_client" "UCLIENT_PROFILE_CUSTOM_TRANSPORT=ON"; \
-	update_meta "microxrcedds_client" "UCLIENT_PROFILE_STREAM_FRAMING=ON"; \
+	if grep -q "^CONFIG_MICROROS_TRANSPORT_UDP=y" "$${ZEPHYR_CONF_FILE}"; then \
+		update_meta "microxrcedds_client" "UCLIENT_PROFILE_STREAM_FRAMING=OFF"; \
+	else \
+		update_meta "microxrcedds_client" "UCLIENT_PROFILE_STREAM_FRAMING=ON"; \
+	fi; \
 	update_meta "rmw_microxrcedds" "RMW_UXRCE_TRANSPORT=custom";
 
 
