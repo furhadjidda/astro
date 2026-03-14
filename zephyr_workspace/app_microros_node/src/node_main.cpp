@@ -77,7 +77,6 @@ static bool bno055_fusion = true;
  * ========================================================= */
 
 #define THREAD_STACK_SIZE 4096
-#define IMU_THREAD_PRIORITY 6
 
 #define EXECUTOR_STACK_SIZE 8192
 #define TIME_SYNC_STACK_SIZE 1024
@@ -140,28 +139,6 @@ sensor_msgs__msg__NavSatFix ublox_nav_sat_fix_msg;
 static ATOMIC_DEFINE(mtk3333_msg_ready, 1);
 static ATOMIC_DEFINE(ublox_msg_ready, 1);
 static atomic_t time_is_valid;
-
-static int64_t get_local_time_nanos(void) {
-    // Once the executor-owned time_sync_timer has successfully synced the
-    // session, use the agent epoch directly.  All callers of this function
-    // are timer callbacks that run on the same executor thread as the sync
-    // timer, so calling rmw_uros_epoch_nanos() here is thread-safe.
-    if (atomic_get(&time_is_valid)) {
-        int64_t epoch_ns = rmw_uros_epoch_nanos();
-        if (epoch_ns > 0) {
-            return epoch_ns;
-        }
-    }
-
-    // Fallback: CLOCK_REALTIME (may still be agent-synced via clock_settime)
-    struct timespec ts = {0};
-    if (clock_gettime(CLOCK_REALTIME, &ts) == 0 && ts.tv_sec > 0) {
-        return ((int64_t)ts.tv_sec * 1000000000LL) + ts.tv_nsec;
-    }
-
-    // Last resort: kernel uptime
-    return k_uptime_get() * 1000000LL;
-}
 
 #if defined(CONFIG_MICROROS_TRANSPORT_UDP)
 static K_SEM_DEFINE(wifi_connected_sem, 0, 1);
@@ -268,6 +245,11 @@ static int init_wifi_station(void) {
 
     net_mgmt_init_event_callback(&ipv4_cb, ipv4_event_handler, NET_EVENT_IPV4_ADDR_ADD);
     net_mgmt_add_event_callback(&ipv4_cb);
+    char waiting_message[64];
+    snprintf(waiting_message, sizeof(waiting_message), "Waiting for Wifi '%s'...", CONFIG_MICROROS_WIFI_SSID);
+
+    oled.print(waiting_message, 0, 0);  // Print at
+    oled.finalize();
 
     k_sleep(K_SECONDS(2));
 
@@ -284,9 +266,6 @@ static int init_wifi_station(void) {
 /* =========================================================
  * Thread objects
  * ========================================================= */
-
-K_THREAD_STACK_DEFINE(imu_stack, THREAD_STACK_SIZE);
-static struct k_thread imu_thread;
 
 K_THREAD_STACK_DEFINE(executor_stack, EXECUTOR_STACK_SIZE);
 static struct k_thread executor_thread;
@@ -354,10 +333,7 @@ static void bno055_imu_timer_callback(rcl_timer_t* timer, int64_t last_call_time
                  bno055_imu_msg.orientation.y, bno055_imu_msg.orientation.z);
         storage.log_write(buffer);
 
-        rcl_ret_t pub_rc = rcl_publish(&bno055_imu_publisher, &bno055_imu_msg, NULL);
-        if (pub_rc != RCL_RET_OK) {
-            LOG_WRN("IMU publish failed rc=%d", pub_rc);
-        }
+        RCSOFTCHECK(rcl_publish(&bno055_imu_publisher, &bno055_imu_msg, NULL));
     }
 }
 
@@ -369,17 +345,11 @@ static void gnss_publish_timer_callback(rcl_timer_t* timer, int64_t last_call_ti
     }
 
     if (atomic_test_and_clear_bit(mtk3333_msg_ready, 0)) {
-        rcl_ret_t rc = rcl_publish(&mtk3333_gnss_publisher, &mtk3333_nav_sat_fix_msg, NULL);
-        if (rc != RCL_RET_OK) {
-            LOG_WRN("MTK3333 publish failed rc=%d", rc);
-        }
+        RCSOFTCHECK(rcl_publish(&mtk3333_gnss_publisher, &mtk3333_nav_sat_fix_msg, NULL));
     }
 
     if (atomic_test_and_clear_bit(ublox_msg_ready, 0)) {
-        rcl_ret_t rc = rcl_publish(&ublox_gnss_publisher, &ublox_nav_sat_fix_msg, NULL);
-        if (rc != RCL_RET_OK) {
-            LOG_WRN("u-blox publish failed rc=%d", rc);
-        }
+        RCSOFTCHECK(rcl_publish(&ublox_gnss_publisher, &ublox_nav_sat_fix_msg, NULL));
     }
 }
 
@@ -663,6 +633,11 @@ int main(void) {
 #if defined(CONFIG_MICROROS_TRANSPORT_UDP)
     if (init_wifi_station() != 0) {
         LOG_ERR("WiFi initialization failed");
+        char waiting_message[64];
+        snprintf(waiting_message, sizeof(waiting_message), "Failed to connect WiFi '%s'", CONFIG_MICROROS_WIFI_SSID);
+
+        oled.print(waiting_message, 0, 0);  // Print at
+        oled.finalize();
         return -EIO;
     }
 
