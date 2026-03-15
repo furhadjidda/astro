@@ -287,28 +287,30 @@ static struct k_thread executor_thread;
 static void bno055_imu_timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
     ARG_UNUSED(last_call_time);
     if (timer != NULL && NULL != bno055_dev) {
-        double accel[3] = {0.0, 0.0, 0.0};
-        double gyro[3] = {0.0, 0.0, 0.0};
         struct sensor_value eul[3];
         struct sensor_value quat[4];
+        struct sensor_value accel[4];
+        struct sensor_value gyro[4];
         rcl_time_point_value_t now = rmw_uros_epoch_nanos();
         sensor_sample_fetch(bno055_dev);
         sensor_channel_get(bno055_dev, static_cast<sensor_channel>(BNO055_SENSOR_CHAN_EULER_YRP), eul);
         sensor_channel_get(bno055_dev, static_cast<sensor_channel>(BNO055_SENSOR_CHAN_QUATERNION_WXYZ), quat);
+        sensor_channel_get(bno055_dev, static_cast<sensor_channel>(BNO055_SENSOR_CHAN_LINEAR_ACCEL_XYZ), accel);
+        sensor_channel_get(bno055_dev, static_cast<sensor_channel>(BNO055_SENSOR_CHAN_GRAVITY_XYZ), gyro);
 
         // CORRECT - use integer arithmetic
         bno055_imu_msg.header.stamp.sec = now / 1000000000LL;
         bno055_imu_msg.header.stamp.nanosec = now % 1000000000LL;
 
         // Fill accelerometer data
-        bno055_imu_msg.linear_acceleration.x = accel[0];
-        bno055_imu_msg.linear_acceleration.y = accel[1];
-        bno055_imu_msg.linear_acceleration.z = accel[2];
+        bno055_imu_msg.linear_acceleration.x = sensor_value_to_double(&accel[0]);
+        bno055_imu_msg.linear_acceleration.y = sensor_value_to_double(&accel[1]);
+        bno055_imu_msg.linear_acceleration.z = sensor_value_to_double(&accel[2]);
 
         // Fill gyroscope data
-        bno055_imu_msg.angular_velocity.x = gyro[0];
-        bno055_imu_msg.angular_velocity.y = gyro[1];
-        bno055_imu_msg.angular_velocity.z = gyro[2];
+        bno055_imu_msg.angular_velocity.x = sensor_value_to_double(&gyro[0]);
+        bno055_imu_msg.angular_velocity.y = sensor_value_to_double(&gyro[1]);
+        bno055_imu_msg.angular_velocity.z = sensor_value_to_double(&gyro[2]);
 
         // Fill orientation
         bno055_imu_msg.orientation.w = sensor_value_to_double(&quat[0]);

@@ -213,13 +213,17 @@ static int bno055_set_power(const struct device* dev, bno055_powermode_t power) 
 static int get_vector(const struct device* dev, const uint8_t data_register, struct bno055_vector3_data* data) {
     uint8_t buffer[6] = {0};
     const struct bno055_config* config = dev->config;
-    int16_t x, y, z;
-    x = y = z = 0;
+    int16_t x = 0;
+    int16_t y = 0;
+    int16_t z = 0;
 
     /* Read vector data (6 bytes) */
     // get vecotor 3
     // LOG_DBG(">>>> Reading vector data from register[0x%02x]", data_register);
     int err = i2c_burst_read_dt(&config->i2c_bus, data_register, buffer, sizeof(buffer));
+    if (err < 0) {
+        return err;
+    }
 
     x = ((int16_t)buffer[0]) | (((int16_t)buffer[1]) << 8);
     y = ((int16_t)buffer[2]) | (((int16_t)buffer[3]) << 8);
@@ -604,6 +608,48 @@ static int bno055_channel_get(const struct device* dev, enum sensor_channel chan
         return 0;
     }
 
+    if (chan == (enum sensor_channel)BNO055_SENSOR_CHAN_LINEAR_ACCEL_X) {
+        (val)->val1 = data->lia.x / BNO055_ACCEL_RESOLUTION;
+        (val)->val2 = (1000000 / BNO055_ACCEL_RESOLUTION) * (data->lia.x - (val)->val1 * BNO055_ACCEL_RESOLUTION);
+        return 0;
+    }
+
+    if (chan == (enum sensor_channel)BNO055_SENSOR_CHAN_LINEAR_ACCEL_Y) {
+        (val)->val1 = data->lia.y / BNO055_ACCEL_RESOLUTION;
+        (val)->val2 = (1000000 / BNO055_ACCEL_RESOLUTION) * (data->lia.y - (val)->val1 * BNO055_ACCEL_RESOLUTION);
+        return 0;
+    }
+
+    if (chan == (enum sensor_channel)BNO055_SENSOR_CHAN_LINEAR_ACCEL_Z) {
+        (val)->val1 = data->lia.z / BNO055_ACCEL_RESOLUTION;
+        (val)->val2 = (1000000 / BNO055_ACCEL_RESOLUTION) * (data->lia.z - (val)->val1 * BNO055_ACCEL_RESOLUTION);
+        return 0;
+    }
+
+    if (chan == (enum sensor_channel)BNO055_SENSOR_CHAN_LINEAR_ACCEL_XYZ) {
+        (val)->val1 = data->lia.x / BNO055_ACCEL_RESOLUTION;
+        (val)->val2 = (1000000 / BNO055_ACCEL_RESOLUTION) * (data->lia.x - (val)->val1 * BNO055_ACCEL_RESOLUTION);
+        (val + 1)->val1 = data->lia.y / BNO055_ACCEL_RESOLUTION;
+        (val + 1)->val2 =
+            (1000000 / BNO055_ACCEL_RESOLUTION) * (data->lia.y - (val + 1)->val1 * BNO055_ACCEL_RESOLUTION);
+        (val + 2)->val1 = data->lia.z / BNO055_ACCEL_RESOLUTION;
+        (val + 2)->val2 =
+            (1000000 / BNO055_ACCEL_RESOLUTION) * (data->lia.z - (val + 2)->val1 * BNO055_ACCEL_RESOLUTION);
+        return 0;
+    }
+
+    if (chan == (enum sensor_channel)BNO055_SENSOR_CHAN_GRAVITY_XYZ) {
+        (val)->val1 = data->grv.x / BNO055_ACCEL_RESOLUTION;
+        (val)->val2 = (1000000 / BNO055_ACCEL_RESOLUTION) * (data->grv.x - (val)->val1 * BNO055_ACCEL_RESOLUTION);
+        (val + 1)->val1 = data->grv.y / BNO055_ACCEL_RESOLUTION;
+        (val + 1)->val2 =
+            (1000000 / BNO055_ACCEL_RESOLUTION) * (data->grv.y - (val + 1)->val1 * BNO055_ACCEL_RESOLUTION);
+        (val + 2)->val1 = data->grv.z / BNO055_ACCEL_RESOLUTION;
+        (val + 2)->val2 =
+            (1000000 / BNO055_ACCEL_RESOLUTION) * (data->grv.z - (val + 2)->val1 * BNO055_ACCEL_RESOLUTION);
+        return 0;
+    }
+
     return -ENOTSUP;
 }
 
@@ -779,7 +825,22 @@ static int bno055_sample_fetch(const struct device* dev, enum sensor_channel cha
         case OPERATION_MODE_NDOF:
             err = get_system_status(dev);
             err = get_vector(dev, VECTOR_EULER, &data->eul);
+            if (err < 0) {
+                return err;
+            }
             err = get_vector4(dev, VECTOR_QUAT, &data->qua);
+            if (err < 0) {
+                return err;
+            }
+
+            err = get_vector(dev, VECTOR_LINEARACCEL, &data->lia);
+            if (err < 0) {
+                return err;
+            }
+            err = get_vector(dev, VECTOR_GRAVITY, &data->grv);
+            if (err < 0) {
+                return err;
+            }
             is_fully_calibrated(dev);
             if (err < 0) {
                 return err;
