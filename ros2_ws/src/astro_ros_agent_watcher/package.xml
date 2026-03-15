@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>ros_agent_watcher</name>
+  <version>1.0.0</version>
+  <description>
+    Micro ROS agent watcher for monitoring the status of micro ROS
+    agents in a ROS 2 environment.
+    This package provides tools to track and manage micro ROS agents,
+    ensuring seamless integration and communication within the ROS 2 ecosystem.
+  </description>
+  <maintainer email="furhadjidda@gmail.com">Will Son</maintainer>
+  <license>Apache 2.0</license>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>rclpy</exec_depend>
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>
