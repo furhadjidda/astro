@@ -7,8 +7,8 @@
 		zephyr,shell-uart = &usb_serial;
 	};
     aliases {
-        my-green-led = &green_led;
-        my-blue-led = &blue_led;
+        op-green-led = &green_led;
+        op-blue-led = &blue_led;
         gnss = &gnssnode;
         ubloxgnss = &gnssublox;
     };

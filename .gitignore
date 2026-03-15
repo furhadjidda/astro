@@ -81,3 +81,4 @@ zephyr_workspace/astro_custom_modules/libmicroros/include
 zephyr_workspace/astro_custom_modules/libmicroros/micro_ros_dev
 zephyr_workspace/astro_custom_modules/libmicroros/micro_ros_src
 *.cmake
+local.conf

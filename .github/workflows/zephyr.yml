@@ -19,12 +19,6 @@ jobs:
             sysbuild: true
             flash: flash-4M
             psram: psram-2M
-          - name: rak3112/esp32s3/procpu
-            overlay: boards/rak_wireless_rak3312.overlay
-            conf: boards/rak_wireless_rak3312.conf
-            sysbuild: true
-            flash: flash-16M
-            psram: psram-8M
 
     container:
       image: ghcr.io/furhadjidda/zephyr-dev:latest
@@ -44,6 +38,7 @@ jobs:
             west update --narrow
           fi
           west packages pip --install
+          west blobs fetch hal_espressif
 
 
       - name: Build sensor node app

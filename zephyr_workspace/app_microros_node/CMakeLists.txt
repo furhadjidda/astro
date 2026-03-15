@@ -8,10 +8,22 @@ list(APPEND ZEPHYR_EXTRA_MODULES ${PARENT_DIR}/astro_custom_modules/sensor)
 list(APPEND ZEPHYR_EXTRA_MODULES ${PARENT_DIR}/astro_custom_modules/iim42652_rak12033)
 list(APPEND ZEPHYR_EXTRA_MODULES ${PARENT_DIR}/astro_custom_modules/gnss)
 
+# Include local credentials (Wi-Fi SSID/password, agent IP) without committing them.
+# Copy local.conf.example -> local.conf and fill in your values.
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/local.conf")
+    list(APPEND OVERLAY_CONFIG "${CMAKE_CURRENT_SOURCE_DIR}/local.conf")
+endif()
+
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(microros_node)
 if(CONFIG_PICOLIBC)
     add_compile_definitions(__STDC_WANT_LIB_EXT1__=1)
+endif()
+
+# The ESP32 WiFi adapter (libzephyr) and picolibc both define random().
+# Allow the linker to pick the first definition (ESP32's) and ignore the duplicate.
+if(CONFIG_WIFI_ESP32 AND CONFIG_PICOLIBC)
+    zephyr_link_libraries(-Wl,--allow-multiple-definition)
 endif()
 
 

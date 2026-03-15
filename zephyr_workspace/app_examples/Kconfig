@@ -6,4 +6,16 @@ config ZSN_STATUS_CLASS
     help
     Enables the status class implementation for supported boards.
 
+config WIFI_SSID
+    string "WiFi SSID"
+    default "YourSSID"
+    help
+      The SSID of the WiFi network to connect to.
+
+config WIFI_PSK
+    string "WiFi Password"
+    default "YourPassword"
+    help
+      The WPA2 passphrase for the WiFi network.
+
 source "Kconfig.zephyr"
