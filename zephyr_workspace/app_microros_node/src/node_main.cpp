@@ -25,10 +25,12 @@
 #include <rclc/rclc.h>
 #include <rmw_microros/rmw_microros.h>
 #include <rosidl_runtime_c/string_functions.h>
+#include <sensor_msgs/msg/fluid_pressure.h>
 #include <sensor_msgs/msg/imu.h>
 #include <sensor_msgs/msg/nav_sat_fix.h>
 #include <sensor_msgs/msg/nav_sat_status.h>
 #include <sensor_msgs/msg/range.h>
+#include <sensor_msgs/msg/temperature.h>
 #include <std_msgs/msg/int32.h>
 #include <string.h>
 #include <time.h>
@@ -67,6 +69,8 @@ static const struct device* const bno055_dev = DEVICE_DT_GET(DT_NODELABEL(bno055
 // gnss driver
 #define mtk3333_gnss DEVICE_DT_GET(DT_ALIAS(gnss))
 #define ublox_gnss DEVICE_DT_GET(DT_ALIAS(ubloxgnss))
+// lps22hb driver
+const struct device* st_lps22hb_dev = DEVICE_DT_GET_ANY(st_lps22hb_press);
 
 // IMU configuration
 static bool bno055_fusion = true;
@@ -86,6 +90,7 @@ static bool bno055_fusion = true;
 #define GNSS_PUBLISH_PERIOD_MS 1000
 #define IMU_PUBLISH_PERIOD_MS 200
 #define TIME_SYNC_PERIOD_MS 1000
+#define LPS22HB_PUBLISH_PERIOD_MS 2000
 
 #if defined(CONFIG_MICROROS_TRANSPORT_UDP)
 #define WIFI_CONNECT_TIMEOUT_S 30
@@ -126,13 +131,18 @@ static rcl_node_t node;
 static rcl_publisher_t mtk3333_gnss_publisher;
 static rcl_publisher_t ublox_gnss_publisher;
 static rcl_publisher_t bno055_imu_publisher;
+static rcl_publisher_t lps22hb_temp_publisher;
+static rcl_publisher_t lps22hb_pressure_publisher;
 // Timers
 static rcl_timer_t imu_timer;
 static rcl_timer_t gnss_timer;
 static rcl_timer_t time_sync_timer;
+static rcl_timer_t lps22hb_timer;
 
 static rclc_executor_t executor;
 static sensor_msgs__msg__Imu bno055_imu_msg;
+static sensor_msgs__msg__Temperature lps22hb_temp_msg;
+static sensor_msgs__msg__FluidPressure lps22hb_pressure_msg;
 static std_msgs__msg__Int32 msg;
 sensor_msgs__msg__NavSatFix mtk3333_nav_sat_fix_msg;
 sensor_msgs__msg__NavSatFix ublox_nav_sat_fix_msg;
@@ -318,13 +328,13 @@ static void bno055_imu_timer_callback(rcl_timer_t* timer, int64_t last_call_time
                 bno055_imu_msg.orientation.z);
         // Format for the screen
         char buffer[64];
-        snprintf(buffer, sizeof(buffer), "X=%.3f", bno055_imu_msg.orientation.x);
+        snprintf(buffer, sizeof(buffer), "X=%.1f", bno055_imu_msg.orientation.x);
         oled.print(buffer, 0, 20);
 
-        snprintf(buffer, sizeof(buffer), "Y=%.3f", bno055_imu_msg.orientation.y);
+        snprintf(buffer, sizeof(buffer), "Y=%.1f", bno055_imu_msg.orientation.y);
         oled.print(buffer, 0, 35);
 
-        snprintf(buffer, sizeof(buffer), "Z=%.3f", bno055_imu_msg.orientation.z);
+        snprintf(buffer, sizeof(buffer), "Z=%.1f", bno055_imu_msg.orientation.z);
         oled.print(buffer, 0, 50);
 
         oled.finalize();
@@ -378,6 +388,59 @@ static void time_sync_timer_callback(rcl_timer_t* timer, int64_t last_call_time)
 
     if (clock_settime(CLOCK_REALTIME, &ts) == 0) {
         atomic_set(&time_is_valid, 1);
+    }
+}
+
+static void lps22hb_timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
+    ARG_UNUSED(last_call_time);
+    if (timer != NULL) {
+        struct sensor_value temp, press;
+        int rc = sensor_sample_fetch(st_lps22hb_dev);
+        if (rc < 0) {
+            LOG_ERR("LPS22HB sensor_sample_fetch error: %d", rc);
+            return;
+        }
+
+        rc = sensor_channel_get(st_lps22hb_dev, SENSOR_CHAN_AMBIENT_TEMP, &temp);
+        if (rc < 0) {
+            LOG_ERR("LPS22HB sensor_channel_get ambient temp error: %d", rc);
+            return;
+        }
+
+        rc = sensor_channel_get(st_lps22hb_dev, SENSOR_CHAN_PRESS, &press);
+        if (rc < 0) {
+            LOG_ERR("LPS22HB sensor_channel_get pressure error: %d", rc);
+            return;
+        }
+
+        rcl_time_point_value_t now = rmw_uros_epoch_nanos();
+        lps22hb_temp_msg.header.stamp.sec = now / 1000000000LL;
+        lps22hb_temp_msg.header.stamp.nanosec = now % 1000000000LL;
+        lps22hb_pressure_msg.header.stamp = lps22hb_temp_msg.header.stamp;
+
+        lps22hb_temp_msg.temperature = sensor_value_to_double(&temp);
+        lps22hb_pressure_msg.fluid_pressure = sensor_value_to_double(&press) * 1000.0;
+
+        RCSOFTCHECK(rcl_publish(&lps22hb_temp_publisher, &lps22hb_temp_msg, NULL));
+        RCSOFTCHECK(rcl_publish(&lps22hb_pressure_publisher, &lps22hb_pressure_msg, NULL));
+
+        char buffer[64];
+        snprintf(buffer, sizeof(buffer), "T&P");
+        oled.print(buffer, 70, 20);
+
+        snprintf(buffer, sizeof(buffer), "%d.%01dC", temp.val1, abs(temp.val2) / 10000);
+        oled.print(buffer, 70, 35);
+
+        snprintf(buffer, sizeof(buffer), "%d.%01dkPa", press.val1, abs(press.val2) / 10000);
+        oled.print(buffer, 70, 50);
+
+        // storage log
+        memset(buffer, 0, sizeof(buffer));
+        snprintf(buffer, sizeof(buffer), "T=%d.%02dC P=%d.%02dkPa", temp.val1, abs(temp.val2) / 10000, press.val1,
+                 abs(press.val2) / 10000);
+        storage.log_write(buffer);
+
+        oled.finalize();
     }
 }
 
@@ -568,10 +631,23 @@ int main(void) {
 #endif
     sensor_msgs__msg__Imu__init(&bno055_imu_msg);
     rosidl_runtime_c__String__assign(&bno055_imu_msg.header.frame_id, "bno055_imu_frame");
+    sensor_msgs__msg__Temperature__init(&lps22hb_temp_msg);
+    rosidl_runtime_c__String__assign(&lps22hb_temp_msg.header.frame_id, "lps22hb_frame");
+    lps22hb_temp_msg.variance = 0.0;
+
+    sensor_msgs__msg__FluidPressure__init(&lps22hb_pressure_msg);
+    rosidl_runtime_c__String__assign(&lps22hb_pressure_msg.header.frame_id, "lps22hb_frame");
+    lps22hb_pressure_msg.variance = 0.0;
+
     sensor_msgs__msg__NavSatFix__init(&mtk3333_nav_sat_fix_msg);
     rosidl_runtime_c__String__assign(&mtk3333_nav_sat_fix_msg.header.frame_id, "mtk3333_gnss_frame");
     sensor_msgs__msg__NavSatFix__init(&ublox_nav_sat_fix_msg);
     rosidl_runtime_c__String__assign(&ublox_nav_sat_fix_msg.header.frame_id, "ublox_gnss_frame");
+
+    if (!device_is_ready(st_lps22hb_dev)) {
+        LOG_ERR("LPS22HB device not ready");
+        return -ENODEV;
+    }
 
     if (!device_is_ready(bno055_dev)) {
         LOG_ERR("Device %s is not ready\n", bno055_dev->name);
@@ -667,6 +743,9 @@ int main(void) {
     LOG_DBG("Agent connected!\n");
     oled.clear();
 
+    oled.draw_horizontal_line(18, 0, 128);
+    oled.draw_vertical_line(68, 0, 64);
+
     /* Allocator */
     rcl_allocator_t allocator = rcl_get_default_allocator();
 
@@ -691,6 +770,12 @@ int main(void) {
 
     RCCHECK(rclc_publisher_init_default(&bno055_imu_publisher, &node,
                                         ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, Imu), "/bno055_imu_raw"));
+    RCCHECK(rclc_publisher_init_default(&lps22hb_temp_publisher, &node,
+                                        ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, Temperature),
+                                        "/lps22hb_temperature_raw"));
+    RCCHECK(rclc_publisher_init_default(&lps22hb_pressure_publisher, &node,
+                                        ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, FluidPressure),
+                                        "/lps22hb_pressure_raw"));
 
     /* Timer */
     RCCHECK(
@@ -699,14 +784,16 @@ int main(void) {
                                     gnss_publish_timer_callback));
     RCCHECK(rclc_timer_init_default(&time_sync_timer, &support, RCL_MS_TO_NS(TIME_SYNC_PERIOD_MS),
                                     time_sync_timer_callback));
+    RCCHECK(rclc_timer_init_default(&lps22hb_timer, &support, RCL_MS_TO_NS(LPS22HB_PUBLISH_PERIOD_MS),
+                                    lps22hb_timer_callback));
 
     /* Executor */
-    RCCHECK(rclc_executor_init(&executor, &support.context, 3, &allocator));
+    RCCHECK(rclc_executor_init(&executor, &support.context, 4, &allocator));
 
     RCCHECK(rclc_executor_add_timer(&executor, &imu_timer));
     RCCHECK(rclc_executor_add_timer(&executor, &gnss_timer));
     RCCHECK(rclc_executor_add_timer(&executor, &time_sync_timer));
-
+    RCCHECK(rclc_executor_add_timer(&executor, &lps22hb_timer));
     msg.data = 0;
 
     /* Start executor thread */

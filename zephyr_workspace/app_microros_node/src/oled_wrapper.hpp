@@ -34,6 +34,10 @@ class OLEDWrapper {
 
     void finalize();
 
+    void draw_vertical_line(int x, int y_start, int y_end);
+
+    void draw_horizontal_line(int y, int x_start, int x_end);
+
    private:
     const struct device* display_dev;
     uint16_t _rows = 0;
