@@ -63,3 +63,15 @@ void OLEDWrapper::print(const char* message, int x, int y) { cfb_print(display_d
 void OLEDWrapper::clear() { cfb_framebuffer_clear(display_dev, true); }
 
 void OLEDWrapper::finalize() { cfb_framebuffer_finalize(display_dev); }
+
+void OLEDWrapper::draw_vertical_line(int x, int y_start, int y_end) {
+    struct cfb_position start = {static_cast<uint16_t>(x), static_cast<uint16_t>(y_start)};
+    struct cfb_position end = {static_cast<uint16_t>(x), static_cast<uint16_t>(y_end)};
+    cfb_draw_line(display_dev, &start, &end);
+}
+
+void OLEDWrapper::draw_horizontal_line(int y, int x_start, int x_end) {
+    struct cfb_position start = {static_cast<uint16_t>(x_start), static_cast<uint16_t>(y)};
+    struct cfb_position end = {static_cast<uint16_t>(x_end), static_cast<uint16_t>(y)};
+    cfb_draw_line(display_dev, &start, &end);
+}
