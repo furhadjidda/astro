@@ -401,8 +401,17 @@ static void lps22hb_timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
             return;
         }
 
-        sensor_channel_get(st_lps22hb_dev, SENSOR_CHAN_AMBIENT_TEMP, &temp);
-        sensor_channel_get(st_lps22hb_dev, SENSOR_CHAN_PRESS, &press);
+        rc = sensor_channel_get(st_lps22hb_dev, SENSOR_CHAN_AMBIENT_TEMP, &temp);
+        if (rc < 0) {
+            LOG_ERR("LPS22HB sensor_channel_get ambient temp error: %d", rc);
+            return;
+        }
+
+        rc = sensor_channel_get(st_lps22hb_dev, SENSOR_CHAN_PRESS, &press);
+        if (rc < 0) {
+            LOG_ERR("LPS22HB sensor_channel_get pressure error: %d", rc);
+            return;
+        }
 
         rcl_time_point_value_t now = rmw_uros_epoch_nanos();
         lps22hb_temp_msg.header.stamp.sec = now / 1000000000LL;
