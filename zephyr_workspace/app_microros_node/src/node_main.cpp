@@ -763,10 +763,10 @@ int main(void) {
                                         ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, Imu), "/bno055_imu_raw"));
     RCCHECK(rclc_publisher_init_default(&lps22hb_temp_publisher, &node,
                                         ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, Temperature),
-                                        "/lps22hb_temperature"));
+                                        "/lps22hb_temperature_raw"));
     RCCHECK(rclc_publisher_init_default(&lps22hb_pressure_publisher, &node,
                                         ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, FluidPressure),
-                                        "/lps22hb_pressure"));
+                                        "/lps22hb_pressure_raw"));
 
     /* Timer */
     RCCHECK(
