@@ -1,0 +1,314 @@
+#Copyright(c) 2026
+#SPDX - License - Identifier : Apache - 2.0
+
+menuconfig IIM42652
+    bool "TDK IIM42652 6-axis IMU"
+    default y
+    depends on DT_HAS_TDK_IIM42652_ENABLED
+    select I2C
+    help
+      Enable driver for TDK IIM42652 6-axis IMU.
+
+if IIM42652
+
+config IIM42652_ACC_CUSTOM_CONFIG
+    bool "Accelerometer custom configuration"
+    default n
+    depends on IIM42652
+    help
+      Enable Accelerometer configuration customization.
+
+if IIM42652_ACC_CUSTOM_CONFIG
+
+choice
+    prompt "Range configuration"
+    default IIM42652_ACC_4G_RANGE
+
+config IIM42652_ACC_2G_RANGE
+    bool "2G"
+    depends on IIM42652_ACC_CUSTOM_CONFIG
+
+config IIM42652_ACC_4G_RANGE
+    bool "4G"
+    depends on IIM42652_ACC_CUSTOM_CONFIG
+
+config IIM42652_ACC_8G_RANGE
+    bool "8G"
+    depends on IIM42652_ACC_CUSTOM_CONFIG
+
+config IIM42652_ACC_16G_RANGE
+    bool "16G"
+    depends on IIM42652_ACC_CUSTOM_CONFIG
+
+endchoice
+
+choice
+    prompt "Bandwidth configuration"
+    default IIM42652_ACC_62HZ_BANDWIDTH
+
+config IIM42652_ACC_8HZ_BANDWIDTH
+    bool "7.81Hz"
+    depends on IIM42652_ACC_CUSTOM_CONFIG
+
+config IIM42652_ACC_16HZ_BANDWIDTH
+    bool "15.63Hz"
+    depends on IIM42652_ACC_CUSTOM_CONFIG
+
+config IIM42652_ACC_31HZ_BANDWIDTH
+    bool "31.25Hz"
+    depends on IIM42652_ACC_CUSTOM_CONFIG
+
+config IIM42652_ACC_62HZ_BANDWIDTH
+    bool "62.5Hz"
+    depends on IIM42652_ACC_CUSTOM_CONFIG
+
+config IIM42652_ACC_125HZ_BANDWIDTH
+    bool "125Hz"
+    depends on IIM42652_ACC_CUSTOM_CONFIG
+
+config IIM42652_ACC_250HZ_BANDWIDTH
+    bool "250Hz"
+    depends on IIM42652_ACC_CUSTOM_CONFIG
+
+config IIM42652_ACC_500HZ_BANDWIDTH
+    bool "500Hz"
+    depends on IIM42652_ACC_CUSTOM_CONFIG
+
+config IIM42652_ACC_1000HZ_BANDWIDTH
+    bool "1000Hz"
+    depends on IIM42652_ACC_CUSTOM_CONFIG
+
+endchoice
+
+choice
+    prompt "Power mode configuration"
+    default IIM42652_ACC_NORMAL_POWER
+
+config IIM42652_ACC_NORMAL_POWER
+    bool "Normal"
+    depends on IIM42652_ACC_CUSTOM_CONFIG
+
+config IIM42652_ACC_LOW_1_POWER
+    bool "Low Power 1"
+    depends on IIM42652_ACC_CUSTOM_CONFIG
+
+config IIM42652_ACC_LOW_2_POWER
+    bool "Low Power 2"
+    depends on IIM42652_ACC_CUSTOM_CONFIG
+
+config IIM42652_ACC_STANDBY_POWER
+    bool "Standby"
+    depends on IIM42652_ACC_CUSTOM_CONFIG
+
+config IIM42652_ACC_SUSPEND_POWER
+    bool "Suspend"
+    depends on IIM42652_ACC_CUSTOM_CONFIG
+
+config IIM42652_ACC_DEEP_SUSPEND_POWER
+    bool "Deep Suspend"
+    depends on IIM42652_ACC_CUSTOM_CONFIG
+
+endchoice
+
+endif # IIM42652_ACC_CUSTOM_CONFIG
+
+config IIM42652_MAG_CUSTOM_CONFIG
+    bool "Magnetometer custom configuration"
+    default n
+    depends on IIM42652
+    help
+      Enable Magnetometer configuration customization.
+
+if IIM42652_MAG_CUSTOM_CONFIG
+
+choice
+    prompt "Output Rate configuration"
+    default IIM42652_MAG_20HZ_RATE
+
+config IIM42652_MAG_2HZ_RATE
+    bool "2Hz"
+    depends on IIM42652_MAG_CUSTOM_CONFIG
+
+config IIM42652_MAG_6HZ_RATE
+    bool "6Hz"
+    depends on IIM42652_MAG_CUSTOM_CONFIG
+
+config IIM42652_MAG_8HZ_RATE
+    bool "8Hz"
+    depends on IIM42652_MAG_CUSTOM_CONFIG
+
+config IIM42652_MAG_10HZ_RATE
+    bool "10Hz"
+    depends on IIM42652_MAG_CUSTOM_CONFIG
+
+config IIM42652_MAG_15HZ_RATE
+    bool "15Hz"
+    depends on IIM42652_MAG_CUSTOM_CONFIG
+
+config IIM42652_MAG_20HZ_RATE
+    bool "20Hz"
+    depends on IIM42652_MAG_CUSTOM_CONFIG
+
+config IIM42652_MAG_25HZ_RATE
+    bool "25Hz"
+    depends on IIM42652_MAG_CUSTOM_CONFIG
+
+config IIM42652_MAG_30HZ_RATE
+    bool "30Hz"
+    depends on IIM42652_MAG_CUSTOM_CONFIG
+
+endchoice
+
+choice
+    prompt "Operation mode configuration"
+    default IIM42652_MAG_REGULAR_MODE
+
+config IIM42652_MAG_LOW_POWER_MODE
+    bool "Low Power"
+    depends on IIM42652_MAG_CUSTOM_CONFIG
+
+config IIM42652_MAG_REGULAR_MODE
+    bool "Regular"
+    depends on IIM42652_MAG_CUSTOM_CONFIG
+
+config IIM42652_MAG_ENHANCED_REGULAR_MODE
+    bool "Enhanced Regular"
+    depends on IIM42652_MAG_CUSTOM_CONFIG
+
+config IIM42652_MAG_HIGH_ACCURACY_MODE
+    bool "High Accuracy"
+    depends on IIM42652_MAG_CUSTOM_CONFIG
+
+endchoice
+
+choice
+    prompt "Power mode configuration"
+    default IIM42652_MAG_FORCED_POWER
+
+config IIM42652_MAG_NORMAL_POWER
+    bool "Normal"
+    depends on IIM42652_MAG_CUSTOM_CONFIG
+
+config IIM42652_MAG_SUSPEND_POWER
+    bool "Suspend"
+    depends on IIM42652_MAG_CUSTOM_CONFIG
+
+config IIM42652_MAG_SLEEP_POWER
+    bool "Sleep"
+    depends on IIM42652_MAG_CUSTOM_CONFIG
+
+config IIM42652_MAG_FORCED_POWER
+    bool "Forced"
+    depends on IIM42652_MAG_CUSTOM_CONFIG
+
+endchoice
+
+endif # IIM42652_MAG_CUSTOM_CONFIG
+
+config IIM42652_GYR_CUSTOM_CONFIG
+    bool "Gyroscope custom configuration"
+    default n
+    depends on IIM42652
+    help
+      Enable Gyroscope configuration customization.
+
+if IIM42652_GYR_CUSTOM_CONFIG
+
+choice
+    prompt "Range configuration"
+    default IIM42652_GYR_2000_RANGE
+
+config IIM42652_GYR_125_RANGE
+    bool "125"
+    depends on IIM42652_GYR_CUSTOM_CONFIG
+
+config IIM42652_GYR_250_RANGE
+    bool "250"
+    depends on IIM42652_GYR_CUSTOM_CONFIG
+
+config IIM42652_GYR_500_RANGE
+    bool "500"
+    depends on IIM42652_GYR_CUSTOM_CONFIG
+
+config IIM42652_GYR_1000_RANGE
+    bool "1000"
+    depends on IIM42652_GYR_CUSTOM_CONFIG
+
+config IIM42652_GYR_2000_RANGE
+    bool "2000"
+    depends on IIM42652_GYR_CUSTOM_CONFIG
+
+endchoice
+
+choice
+    prompt "Bandwidth configuration"
+    default IIM42652_GYR_32HZ_BANDWIDTH
+
+config IIM42652_GYR_12HZ_BANDWIDTH
+    bool "12Hz"
+    depends on IIM42652_GYR_CUSTOM_CONFIG
+
+config IIM42652_GYR_23HZ_BANDWIDTH
+    bool "23Hz"
+    depends on IIM42652_GYR_CUSTOM_CONFIG
+
+config IIM42652_GYR_32HZ_BANDWIDTH
+    bool "32Hz"
+    depends on IIM42652_GYR_CUSTOM_CONFIG
+
+config IIM42652_GYR_47HZ_BANDWIDTH
+    bool "47Hz"
+    depends on IIM42652_GYR_CUSTOM_CONFIG
+
+config IIM42652_GYR_64HZ_BANDWIDTH
+    bool "64Hz"
+    depends on IIM42652_GYR_CUSTOM_CONFIG
+
+config IIM42652_GYR_116HZ_BANDWIDTH
+    bool "116Hz"
+    depends on IIM42652_GYR_CUSTOM_CONFIG
+
+config IIM42652_GYR_230HZ_BANDWIDTH
+    bool "230Hz"
+    depends on IIM42652_GYR_CUSTOM_CONFIG
+
+config IIM42652_GYR_523HZ_BANDWIDTH
+    bool "523Hz"
+    depends on IIM42652_GYR_CUSTOM_CONFIG
+
+endchoice
+
+choice
+    prompt "Power mode configuration"
+    default IIM42652_GYR_NORMAL_POWER
+
+config IIM42652_GYR_NORMAL_POWER
+    bool "Normal"
+    depends on IIM42652_GYR_CUSTOM_CONFIG
+
+config IIM42652_GYR_FAST_POWER
+    bool "Fast Power Up"
+    depends on IIM42652_GYR_CUSTOM_CONFIG
+
+config IIM42652_GYR_SUSPEND_POWER
+    bool "Suspend"
+    depends on IIM42652_GYR_CUSTOM_CONFIG
+
+config IIM42652_GYR_DEEP_SUSPEND_POWER
+    bool "Deep Suspend"
+    depends on IIM42652_GYR_CUSTOM_CONFIG
+
+config IIM42652_GYR_POWERSAVE_POWER
+    bool "Advanced Powersave"
+    depends on IIM42652_GYR_CUSTOM_CONFIG
+
+endchoice
+
+endif # IIM42652_GYR_CUSTOM_CONFIG
+
+config IIM42652_TRIGGER
+    bool "IRQ Trigger"
+    help
+      Enable IRQ pin to trigger software interruption.
+
+endif # IIM42652

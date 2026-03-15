@@ -86,6 +86,17 @@
         },
     "[c]": {
         "editor.defaultFormatter": "ms-vscode.cpptools"
+    },
+    "search.exclude": {
+        "*.ko": true,
+        "*.map": true,
+        "*.obj": true,
+        "*o": true,
+        "build_*": true,
+        "build_host": true,
+        "build_target": true,
+        "build*": true,
+        "zephyr_workspace/.west": true
     }
 
 }

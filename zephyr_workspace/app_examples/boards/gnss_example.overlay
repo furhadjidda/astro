@@ -1,0 +1,24 @@
+/ {
+    aliases {
+        gnss = &gnssnode;
+    };
+	chosen {
+		zephyr,console = &usb_serial;
+		zephyr,shell-uart = &usb_serial;
+	};
+};
+
+&usb_serial {
+	status = "okay";
+};
+
+&i2c0 {
+    status = "okay";
+
+    gnssnode: gnss@10 {
+        compatible = "mtk,mtk3333";
+        reg = <0x10>;
+        label = "GNSS_0";
+        status = "okay";
+    };
+};

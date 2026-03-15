@@ -164,3 +164,12 @@ Set GDB target to 'esp32s3.cpu0'
 
 
 ```
+
+
+## Running cpp check
+*  git clone https://github.com/danmar/cppcheck.git
+*  cd cppcheck/
+*  cmake -S . -B build
+*  cmake --build build
+* <path_to_build_bin>/cppcheck   --project=./build/zephyr_sensor_node/compile_commands.json --enable=all -i ../zephyr/include/ -i ../zephyr   -i ../bootloader   -i ../modules  --xml 2> cppcheck-report.xml
+* <path_to_cpp_checkrepo>/htmlreport/cppcheck-htmlreport   --file=cppcheck-report.xml   --report-dir=cppcheck-html
