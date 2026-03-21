@@ -2,8 +2,11 @@
 
 #include "mtk3333.h"
 
+#include <stdlib.h>
+#include <string.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gnss.h>
+#include <zephyr/drivers/gnss/gnss_publish.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
@@ -19,6 +22,9 @@ struct mtk3333_config {
     struct i2c_dt_spec i2c_bus;
     uint16_t i2c_addr;
 };
+
+/* Forward declarations */
+static void mtk3333_parse_gsv(struct mtk3333_data* data, const char* sentence);
 
 static int mtk3333_send_command(const struct device* dev, const char* cmd, size_t len) {
     const struct mtk3333_config* cfg = dev->config;
@@ -64,6 +70,93 @@ static void mtk3333_process_char(struct mtk3333_data* data, char c, struct gnss_
         strncmp(data->last_line, "$GNGGA", 6) == 0) {
         *publish = true;
     }
+
+    /* Check for GSV (satellite) sentences */
+    if (strncmp(data->last_line, "$GPGSV", 6) == 0 || strncmp(data->last_line, "$GLGSV", 6) == 0 ||
+        strncmp(data->last_line, "$GAGSV", 6) == 0 || strncmp(data->last_line, "$GNGSV", 6) == 0) {
+        mtk3333_parse_gsv(data, data->last_line);
+    }
+}
+
+/* Parse GSV (satellite) NMEA sentence */
+static void mtk3333_parse_gsv(struct mtk3333_data* data, const char* sentence) {
+    char* copy = malloc(strlen(sentence) + 1);
+    if (!copy) {
+        LOG_ERR("Failed to allocate GSV parse buffer");
+        return;
+    }
+    strcpy(copy, sentence);
+
+    // GSV format: $GPGSV,total_msg,msg_num,total_sats,prn1,elev1,azim1,snr1,...*checksum
+    char* ptr = copy;
+    char* field[25];
+    int field_count = 0;
+
+    // Split by comma
+    while (*ptr && field_count < 25) {
+        field[field_count++] = ptr;
+        ptr = strchr(ptr, ',');
+        if (ptr) {
+            *ptr = '\0';
+            ptr++;
+        } else {
+            break;
+        }
+    }
+
+    if (field_count < 4) {
+        free(copy);
+        return;
+    }
+
+    uint16_t total_msg = (uint16_t)strtol(field[1], NULL, 10);
+    uint16_t msg_num = (uint16_t)strtol(field[2], NULL, 10);
+    uint16_t total_sats = (uint16_t)strtol(field[3], NULL, 10);
+
+    // If this is the first message, reset and store expected count
+    if (msg_num == 1) {
+        data->satellites_len = 0;
+        data->gsv_expected_count = total_sats;
+    }
+
+    // Parse satellites from this message (up to 4 per GSV sentence)
+    for (int i = 0; i < 4 && (4 * (msg_num - 1) + i < total_sats); i++) {
+        int base_field = 4 + (i * 4);
+        if (base_field + 3 >= field_count) {
+            break;
+        }
+
+        if (data->satellites_len >= MTK3333_MAX_SATELLITES) {
+            break;
+        }
+
+        struct gnss_satellite* sat = &data->satellites[data->satellites_len];
+        sat->prn = (uint8_t)strtol(field[base_field], NULL, 10);
+        sat->elevation = (uint8_t)strtol(field[base_field + 1], NULL, 10);
+        sat->azimuth = (uint16_t)strtol(field[base_field + 2], NULL, 10);
+        sat->snr = (uint8_t)strtol(field[base_field + 3], NULL, 10);
+
+        // Guess system based on sentence prefix
+        if (strncmp(sentence, "$GLGSV", 6) == 0) {
+            sat->system = GNSS_SYSTEM_GLONASS;
+        } else if (strncmp(sentence, "$GAGSV", 6) == 0) {
+            sat->system = GNSS_SYSTEM_GALILEO;
+        } else if (strncmp(sentence, "$GNGSV", 6) == 0) {
+            sat->system = GNSS_SYSTEM_GPS;  // Could be mixed, but default to GPS
+        } else {
+            sat->system = GNSS_SYSTEM_GPS;
+        }
+
+        data->satellites_len++;
+    }
+
+    // If this is the last message, publish satellites
+    if (msg_num == total_msg && data->satellites_len > 0) {
+        gnss_publish_satellites(data->dev, data->satellites, data->satellites_len);
+        LOG_DBG("Published %d satellites", data->satellites_len);
+    }
+
+    free(copy);
 }
 
 /* -------------------------- Poll Work Handler -------------------------- */
@@ -189,7 +282,8 @@ static int mtk3333_init(const struct device* dev) {
     data->dev = dev;
     data->current_line = data->buffer_line1;
     data->last_line = data->buffer_line2;
-    mtk3333_send_command(dev, (const uint8_t*)PMTK_SET_NMEA_OUTPUT_RMCGGA, strlen(PMTK_SET_NMEA_OUTPUT_RMCGGA));
+    // Enable RMC, GGA, GSA, and GSV sentences for full position + satellite data
+    mtk3333_send_command(dev, (const uint8_t*)PMTK_SET_NMEA_OUTPUT_ALLDATA, strlen(PMTK_SET_NMEA_OUTPUT_ALLDATA));
     // uncomment this line to turn on only the "minimum recommended" data
     // GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCONLY);
     // For parsing data, we don't suggest using anything but either RMC only or
@@ -205,6 +299,11 @@ static int mtk3333_init(const struct device* dev) {
     mtk3333_send_command(dev, (const uint8_t*)PGCMD_ANTENNA, strlen(PGCMD_ANTENNA));
 
     k_msleep(500);
+
+    /* Initialize satellite tracking */
+    data->satellites_len = 0;
+    data->gsv_expected_count = 0;
+    data->gsv_current_count = 0;
 
     /* Initialize delayable work */
     k_work_init_delayable(&data->poll_work, mtk3333_poll_work);

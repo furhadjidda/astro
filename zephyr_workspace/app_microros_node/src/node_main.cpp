@@ -536,13 +536,13 @@ static void gnss_satellites_cb(const struct device* dev, const struct gnss_satel
     }
     char buffer[32] = {0};
     snprintf(buffer, sizeof(buffer), "[%d]", tracked_count);
-    oled.print(buffer, 90, 2);  // Print at
+    oled.print(buffer, 110, 2);  // Print at
     oled.finalize();
     LOG_DBG("%u satellite%s reported (of which %u tracked, of which %u has RTK corrections)!\n", size,
             size > 1 ? "s" : "", tracked_count, corrected_count);
 }
-#endif
 GNSS_SATELLITES_CALLBACK_DEFINE(mtk3333_gnss, gnss_satellites_cb);
+#endif
 
 static void ublox_gnss_data_cb(const struct device* dev, const struct gnss_data* data) {
     if (!atomic_test_bit(init_complete, 0)) return;
@@ -622,8 +622,8 @@ static void ublox_gnss_satellites_cb(const struct device* dev, const struct gnss
     oled.print(buffer, 35, 2);  // Print at
     oled.finalize();
 }
-#endif
 GNSS_SATELLITES_CALLBACK_DEFINE(ublox_gnss, ublox_gnss_satellites_cb);
+#endif
 
 #define GNSS_SYSTEMS_PRINTF(define, supported, enabled)                                                      \
     LOG_DBG("\t%20s: Supported: %3s Enabled: %3s\n", STRINGIFY(define), (supported & define) ? "Yes" : "No", \

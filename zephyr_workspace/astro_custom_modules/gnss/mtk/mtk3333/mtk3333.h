@@ -8,10 +8,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#define GPS_MAX_I2C_TRANSFER 32  ///< The max number of bytes we'll try to read at once
-#define MAXLINELENGTH 120        ///< how long are max NMEA lines to parse?
-#define NMEA_MAX_SENTENCE_ID 20  ///< maximum length of a sentence ID name, including terminating 0
-#define NMEA_MAX_SOURCE_ID 3     ///< maximum length of a source ID name, including terminating 0
+#define GPS_MAX_I2C_TRANSFER 32    ///< The max number of bytes we'll try to read at once
+#define MAXLINELENGTH 120          ///< how long are max NMEA lines to parse?
+#define NMEA_MAX_SENTENCE_ID 20    ///< maximum length of a sentence ID name, including terminating 0
+#define NMEA_MAX_SOURCE_ID 3       ///< maximum length of a source ID name, including terminating 0
+#define MTK3333_MAX_SATELLITES 32  ///< maximum number of satellites to track
 
 struct mtk3333_data {
     struct k_work_delayable poll_work;
@@ -46,6 +47,12 @@ struct mtk3333_data {
     /* Simulated GNSS data */
     struct gnss_data data;
     int fix_rate_ms;
+
+    /* Satellite data */
+    struct gnss_satellite satellites[MTK3333_MAX_SATELLITES];
+    uint16_t satellites_len;
+    uint16_t gsv_expected_count;
+    uint16_t gsv_current_count;
 };
 
 #ifdef __cplusplus
