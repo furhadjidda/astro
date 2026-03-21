@@ -330,14 +330,14 @@ static void bno055_imu_timer_callback(rcl_timer_t* timer, int64_t last_call_time
                 bno055_imu_msg.orientation.z);
         // Format for the screen
         char buffer[64];
-        snprintf(buffer, sizeof(buffer), "X=%.1f", bno055_imu_msg.orientation.x);
+        snprintf(buffer, sizeof(buffer), "X=%.3f", bno055_imu_msg.orientation.x);
         oled.print(buffer, 0, 20);
 
-        snprintf(buffer, sizeof(buffer), "Y=%.1f", bno055_imu_msg.orientation.y);
-        oled.print(buffer, 0, 35);
+        snprintf(buffer, sizeof(buffer), "Y=%.3f", bno055_imu_msg.orientation.y);
+        oled.print(buffer, 0, 30);
 
-        snprintf(buffer, sizeof(buffer), "Z=%.1f", bno055_imu_msg.orientation.z);
-        oled.print(buffer, 0, 50);
+        snprintf(buffer, sizeof(buffer), "Z=%.3f", bno055_imu_msg.orientation.z);
+        oled.print(buffer, 0, 40);
 
         oled.finalize();
         memset(buffer, 0, sizeof(buffer));
@@ -427,14 +427,14 @@ static void lps22hb_timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
         RCSOFTCHECK(rcl_publish(&lps22hb_pressure_publisher, &lps22hb_pressure_msg, NULL));
 
         char buffer[64];
-        snprintf(buffer, sizeof(buffer), "T&P");
+        snprintf(buffer, sizeof(buffer), "Temp&Pres");
         oled.print(buffer, 70, 20);
 
-        snprintf(buffer, sizeof(buffer), "%d.%01dC", temp.val1, abs(temp.val2) / 10000);
+        snprintf(buffer, sizeof(buffer), "%d.%02dC", temp.val1, abs(temp.val2) / 10000);
         oled.print(buffer, 70, 35);
 
-        snprintf(buffer, sizeof(buffer), "%d.%01dkPa", press.val1, abs(press.val2) / 10000);
-        oled.print(buffer, 70, 50);
+        snprintf(buffer, sizeof(buffer), "%d.%02dkPa", press.val1, abs(press.val2) / 10000);
+        oled.print(buffer, 70, 45);
 
         // storage log
         memset(buffer, 0, sizeof(buffer));
@@ -477,7 +477,7 @@ static void mtk3333_gnss_data_cb(const struct device* dev, const struct gnss_dat
         LOG_DBG("UTC Time: %02d %02d:%02d", data->utc.month, data->utc.hour, data->utc.minute);
         snprintf(buffer, sizeof(buffer), "%02d:%02d", data->utc.hour, data->utc.minute);
 
-        oled.print(buffer, 64, 0);  // Print at
+        oled.print(buffer, 68, 0);  // Print at
         oled.finalize();
 
         rcl_time_point_value_t now = rmw_uros_epoch_nanos();
@@ -534,6 +534,10 @@ static void gnss_satellites_cb(const struct device* dev, const struct gnss_satel
         tracked_count += satellites[i].is_tracked;
         corrected_count += satellites[i].is_corrected;
     }
+    char buffer[32] = {0};
+    snprintf(buffer, sizeof(buffer), "[%d]", tracked_count);
+    oled.print(buffer, 90, 2);  // Print at
+    oled.finalize();
     LOG_DBG("%u satellite%s reported (of which %u tracked, of which %u has RTK corrections)!\n", size,
             size > 1 ? "s" : "", tracked_count, corrected_count);
 }
@@ -613,6 +617,10 @@ static void ublox_gnss_satellites_cb(const struct device* dev, const struct gnss
     }
     LOG_DBG("%u satellite%s reported (of which %u tracked, of which %u has RTK corrections)!\n", size,
             size > 1 ? "s" : "", tracked_count, corrected_count);
+    char buffer[32] = {0};
+    snprintf(buffer, sizeof(buffer), "[%d]", tracked_count);
+    oled.print(buffer, 35, 2);  // Print at
+    oled.finalize();
 }
 #endif
 GNSS_SATELLITES_CALLBACK_DEFINE(ublox_gnss, ublox_gnss_satellites_cb);
@@ -745,8 +753,8 @@ int main(void) {
     LOG_DBG("Agent connected!\n");
     oled.clear();
 
-    oled.draw_horizontal_line(18, 0, 128);
-    oled.draw_vertical_line(68, 0, 64);
+    oled.draw_horizontal_line(15, 0, 128);
+    oled.draw_vertical_line(64, 0, 64);
 
     /* Allocator */
     rcl_allocator_t allocator = rcl_get_default_allocator();
