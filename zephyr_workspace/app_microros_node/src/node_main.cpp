@@ -51,6 +51,7 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/printk.h>
 
+#include "oled_layout.hpp"
 #include "oled_wrapper.hpp"
 #include "storage.hpp"
 static ATOMIC_DEFINE(init_complete, 1);  // single-bit flag, starts 0
@@ -63,7 +64,8 @@ Storage storage;
 
 // display driver
 static const struct device* display_dev = DEVICE_DT_GET(DT_NODELABEL(ssd1306));
-OLEDWrapper oled(display_dev);
+OLEDWrapper oled_wrapper(display_dev);
+OLEDLayout oled_layout(&oled_wrapper);
 // imu driver
 static const struct device* const bno055_dev = DEVICE_DT_GET(DT_NODELABEL(bno055));
 // gnss driver
@@ -258,8 +260,8 @@ static int init_wifi_station(void) {
     char waiting_message[64];
     snprintf(waiting_message, sizeof(waiting_message), "Waiting for Wifi '%s'...", CONFIG_MICROROS_WIFI_SSID);
 
-    oled.print(waiting_message, 0, 0);  // Print at
-    oled.finalize();
+    oled_layout.display_status_message(waiting_message);
+    oled_layout.finalize_screen();
 
     k_sleep(K_SECONDS(2));
 
@@ -287,28 +289,30 @@ static struct k_thread executor_thread;
 static void bno055_imu_timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
     ARG_UNUSED(last_call_time);
     if (timer != NULL && NULL != bno055_dev) {
-        double accel[3] = {0.0, 0.0, 0.0};
-        double gyro[3] = {0.0, 0.0, 0.0};
         struct sensor_value eul[3];
         struct sensor_value quat[4];
+        struct sensor_value accel[4];
+        struct sensor_value gyro[4];
         rcl_time_point_value_t now = rmw_uros_epoch_nanos();
         sensor_sample_fetch(bno055_dev);
         sensor_channel_get(bno055_dev, static_cast<sensor_channel>(BNO055_SENSOR_CHAN_EULER_YRP), eul);
         sensor_channel_get(bno055_dev, static_cast<sensor_channel>(BNO055_SENSOR_CHAN_QUATERNION_WXYZ), quat);
+        sensor_channel_get(bno055_dev, static_cast<sensor_channel>(BNO055_SENSOR_CHAN_LINEAR_ACCEL_XYZ), accel);
+        sensor_channel_get(bno055_dev, static_cast<sensor_channel>(BNO055_SENSOR_CHAN_GRAVITY_XYZ), gyro);
 
         // CORRECT - use integer arithmetic
         bno055_imu_msg.header.stamp.sec = now / 1000000000LL;
         bno055_imu_msg.header.stamp.nanosec = now % 1000000000LL;
 
         // Fill accelerometer data
-        bno055_imu_msg.linear_acceleration.x = accel[0];
-        bno055_imu_msg.linear_acceleration.y = accel[1];
-        bno055_imu_msg.linear_acceleration.z = accel[2];
+        bno055_imu_msg.linear_acceleration.x = sensor_value_to_double(&accel[0]);
+        bno055_imu_msg.linear_acceleration.y = sensor_value_to_double(&accel[1]);
+        bno055_imu_msg.linear_acceleration.z = sensor_value_to_double(&accel[2]);
 
         // Fill gyroscope data
-        bno055_imu_msg.angular_velocity.x = gyro[0];
-        bno055_imu_msg.angular_velocity.y = gyro[1];
-        bno055_imu_msg.angular_velocity.z = gyro[2];
+        bno055_imu_msg.angular_velocity.x = sensor_value_to_double(&gyro[0]);
+        bno055_imu_msg.angular_velocity.y = sensor_value_to_double(&gyro[1]);
+        bno055_imu_msg.angular_velocity.z = sensor_value_to_double(&gyro[2]);
 
         // Fill orientation
         bno055_imu_msg.orientation.w = sensor_value_to_double(&quat[0]);
@@ -328,16 +332,9 @@ static void bno055_imu_timer_callback(rcl_timer_t* timer, int64_t last_call_time
                 bno055_imu_msg.orientation.z);
         // Format for the screen
         char buffer[64];
-        snprintf(buffer, sizeof(buffer), "X=%.1f", bno055_imu_msg.orientation.x);
-        oled.print(buffer, 0, 20);
-
-        snprintf(buffer, sizeof(buffer), "Y=%.1f", bno055_imu_msg.orientation.y);
-        oled.print(buffer, 0, 35);
-
-        snprintf(buffer, sizeof(buffer), "Z=%.1f", bno055_imu_msg.orientation.z);
-        oled.print(buffer, 0, 50);
-
-        oled.finalize();
+        oled_layout.display_imu_orientation(bno055_imu_msg.orientation.x, bno055_imu_msg.orientation.y,
+                            bno055_imu_msg.orientation.z);
+        oled_layout.finalize_screen();
         memset(buffer, 0, sizeof(buffer));
         snprintf(buffer, sizeof(buffer), "X=%.3f Y=%.3f Z=%.3f", bno055_imu_msg.orientation.x,
                  bno055_imu_msg.orientation.y, bno055_imu_msg.orientation.z);
@@ -425,14 +422,7 @@ static void lps22hb_timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
         RCSOFTCHECK(rcl_publish(&lps22hb_pressure_publisher, &lps22hb_pressure_msg, NULL));
 
         char buffer[64];
-        snprintf(buffer, sizeof(buffer), "T&P");
-        oled.print(buffer, 70, 20);
-
-        snprintf(buffer, sizeof(buffer), "%d.%01dC", temp.val1, abs(temp.val2) / 10000);
-        oled.print(buffer, 70, 35);
-
-        snprintf(buffer, sizeof(buffer), "%d.%01dkPa", press.val1, abs(press.val2) / 10000);
-        oled.print(buffer, 70, 50);
+        oled_layout.display_temperature_pressure(temp.val1, temp.val2, press.val1, press.val2);
 
         // storage log
         memset(buffer, 0, sizeof(buffer));
@@ -440,7 +430,7 @@ static void lps22hb_timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
                  abs(press.val2) / 10000);
         storage.log_write(buffer);
 
-        oled.finalize();
+        oled_layout.finalize_screen();
     }
 }
 
@@ -475,8 +465,8 @@ static void mtk3333_gnss_data_cb(const struct device* dev, const struct gnss_dat
         LOG_DBG("UTC Time: %02d %02d:%02d", data->utc.month, data->utc.hour, data->utc.minute);
         snprintf(buffer, sizeof(buffer), "%02d:%02d", data->utc.hour, data->utc.minute);
 
-        oled.print(buffer, 64, 0);  // Print at
-        oled.finalize();
+        oled_layout.display_mtk3333_time(buffer);
+        oled_layout.finalize_screen();
 
         rcl_time_point_value_t now = rmw_uros_epoch_nanos();
         mtk3333_nav_sat_fix_msg.header.stamp.sec = now / 1000000000LL;
@@ -532,11 +522,13 @@ static void gnss_satellites_cb(const struct device* dev, const struct gnss_satel
         tracked_count += satellites[i].is_tracked;
         corrected_count += satellites[i].is_corrected;
     }
+    oled_layout.display_mtk3333_satellites(tracked_count);
+    oled_layout.finalize_screen();
     LOG_DBG("%u satellite%s reported (of which %u tracked, of which %u has RTK corrections)!\n", size,
             size > 1 ? "s" : "", tracked_count, corrected_count);
 }
-#endif
 GNSS_SATELLITES_CALLBACK_DEFINE(mtk3333_gnss, gnss_satellites_cb);
+#endif
 
 static void ublox_gnss_data_cb(const struct device* dev, const struct gnss_data* data) {
     if (!atomic_test_bit(init_complete, 0)) return;
@@ -553,8 +545,8 @@ static void ublox_gnss_data_cb(const struct device* dev, const struct gnss_data*
         LOG_DBG("UTC Time: %02d %02d:%02d", data->utc.month, data->utc.hour, data->utc.minute);
         snprintf(buffer, sizeof(buffer), "%02d:%02d", data->utc.hour, data->utc.minute);
 
-        oled.print(buffer, 0, 0);  // Print at
-        oled.finalize();
+        oled_layout.display_ublox_time(buffer);
+        oled_layout.finalize_screen();
 
         rcl_time_point_value_t now = rmw_uros_epoch_nanos();
         ublox_nav_sat_fix_msg.header.stamp.sec = now / 1000000000LL;
@@ -611,9 +603,11 @@ static void ublox_gnss_satellites_cb(const struct device* dev, const struct gnss
     }
     LOG_DBG("%u satellite%s reported (of which %u tracked, of which %u has RTK corrections)!\n", size,
             size > 1 ? "s" : "", tracked_count, corrected_count);
+    oled_layout.display_ublox_satellites(tracked_count);
+    oled_layout.finalize_screen();
 }
-#endif
 GNSS_SATELLITES_CALLBACK_DEFINE(ublox_gnss, ublox_gnss_satellites_cb);
+#endif
 
 #define GNSS_SYSTEMS_PRINTF(define, supported, enabled)                                                      \
     LOG_DBG("\t%20s: Supported: %3s Enabled: %3s\n", STRINGIFY(define), (supported & define) ? "Yes" : "No", \
@@ -663,7 +657,10 @@ int main(void) {
     config.val2 = 0;
     sensor_attr_set(bno055_dev, SENSOR_CHAN_ALL, static_cast<sensor_attribute>(BNO055_SENSOR_ATTR_POWER_MODE), &config);
     // Starting display
-    oled.init();
+    if (oled_layout.init_screen() != 0) {
+        LOG_ERR("OLED init failed");
+        return -ENODEV;
+    }
     storage.init();
 
     storage.print_storage_stats();
@@ -712,8 +709,8 @@ int main(void) {
         char waiting_message[64];
         snprintf(waiting_message, sizeof(waiting_message), "Failed to connect WiFi '%s'", CONFIG_MICROROS_WIFI_SSID);
 
-        oled.print(waiting_message, 0, 0);  // Print at
-        oled.finalize();
+        oled_layout.display_status_message(waiting_message);
+        oled_layout.finalize_screen();
         return -EIO;
     }
 
@@ -731,8 +728,8 @@ int main(void) {
     char waiting_message[64];
     snprintf(waiting_message, sizeof(waiting_message), "Waiting for ROS Agent");
 
-    oled.print(waiting_message, 0, 0);  // Print at
-    oled.finalize();
+    oled_layout.display_status_message(waiting_message);
+    oled_layout.finalize_screen();
 
     LOG_DBG("Waiting for micro-ROS agent...\n");
     while (rmw_uros_ping_agent(100, 10) != RMW_RET_OK) {
@@ -741,10 +738,8 @@ int main(void) {
         k_sleep(K_MSEC(1000));
     }
     LOG_DBG("Agent connected!\n");
-    oled.clear();
-
-    oled.draw_horizontal_line(18, 0, 128);
-    oled.draw_vertical_line(68, 0, 64);
+    oled_layout.clear_screen();
+    oled_layout.draw_default_grid();
 
     /* Allocator */
     rcl_allocator_t allocator = rcl_get_default_allocator();

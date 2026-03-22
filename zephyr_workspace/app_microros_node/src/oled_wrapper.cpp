@@ -19,7 +19,6 @@
 
 // Display parameters
 #define MAX_FONTS 42
-#define SELECTED_FONT_INDEX 0
 
 LOG_MODULE_REGISTER(oled_wrapper, LOG_LEVEL_DBG);
 
@@ -43,15 +42,28 @@ int OLEDWrapper::init() {
     _rows = cfb_get_display_parameter(display_dev, CFB_DISPLAY_ROWS);
     _ppt = cfb_get_display_parameter(display_dev, CFB_DISPLAY_PPT);
 
+    int best_font_idx = 0;
+    uint32_t best_area = UINT32_MAX;
+
     for (int idx = 0; idx < MAX_FONTS; idx++) {
-        if (cfb_get_font_size(display_dev, idx, &_font_width, &_font_height)) {
+        uint8_t w = 0, h = 0;
+        if (cfb_get_font_size(display_dev, idx, &w, &h)) {
             break;  // end of font list, so exit loop.
         }
 
-        LOG_DBG("index[%d] font width %d, font height %d", idx, _font_width, _font_height);
+        LOG_DBG("index[%d] font width %d, font height %d", idx, w, h);
+
+        uint32_t area = (uint32_t)w * h;
+        if (area < best_area) {
+            best_area = area;
+            best_font_idx = idx;
+            _font_width = w;
+            _font_height = h;
+        }
     }
 
-    cfb_framebuffer_set_font(display_dev, SELECTED_FONT_INDEX);
+    LOG_DBG("Selected smallest font index[%d] width %d, height %d", best_font_idx, _font_width, _font_height);
+    cfb_framebuffer_set_font(display_dev, best_font_idx);
 
     cfb_framebuffer_invert(display_dev);  // Optional: Invert the display (bright text on dark background)
 
