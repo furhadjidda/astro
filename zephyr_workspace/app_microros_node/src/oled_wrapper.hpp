@@ -38,6 +38,12 @@ class OLEDWrapper {
 
     void draw_horizontal_line(int y, int x_start, int x_end);
 
+    void draw_point(int x, int y);
+
+    void draw_rectangle(int x0, int y0, int x1, int y1);
+
+    void draw_circle(int x, int y, int radius);
+
    private:
     const struct device* display_dev;
     uint16_t _rows = 0;
