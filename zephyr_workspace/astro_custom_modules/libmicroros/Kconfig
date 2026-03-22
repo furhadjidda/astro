@@ -97,6 +97,10 @@ if MICROROS
         string "available micro-ROS service servers"
         default "1"
 
+    config MICROROS_GUARD_CONDITIONS
+        string "available micro-ROS guard conditions"
+        default "8"
+
     config MICROROS_RMW_HISTORIC
         string "available micro-ROS RMW historic memory"
         default "4"
