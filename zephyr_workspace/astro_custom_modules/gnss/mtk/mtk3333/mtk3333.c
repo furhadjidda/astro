@@ -131,10 +131,13 @@ static void mtk3333_parse_gsv(struct mtk3333_data* data, const char* sentence) {
         }
 
         struct gnss_satellite* sat = &data->satellites[data->satellites_len];
+        memset(sat, 0, sizeof(*sat));
         sat->prn = (uint8_t)strtol(field[base_field], NULL, 10);
         sat->elevation = (uint8_t)strtol(field[base_field + 1], NULL, 10);
         sat->azimuth = (uint16_t)strtol(field[base_field + 2], NULL, 10);
         sat->snr = (uint8_t)strtol(field[base_field + 3], NULL, 10);
+        sat->is_tracked = 1;
+        sat->is_corrected = 0;
 
         // Guess system based on sentence prefix
         if (strncmp(sentence, "$GLGSV", 6) == 0) {
