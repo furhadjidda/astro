@@ -218,7 +218,7 @@ static int get_vector(const struct device* dev, const uint8_t data_register, str
     int16_t z = 0;
 
     /* Read vector data (6 bytes) */
-    // get vecotor 3
+    // get vector 3
     // LOG_DBG(">>>> Reading vector data from register[0x%02x]", data_register);
     int err = i2c_burst_read_dt(&config->i2c_bus, data_register, buffer, sizeof(buffer));
     if (err < 0) {
@@ -824,6 +824,9 @@ static int bno055_sample_fetch(const struct device* dev, enum sensor_channel cha
             break;
         case OPERATION_MODE_NDOF:
             err = get_system_status(dev);
+            if (err < 0) {
+                return err;
+            }
             err = get_vector(dev, VECTOR_EULER, &data->eul);
             if (err < 0) {
                 return err;

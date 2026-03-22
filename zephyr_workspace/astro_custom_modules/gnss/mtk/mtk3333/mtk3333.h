@@ -51,10 +51,8 @@ struct mtk3333_data {
     /* Satellite data */
     struct gnss_satellite satellites[MTK3333_MAX_SATELLITES];
     uint16_t satellites_len;
-    uint16_t gsv_expected_count;
-    uint16_t gsv_current_count;
+    uint16_t gsv_total_sats;
 };
-
 #ifdef __cplusplus
 }
 #endif
