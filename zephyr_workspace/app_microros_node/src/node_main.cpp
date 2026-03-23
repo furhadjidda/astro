@@ -498,12 +498,13 @@ static void executor_thread_entry(void* a, void* b, void* c) {
     ARG_UNUSED(c);
 
     while (1) {
-        rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100));
+        rclc_executor_spin_some(&executor, RCL_MS_TO_NS(10));
 
         if (atomic_cas(&oled_view_switch_request, 1, 0)) {
             LOG_INF("OLED button view switch");
             oled_layout.next_view();
         }
+        k_sleep(K_MSEC(50));
     }
 }
 
@@ -537,7 +538,6 @@ static void mtk3333_gnss_data_cb(const struct device* dev, const struct gnss_dat
         mtk3333_nav_sat_fix_msg.altitude = data->nav_data.altitude / 1e3;  // mm → meters
         oled_layout.display_mtk3333_location(mtk3333_nav_sat_fix_msg.latitude, mtk3333_nav_sat_fix_msg.longitude,
                                              mtk3333_nav_sat_fix_msg.altitude);
-        oled_layout.finalize_screen();
 
         // ── Fix Status ───────────────────────────────────────────────
         switch (data->info.fix_status) {
@@ -619,7 +619,6 @@ static void ublox_gnss_data_cb(const struct device* dev, const struct gnss_data*
         ublox_nav_sat_fix_msg.altitude = data->nav_data.altitude / 1e3;  // mm → meters
         oled_layout.display_ublox_location(ublox_nav_sat_fix_msg.latitude, ublox_nav_sat_fix_msg.longitude,
                                            ublox_nav_sat_fix_msg.altitude);
-        oled_layout.finalize_screen();
 
         // ── Fix Status ───────────────────────────────────────────────
         switch (data->info.fix_status) {
@@ -791,7 +790,6 @@ int main(void) {
 #endif
 
     oled_layout.display_agent_waiting_message();
-    oled_layout.finalize_screen();
 
     LOG_DBG("Waiting for micro-ROS agent...\n");
     while (rmw_uros_ping_agent(100, 10) != RMW_RET_OK) {
