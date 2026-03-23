@@ -64,7 +64,10 @@ class OLEDLayout {
     void display_temperature_pressure(int temp_val1, int temp_val2, int press_val1, int press_val2);
 
     void display_status_message(const char* message);
+    void display_wifi_waiting_message(const char* ssid);
+    void display_agent_waiting_message();
     void show_startup_splash();
+    void set_display_updates_enabled(bool enabled);
     void set_view(View view);
     void next_view();
     View get_view() const;
@@ -77,6 +80,8 @@ class OLEDLayout {
    private:
     OLEDWrapper* oled_wrapper;
     volatile View active_view = View::SATELLITE;
+    bool display_updates_enabled = false;
+    struct k_mutex display_mutex;
 
     // Screen layout constants (in pixels)
     static constexpr int SCREEN_WIDTH = 128;
@@ -117,25 +122,28 @@ class OLEDLayout {
     static constexpr int PRESS_VAL_Y = 45;
 
     // Satellite-only view constants
-    static constexpr int SAT_SPLIT_X = 64;
+    static constexpr int SAT_SPLIT_X = 57;
     static constexpr int SAT_HEADER_Y = 0;
-    static constexpr int SAT_TIME_Y = 22;
-    static constexpr int SAT_COUNT_Y = 40;
+    static constexpr int SAT_TIME_Y = 12;
+    static constexpr int SAT_COUNT_Y = 22;
+    static constexpr int SAT_LAT_Y = 32;
+    static constexpr int SAT_LON_Y = 42;
+    static constexpr int SAT_ALT_Y = 52;
 
     // Temperature/Pressure-only view constants
-    static constexpr int TP_TITLE_X = 18;
+    static constexpr int TP_TITLE_X = 26;
     static constexpr int TP_TITLE_Y = 0;
-    static constexpr int TP_TEMP_X = 12;
+    static constexpr int TP_TEMP_X = 24;
     static constexpr int TP_TEMP_Y = 24;
-    static constexpr int TP_PRESS_X = 12;
+    static constexpr int TP_PRESS_X = 24;
     static constexpr int TP_PRESS_Y = 42;
 
     // IMU-only view constants
-    static constexpr int IMU_TITLE_X = 36;
+    static constexpr int IMU_TITLE_X = 44;
     static constexpr int IMU_TITLE_Y = 0;
     static constexpr int IMU_AXIS_X = 4;
-    static constexpr int IMU_AXIS_Y = 18;
-    static constexpr int IMU_ONLY_X = 22;
+    static constexpr int IMU_AXIS_Y = 16;
+    static constexpr int IMU_ONLY_X = 30;
     static constexpr int IMU_ONLY_X_Y = 20;
     static constexpr int IMU_ONLY_Y_Y = 34;
     static constexpr int IMU_ONLY_Z_Y = 48;
@@ -143,6 +151,7 @@ class OLEDLayout {
     // Helper to print formatted text at a position
     void print_at_position(const char* text, int x, int y);
     bool is_view_active(View view) const;
+    void show_active_view_locked();
     void draw_satellite_view_layout();
     void draw_temp_pressure_view_layout();
     void draw_imu_view_layout();
@@ -154,6 +163,8 @@ class OLEDLayout {
     void draw_clock_icon(int x, int y);
     void draw_imu_axis_icon(int x, int y);
     void draw_temp_pressure_icon(int x, int y);
+    void draw_wifi_icon(int x, int y);
+    void draw_waiting_icon(int x, int y);
 
     // Cached values used to repopulate a view when switching between layouts.
     static constexpr int TIME_TEXT_LEN = 6;
@@ -161,6 +172,14 @@ class OLEDLayout {
     char ublox_time_cache[TIME_TEXT_LEN] = "--:--";
     int mtk_sat_cache = -1;
     int ublox_sat_cache = -1;
+    double mtk_lat_cache = 0.0;
+    double mtk_lon_cache = 0.0;
+    double mtk_alt_cache = 0.0;
+    bool has_mtk_location_cache = false;
+    double ublox_lat_cache = 0.0;
+    double ublox_lon_cache = 0.0;
+    double ublox_alt_cache = 0.0;
+    bool has_ublox_location_cache = false;
 
     int temp_val1_cache = 0;
     int temp_val2_cache = 0;

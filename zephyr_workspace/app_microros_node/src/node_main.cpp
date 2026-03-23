@@ -303,10 +303,7 @@ static int init_wifi_station(void) {
 
     net_mgmt_init_event_callback(&ipv4_cb, ipv4_event_handler, NET_EVENT_IPV4_ADDR_ADD);
     net_mgmt_add_event_callback(&ipv4_cb);
-    char waiting_message[64];
-    snprintf(waiting_message, sizeof(waiting_message), "Waiting for Wifi '%s'...", CONFIG_MICROROS_WIFI_SSID);
-
-    oled_layout.display_status_message(waiting_message);
+    oled_layout.display_wifi_waiting_message(CONFIG_MICROROS_WIFI_SSID);
     oled_layout.finalize_screen();
 
     k_sleep(K_SECONDS(2));
@@ -538,6 +535,9 @@ static void mtk3333_gnss_data_cb(const struct device* dev, const struct gnss_dat
         mtk3333_nav_sat_fix_msg.longitude = (double)data->nav_data.longitude / 1e9;
 
         mtk3333_nav_sat_fix_msg.altitude = data->nav_data.altitude / 1e3;  // mm → meters
+        oled_layout.display_mtk3333_location(mtk3333_nav_sat_fix_msg.latitude, mtk3333_nav_sat_fix_msg.longitude,
+                                             mtk3333_nav_sat_fix_msg.altitude);
+        oled_layout.finalize_screen();
 
         // ── Fix Status ───────────────────────────────────────────────
         switch (data->info.fix_status) {
@@ -617,6 +617,9 @@ static void ublox_gnss_data_cb(const struct device* dev, const struct gnss_data*
         ublox_nav_sat_fix_msg.latitude = data->nav_data.latitude / 1e9;  // nanodegrees → degrees
         ublox_nav_sat_fix_msg.longitude = data->nav_data.longitude / 1e9;
         ublox_nav_sat_fix_msg.altitude = data->nav_data.altitude / 1e3;  // mm → meters
+        oled_layout.display_ublox_location(ublox_nav_sat_fix_msg.latitude, ublox_nav_sat_fix_msg.longitude,
+                                           ublox_nav_sat_fix_msg.altitude);
+        oled_layout.finalize_screen();
 
         // ── Fix Status ───────────────────────────────────────────────
         switch (data->info.fix_status) {
@@ -787,14 +790,7 @@ int main(void) {
                                   zephyr_transport_read);
 #endif
 
-    oled_layout.show_startup_splash();
-    k_sleep(K_MSEC(1800));
-    oled_layout.clear_screen();
-
-    char waiting_message[64];
-    snprintf(waiting_message, sizeof(waiting_message), "Waiting for ROS Agent");
-
-    oled_layout.display_status_message(waiting_message);
+    oled_layout.display_agent_waiting_message();
     oled_layout.finalize_screen();
 
     LOG_DBG("Waiting for micro-ROS agent...\n");
@@ -804,6 +800,12 @@ int main(void) {
         k_sleep(K_MSEC(1000));
     }
     LOG_DBG("Agent connected!\n");
+
+    oled_layout.show_startup_splash();
+    k_sleep(K_MSEC(1800));
+    oled_layout.set_display_updates_enabled(true);
+    oled_layout.clear_screen();
+
     oled_layout.set_view(OLEDLayout::View::SATELLITE);
     atomic_clear(&oled_view_switch_request);
     (void)init_view_switch_button();

@@ -27,30 +27,54 @@ constexpr uint8_t CLOCK_ICON_8X8[] = {
     0b00111100, 0b01000010, 0b10011001, 0b10100001, 0b10111101, 0b10000001, 0b01000010, 0b00111100,
 };
 
-constexpr uint8_t SATELLITE_ICON_10X8[] = {
-    0b00110110, 0b00000000, 0b00011100, 0b00000000, 0b11111111, 0b11000000, 0b00111111, 0b00000000,
-    0b11111111, 0b11000000, 0b00011100, 0b00000000, 0b00110110, 0b00000000, 0b00000000, 0b00000000,
+constexpr uint8_t SATELLITE_ICON_14X10[] = {
+    0b00001111, 0b00000000, 0b11011111, 0b11101100, 0b11011111, 0b11101100, 0b11111111,
+    0b11111100, 0b11011111, 0b11101100, 0b11001111, 0b11001100, 0b00000111, 0b10000000,
+    0b00001111, 0b11000000, 0b00011100, 0b11100000, 0b00110000, 0b00110000,
 };
 
-constexpr uint8_t IMU_AXIS_ICON_12X12[] = {
-    0x04, 0x00, 0x04, 0x00, 0x04, 0x00, 0x04, 0x00, 0x04, 0xC0, 0xFF, 0xE0,
-    0x04, 0xC0, 0x04, 0x00, 0x04, 0x00, 0x04, 0x00, 0x04, 0x00, 0x00, 0x00,
+constexpr uint8_t IMU_AXIS_ICON_16X16[] = {
+    0x00, 0x40, 0x00, 0xE0, 0x00, 0x40, 0x00, 0x40, 0x00, 0x40, 0x00, 0x40, 0x00, 0x40, 0x00, 0x46,
+    0x00, 0xFF, 0x00, 0xC6, 0x01, 0x00, 0x02, 0x00, 0x04, 0x00, 0x28, 0x00, 0x38, 0x00, 0x10, 0x00,
 };
 
-constexpr uint8_t TEMP_PRESS_ICON_10X12[] = {
-    0b00110000, 0b00000000, 0b00110000, 0b00000000, 0b00110000, 0b00000000, 0b00110011, 0b00000000,
-    0b00110011, 0b00000000, 0b00111111, 0b00000000, 0b00111111, 0b00000000, 0b00111111, 0b00000000,
-    0b00001111, 0b00000000, 0b00000110, 0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000,
+constexpr uint8_t TEMP_PRESS_ICON_16X16[] = {
+    0b00000110, 0b00000000, 0b00001111, 0b00011000, 0b00001111, 0b00111100, 0b00001111, 0b00011000,
+    0b00001111, 0b00000000, 0b00001111, 0b00011000, 0b00001111, 0b00111100, 0b00001111, 0b01111110,
+    0b00001111, 0b00111100, 0b00011111, 0b00011000, 0b00011111, 0b00000000, 0b00111111, 0b10000000,
+    0b00111111, 0b10000000, 0b00111111, 0b10000000, 0b00011111, 0b00000000, 0b00001111, 0b00000000,
+};
+
+constexpr uint8_t WIFI_ICON_24X16[] = {
+    0b00000000, 0b01111110, 0b00000000, 0b00000001, 0b11111111, 0b00000000, 0b00000011, 0b10000001,
+    0b10000000, 0b00000110, 0b00000000, 0b11000000, 0b00001100, 0b01111110, 0b01100000, 0b00011000,
+    0b11111111, 0b00110000, 0b00110001, 0b10000001, 0b10011000, 0b01100011, 0b00000000, 0b11001100,
+    0b00000110, 0b00000000, 0b01100000, 0b00001100, 0b00111100, 0b00110000, 0b00000000, 0b01111110,
+    0b00000000, 0b00000000, 0b00011000, 0b00000000, 0b00000000, 0b00111100, 0b00000000, 0b00000000,
+    0b00111100, 0b00000000, 0b00000000, 0b00011000, 0b00000000, 0b00000000, 0b00000000, 0b00000000,
+};
+
+constexpr uint8_t WAITING_ICON_16X16[] = {
+    0b00000111, 0b11100000, 0b00011000, 0b00011000, 0b00100000, 0b00000100, 0b01000011, 0b11000010,
+    0b01000100, 0b00100010, 0b10001000, 0b00010001, 0b10001000, 0b00010001, 0b10001000, 0b00010001,
+    0b10001000, 0b11010001, 0b10001000, 0b01010001, 0b10001000, 0b00110001, 0b01000100, 0b00000010,
+    0b01000011, 0b00000100, 0b00100000, 0b00001000, 0b00011000, 0b00110000, 0b00000111, 0b11000000,
 };
 }  // namespace
 
-OLEDLayout::OLEDLayout(OLEDWrapper* oled_wrapper) : oled_wrapper(oled_wrapper) {}
+OLEDLayout::OLEDLayout(OLEDWrapper* oled_wrapper) : oled_wrapper(oled_wrapper) { k_mutex_init(&display_mutex); }
 
 int OLEDLayout::init_screen() {
     if (oled_wrapper == nullptr) {
         return -ENODEV;
     }
     return oled_wrapper->init();
+}
+
+void OLEDLayout::set_display_updates_enabled(bool enabled) {
+    k_mutex_lock(&display_mutex, K_FOREVER);
+    display_updates_enabled = enabled;
+    k_mutex_unlock(&display_mutex);
 }
 
 void OLEDLayout::print_at_position(const char* text, int x, int y) {
@@ -62,21 +86,39 @@ void OLEDLayout::print_at_position(const char* text, int x, int y) {
 bool OLEDLayout::is_view_active(View view) const { return active_view == view; }
 
 void OLEDLayout::set_view(View view) {
+    k_mutex_lock(&display_mutex, K_FOREVER);
     active_view = view;
-    show_active_view();
+    if (!display_updates_enabled) {
+        k_mutex_unlock(&display_mutex);
+        return;
+    }
+    show_active_view_locked();
+    k_mutex_unlock(&display_mutex);
 }
 
 void OLEDLayout::next_view() {
+    k_mutex_lock(&display_mutex, K_FOREVER);
     const uint8_t current = static_cast<uint8_t>(active_view);
     const uint8_t next = static_cast<uint8_t>((current + 1U) % 3U);
     active_view = static_cast<View>(next);
-    show_active_view();
+    if (!display_updates_enabled) {
+        k_mutex_unlock(&display_mutex);
+        return;
+    }
+    show_active_view_locked();
+    k_mutex_unlock(&display_mutex);
 }
 
 OLEDLayout::View OLEDLayout::get_view() const { return active_view; }
 
 void OLEDLayout::show_active_view() {
-    if (oled_wrapper == nullptr) {
+    k_mutex_lock(&display_mutex, K_FOREVER);
+    show_active_view_locked();
+    k_mutex_unlock(&display_mutex);
+}
+
+void OLEDLayout::show_active_view_locked() {
+    if (oled_wrapper == nullptr || !display_updates_enabled) {
         return;
     }
 
@@ -101,18 +143,26 @@ void OLEDLayout::draw_satellite_view_layout() {
     oled_wrapper->draw_vertical_line(SAT_SPLIT_X, 0, SCREEN_HEIGHT - 1);
 
     print_at_position("MTK", 3, SAT_HEADER_Y);
-    draw_satellite_icon(31, SAT_HEADER_Y + 2);
+    draw_satellite_icon(27, SAT_HEADER_Y + 1);
 
-    print_at_position("UBX", SAT_SPLIT_X + 3, SAT_HEADER_Y);
-    draw_satellite_icon(SAT_SPLIT_X + 31, SAT_HEADER_Y + 2);
+    print_at_position("UBX", SAT_SPLIT_X + 2, SAT_HEADER_Y);
+    draw_satellite_icon(SAT_SPLIT_X + 33, SAT_HEADER_Y + 1);
 
     draw_clock_icon(3, SAT_TIME_Y + 1);
-    draw_clock_icon(SAT_SPLIT_X + 3, SAT_TIME_Y + 1);
+    draw_clock_icon(SAT_SPLIT_X + 9, SAT_TIME_Y + 1);
+
+    print_at_position("Lt:", 2, SAT_LAT_Y);
+    print_at_position("Ln:", 2, SAT_LON_Y);
+    print_at_position("Al:", 2, SAT_ALT_Y);
+
+    print_at_position("Lt:", SAT_SPLIT_X + 8, SAT_LAT_Y);
+    print_at_position("Ln:", SAT_SPLIT_X + 8, SAT_LON_Y);
+    print_at_position("Al:", SAT_SPLIT_X + 8, SAT_ALT_Y);
 }
 
 void OLEDLayout::draw_temp_pressure_view_layout() {
     print_at_position("TEMP & PRESS", TP_TITLE_X, TP_TITLE_Y);
-    draw_temp_pressure_icon(2, TP_TEMP_Y - 2);
+    draw_temp_pressure_icon(2, TP_TEMP_Y - 4);
 }
 
 void OLEDLayout::draw_imu_view_layout() {
@@ -125,8 +175,8 @@ void OLEDLayout::render_satellite_values() {
 
     print_at_position("     ", 14, SAT_TIME_Y);
     print_at_position(mtk_time_cache, 14, SAT_TIME_Y);
-    print_at_position("     ", SAT_SPLIT_X + 14, SAT_TIME_Y);
-    print_at_position(ublox_time_cache, SAT_SPLIT_X + 14, SAT_TIME_Y);
+    print_at_position("     ", SAT_SPLIT_X + 18, SAT_TIME_Y);
+    print_at_position(ublox_time_cache, SAT_SPLIT_X + 18, SAT_TIME_Y);
 
     if (mtk_sat_cache >= 0) {
         snprintf(buffer, sizeof(buffer), "[%d]", mtk_sat_cache);
@@ -141,8 +191,44 @@ void OLEDLayout::render_satellite_values() {
     } else {
         snprintf(buffer, sizeof(buffer), "[--]");
     }
-    print_at_position("     ", SAT_SPLIT_X + 14, SAT_COUNT_Y);
-    print_at_position(buffer, SAT_SPLIT_X + 14, SAT_COUNT_Y);
+    print_at_position("     ", SAT_SPLIT_X + 18, SAT_COUNT_Y);
+    print_at_position(buffer, SAT_SPLIT_X + 18, SAT_COUNT_Y);
+
+    if (has_mtk_location_cache) {
+        snprintf(buffer, sizeof(buffer), "%+0.1f", mtk_lat_cache);
+        print_at_position("      ", 20, SAT_LAT_Y);
+        print_at_position(buffer, 20, SAT_LAT_Y);
+
+        snprintf(buffer, sizeof(buffer), "%+0.1f", mtk_lon_cache);
+        print_at_position("      ", 20, SAT_LON_Y);
+        print_at_position(buffer, 20, SAT_LON_Y);
+
+        snprintf(buffer, sizeof(buffer), "%0.0fm", mtk_alt_cache);
+        print_at_position("      ", 20, SAT_ALT_Y);
+        print_at_position(buffer, 20, SAT_ALT_Y);
+    } else {
+        print_at_position("--.-  ", 20, SAT_LAT_Y);
+        print_at_position("--.-  ", 20, SAT_LON_Y);
+        print_at_position("---m  ", 20, SAT_ALT_Y);
+    }
+
+    if (has_ublox_location_cache) {
+        snprintf(buffer, sizeof(buffer), "%+0.1f", ublox_lat_cache);
+        print_at_position("      ", SAT_SPLIT_X + 24, SAT_LAT_Y);
+        print_at_position(buffer, SAT_SPLIT_X + 24, SAT_LAT_Y);
+
+        snprintf(buffer, sizeof(buffer), "%+0.1f", ublox_lon_cache);
+        print_at_position("      ", SAT_SPLIT_X + 24, SAT_LON_Y);
+        print_at_position(buffer, SAT_SPLIT_X + 24, SAT_LON_Y);
+
+        snprintf(buffer, sizeof(buffer), "%0.0fm", ublox_alt_cache);
+        print_at_position("      ", SAT_SPLIT_X + 24, SAT_ALT_Y);
+        print_at_position(buffer, SAT_SPLIT_X + 24, SAT_ALT_Y);
+    } else {
+        print_at_position("--.-  ", SAT_SPLIT_X + 24, SAT_LAT_Y);
+        print_at_position("--.-  ", SAT_SPLIT_X + 24, SAT_LON_Y);
+        print_at_position("---m  ", SAT_SPLIT_X + 24, SAT_ALT_Y);
+    }
 }
 
 void OLEDLayout::render_temp_pressure_values() {
@@ -189,94 +275,192 @@ void OLEDLayout::render_imu_values() {
 }
 
 void OLEDLayout::display_mtk3333_time(const char* time_str) {
+    k_mutex_lock(&display_mutex, K_FOREVER);
     if (time_str != nullptr) {
         snprintf(mtk_time_cache, sizeof(mtk_time_cache), "%s", time_str);
     }
 
-    if (!is_view_active(View::SATELLITE)) {
+    if (!display_updates_enabled || !is_view_active(View::SATELLITE)) {
+        k_mutex_unlock(&display_mutex);
         return;
     }
 
     render_satellite_values();
+    oled_wrapper->finalize();
+    k_mutex_unlock(&display_mutex);
 }
 
 void OLEDLayout::display_mtk3333_satellites(int count) {
+    k_mutex_lock(&display_mutex, K_FOREVER);
     mtk_sat_cache = count;
 
-    if (!is_view_active(View::SATELLITE)) {
+    if (!display_updates_enabled || !is_view_active(View::SATELLITE)) {
+        k_mutex_unlock(&display_mutex);
         return;
     }
 
     render_satellite_values();
+    oled_wrapper->finalize();
+    k_mutex_unlock(&display_mutex);
 }
 
 void OLEDLayout::display_mtk3333_location(double latitude, double longitude, double altitude) {
-    char buffer[128] = {0};
-    snprintf(buffer, sizeof(buffer), "MTK3333: Lat=%.6f Lon=%.6f Alt=%.2f", latitude, longitude, altitude);
-    // This may be logged or displayed depending on requirements
-    // For now, just storing the format for reference
+    k_mutex_lock(&display_mutex, K_FOREVER);
+    mtk_lat_cache = latitude;
+    mtk_lon_cache = longitude;
+    mtk_alt_cache = altitude;
+    has_mtk_location_cache = true;
+
+    if (!display_updates_enabled || !is_view_active(View::SATELLITE)) {
+        k_mutex_unlock(&display_mutex);
+        return;
+    }
+
+    render_satellite_values();
+    oled_wrapper->finalize();
+    k_mutex_unlock(&display_mutex);
 }
 
 void OLEDLayout::display_ublox_time(const char* time_str) {
+    k_mutex_lock(&display_mutex, K_FOREVER);
     if (time_str != nullptr) {
         snprintf(ublox_time_cache, sizeof(ublox_time_cache), "%s", time_str);
     }
 
-    if (!is_view_active(View::SATELLITE)) {
+    if (!display_updates_enabled || !is_view_active(View::SATELLITE)) {
+        k_mutex_unlock(&display_mutex);
         return;
     }
 
     render_satellite_values();
+    oled_wrapper->finalize();
+    k_mutex_unlock(&display_mutex);
 }
 
 void OLEDLayout::display_ublox_satellites(int count) {
+    k_mutex_lock(&display_mutex, K_FOREVER);
     ublox_sat_cache = count;
 
-    if (!is_view_active(View::SATELLITE)) {
+    if (!display_updates_enabled || !is_view_active(View::SATELLITE)) {
+        k_mutex_unlock(&display_mutex);
         return;
     }
 
     render_satellite_values();
+    oled_wrapper->finalize();
+    k_mutex_unlock(&display_mutex);
 }
 
 void OLEDLayout::display_ublox_location(double latitude, double longitude, double altitude) {
-    char buffer[128] = {0};
-    snprintf(buffer, sizeof(buffer), "Ublox: Lat=%.6f Lon=%.6f Alt=%.2f", latitude, longitude, altitude);
-    // This may be logged or displayed depending on requirements
-    // For now, just storing the format for reference
+    k_mutex_lock(&display_mutex, K_FOREVER);
+    ublox_lat_cache = latitude;
+    ublox_lon_cache = longitude;
+    ublox_alt_cache = altitude;
+    has_ublox_location_cache = true;
+
+    if (!display_updates_enabled || !is_view_active(View::SATELLITE)) {
+        k_mutex_unlock(&display_mutex);
+        return;
+    }
+
+    render_satellite_values();
+    oled_wrapper->finalize();
+    k_mutex_unlock(&display_mutex);
 }
 
 void OLEDLayout::display_imu_orientation(double x, double y, double z) {
+    k_mutex_lock(&display_mutex, K_FOREVER);
     imu_x_cache = x;
     imu_y_cache = y;
     imu_z_cache = z;
     has_imu_cache = true;
 
-    if (!is_view_active(View::IMU)) {
+    if (!display_updates_enabled || !is_view_active(View::IMU)) {
+        k_mutex_unlock(&display_mutex);
         return;
     }
 
     render_imu_values();
+    oled_wrapper->finalize();
+    k_mutex_unlock(&display_mutex);
 }
 
 void OLEDLayout::display_temperature_pressure(int temp_val1, int temp_val2, int press_val1, int press_val2) {
+    k_mutex_lock(&display_mutex, K_FOREVER);
     temp_val1_cache = temp_val1;
     temp_val2_cache = temp_val2;
     press_val1_cache = press_val1;
     press_val2_cache = press_val2;
     has_temp_press_cache = true;
 
-    if (!is_view_active(View::TEMP_PRESSURE)) {
+    if (!display_updates_enabled || !is_view_active(View::TEMP_PRESSURE)) {
+        k_mutex_unlock(&display_mutex);
         return;
     }
 
     render_temp_pressure_values();
+    oled_wrapper->finalize();
+    k_mutex_unlock(&display_mutex);
 }
 
-void OLEDLayout::display_status_message(const char* message) { print_at_position(message, 0, 0); }
+void OLEDLayout::display_status_message(const char* message) {
+    k_mutex_lock(&display_mutex, K_FOREVER);
+    if (oled_wrapper == nullptr) {
+        k_mutex_unlock(&display_mutex);
+        return;
+    }
+    oled_wrapper->clear();
+    print_at_position(message, 0, 0);
+    oled_wrapper->finalize();
+    k_mutex_unlock(&display_mutex);
+}
+
+void OLEDLayout::display_wifi_waiting_message(const char* ssid) {
+    k_mutex_lock(&display_mutex, K_FOREVER);
+    if (oled_wrapper == nullptr) {
+        k_mutex_unlock(&display_mutex);
+        return;
+    }
+
+    char line1[32] = {0};
+    char line2[32] = {0};
+
+    if (ssid != nullptr && ssid[0] != '\0') {
+        snprintf(line1, sizeof(line1), "Waiting for Wifi");
+        snprintf(line2, sizeof(line2), "'%s'...", ssid);
+    } else {
+        snprintf(line1, sizeof(line1), "Waiting for Wifi...");
+    }
+
+    oled_wrapper->clear();
+    draw_wifi_icon(52, 6);
+    print_at_position(line1, 12, 40);
+    if (line2[0] != '\0') {
+        print_at_position(line2, 26, 52);
+    }
+    oled_wrapper->finalize();
+    k_mutex_unlock(&display_mutex);
+}
+
+void OLEDLayout::display_agent_waiting_message() {
+    k_mutex_lock(&display_mutex, K_FOREVER);
+    if (oled_wrapper == nullptr) {
+        k_mutex_unlock(&display_mutex);
+        return;
+    }
+
+    oled_wrapper->clear();
+    draw_waiting_icon(56, 8);
+    print_at_position("Waiting for", 28, 42);
+    print_at_position("ROS Agent", 34, 54);
+    oled_wrapper->finalize();
+    k_mutex_unlock(&display_mutex);
+}
 
 void OLEDLayout::show_startup_splash() {
+    k_mutex_lock(&display_mutex, K_FOREVER);
     if (oled_wrapper == nullptr) {
+        k_mutex_unlock(&display_mutex);
         return;
     }
 
@@ -313,24 +497,31 @@ void OLEDLayout::show_startup_splash() {
 
     oled_wrapper->print("astro", 46, 28);
     oled_wrapper->finalize();
+    k_mutex_unlock(&display_mutex);
 }
 
 void OLEDLayout::draw_default_grid() {
-    if (oled_wrapper != nullptr) {
-        show_active_view();
+    k_mutex_lock(&display_mutex, K_FOREVER);
+    if (oled_wrapper != nullptr && display_updates_enabled) {
+        show_active_view_locked();
     }
+    k_mutex_unlock(&display_mutex);
 }
 
 void OLEDLayout::clear_screen() {
+    k_mutex_lock(&display_mutex, K_FOREVER);
     if (oled_wrapper != nullptr) {
         oled_wrapper->clear();
     }
+    k_mutex_unlock(&display_mutex);
 }
 
 void OLEDLayout::finalize_screen() {
+    k_mutex_lock(&display_mutex, K_FOREVER);
     if (oled_wrapper != nullptr) {
         oled_wrapper->finalize();
     }
+    k_mutex_unlock(&display_mutex);
 }
 
 void OLEDLayout::draw_bitmap_1bpp(const uint8_t* bitmap, int width, int height, int x, int y) {
@@ -350,10 +541,14 @@ void OLEDLayout::draw_bitmap_1bpp(const uint8_t* bitmap, int width, int height, 
     }
 }
 
-void OLEDLayout::draw_satellite_icon(int x, int y) { draw_bitmap_1bpp(SATELLITE_ICON_10X8, 10, 8, x, y); }
+void OLEDLayout::draw_satellite_icon(int x, int y) { draw_bitmap_1bpp(SATELLITE_ICON_14X10, 14, 10, x, y); }
 
 void OLEDLayout::draw_clock_icon(int x, int y) { draw_bitmap_1bpp(CLOCK_ICON_8X8, 8, 8, x, y); }
 
-void OLEDLayout::draw_imu_axis_icon(int x, int y) { draw_bitmap_1bpp(IMU_AXIS_ICON_12X12, 12, 12, x, y); }
+void OLEDLayout::draw_imu_axis_icon(int x, int y) { draw_bitmap_1bpp(IMU_AXIS_ICON_16X16, 16, 16, x, y); }
 
-void OLEDLayout::draw_temp_pressure_icon(int x, int y) { draw_bitmap_1bpp(TEMP_PRESS_ICON_10X12, 10, 12, x, y); }
+void OLEDLayout::draw_temp_pressure_icon(int x, int y) { draw_bitmap_1bpp(TEMP_PRESS_ICON_16X16, 16, 16, x, y); }
+
+void OLEDLayout::draw_wifi_icon(int x, int y) { draw_bitmap_1bpp(WIFI_ICON_24X16, 24, 16, x, y); }
+
+void OLEDLayout::draw_waiting_icon(int x, int y) { draw_bitmap_1bpp(WAITING_ICON_16X16, 16, 16, x, y); }
