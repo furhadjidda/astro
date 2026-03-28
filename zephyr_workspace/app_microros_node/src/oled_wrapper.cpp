@@ -87,3 +87,19 @@ void OLEDWrapper::draw_horizontal_line(int y, int x_start, int x_end) {
     struct cfb_position end = {static_cast<uint16_t>(x_end), static_cast<uint16_t>(y)};
     cfb_draw_line(display_dev, &start, &end);
 }
+
+void OLEDWrapper::draw_point(int x, int y) {
+    struct cfb_position point = {static_cast<uint16_t>(x), static_cast<uint16_t>(y)};
+    cfb_draw_point(display_dev, &point);
+}
+
+void OLEDWrapper::draw_rectangle(int x0, int y0, int x1, int y1) {
+    struct cfb_position start = {static_cast<uint16_t>(x0), static_cast<uint16_t>(y0)};
+    struct cfb_position end = {static_cast<uint16_t>(x1), static_cast<uint16_t>(y1)};
+    cfb_draw_rect(display_dev, &start, &end);
+}
+
+void OLEDWrapper::draw_circle(int x, int y, int radius) {
+    struct cfb_position center = {static_cast<uint16_t>(x), static_cast<uint16_t>(y)};
+    cfb_draw_circle(display_dev, &center, static_cast<uint16_t>(radius));
+}

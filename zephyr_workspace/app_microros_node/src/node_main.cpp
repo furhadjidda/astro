@@ -93,6 +93,7 @@ static bool bno055_fusion = true;
 #define IMU_PUBLISH_PERIOD_MS 200
 #define TIME_SYNC_PERIOD_MS 1000
 #define LPS22HB_PUBLISH_PERIOD_MS 2000
+#define OLED_VIEW_SWITCH_PERIOD_MS 5000
 
 #if defined(CONFIG_MICROROS_TRANSPORT_UDP)
 #define WIFI_CONNECT_TIMEOUT_S 30
@@ -140,6 +141,7 @@ static rcl_timer_t imu_timer;
 static rcl_timer_t gnss_timer;
 static rcl_timer_t time_sync_timer;
 static rcl_timer_t lps22hb_timer;
+static rcl_timer_t oled_view_timer;
 
 static rclc_executor_t executor;
 static sensor_msgs__msg__Imu bno055_imu_msg;
@@ -151,6 +153,50 @@ sensor_msgs__msg__NavSatFix ublox_nav_sat_fix_msg;
 static ATOMIC_DEFINE(mtk3333_msg_ready, 1);
 static ATOMIC_DEFINE(ublox_msg_ready, 1);
 static atomic_t time_is_valid;
+static atomic_t oled_view_switch_request;
+
+#if DT_NODE_HAS_STATUS(DT_ALIAS(sw0), okay)
+static const struct gpio_dt_spec view_switch_button = GPIO_DT_SPEC_GET(DT_ALIAS(sw0), gpios);
+static struct gpio_callback view_switch_button_cb_data;
+
+static void sw1_pressed(const struct device* dev, struct gpio_callback* cb, uint32_t pins) {
+    ARG_UNUSED(dev);
+    ARG_UNUSED(cb);
+    ARG_UNUSED(pins);
+    atomic_set(&oled_view_switch_request, 1);
+}
+
+static int init_view_switch_button(void) {
+    if (!gpio_is_ready_dt(&view_switch_button)) {
+        LOG_WRN("View switch button GPIO not ready");
+        return -ENODEV;
+    }
+
+    int rc = gpio_pin_configure_dt(&view_switch_button, GPIO_INPUT);
+    if (rc != 0) {
+        LOG_WRN("Failed to configure view switch button (%d)", rc);
+        return rc;
+    }
+
+    rc = gpio_pin_interrupt_configure_dt(&view_switch_button, GPIO_INT_EDGE_TO_ACTIVE);
+    if (rc != 0) {
+        LOG_WRN("Failed to enable view switch button interrupt (%d)", rc);
+        return rc;
+    }
+
+    gpio_init_callback(&view_switch_button_cb_data, sw1_pressed, BIT(view_switch_button.pin));
+    rc = gpio_add_callback(view_switch_button.port, &view_switch_button_cb_data);
+    if (rc != 0) {
+        LOG_WRN("Failed to register view switch callback (%d)", rc);
+        return rc;
+    }
+
+    LOG_INF("OLED view switch button enabled on pin %d", view_switch_button.pin);
+    return 0;
+}
+#else
+static int init_view_switch_button(void) { return -ENOTSUP; }
+#endif
 
 #if defined(CONFIG_MICROROS_TRANSPORT_UDP)
 static K_SEM_DEFINE(wifi_connected_sem, 0, 1);
@@ -257,10 +303,7 @@ static int init_wifi_station(void) {
 
     net_mgmt_init_event_callback(&ipv4_cb, ipv4_event_handler, NET_EVENT_IPV4_ADDR_ADD);
     net_mgmt_add_event_callback(&ipv4_cb);
-    char waiting_message[64];
-    snprintf(waiting_message, sizeof(waiting_message), "Waiting for Wifi '%s'...", CONFIG_MICROROS_WIFI_SSID);
-
-    oled_layout.display_status_message(waiting_message);
+    oled_layout.display_wifi_waiting_message(CONFIG_MICROROS_WIFI_SSID);
     oled_layout.finalize_screen();
 
     k_sleep(K_SECONDS(2));
@@ -333,7 +376,7 @@ static void bno055_imu_timer_callback(rcl_timer_t* timer, int64_t last_call_time
         // Format for the screen
         char buffer[64];
         oled_layout.display_imu_orientation(bno055_imu_msg.orientation.x, bno055_imu_msg.orientation.y,
-                            bno055_imu_msg.orientation.z);
+                                            bno055_imu_msg.orientation.z);
         oled_layout.finalize_screen();
         memset(buffer, 0, sizeof(buffer));
         snprintf(buffer, sizeof(buffer), "X=%.3f Y=%.3f Z=%.3f", bno055_imu_msg.orientation.x,
@@ -358,6 +401,17 @@ static void gnss_publish_timer_callback(rcl_timer_t* timer, int64_t last_call_ti
     if (atomic_test_and_clear_bit(ublox_msg_ready, 0)) {
         RCSOFTCHECK(rcl_publish(&ublox_gnss_publisher, &ublox_nav_sat_fix_msg, NULL));
     }
+}
+
+static void oled_view_timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
+    ARG_UNUSED(last_call_time);
+
+    if (timer == NULL) {
+        return;
+    }
+
+    LOG_INF("OLED auto view switch");
+    oled_layout.next_view();
 }
 
 static void time_sync_timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
@@ -445,6 +499,11 @@ static void executor_thread_entry(void* a, void* b, void* c) {
 
     while (1) {
         rclc_executor_spin_some(&executor, RCL_MS_TO_NS(10));
+
+        if (atomic_cas(&oled_view_switch_request, 1, 0)) {
+            LOG_INF("OLED button view switch");
+            oled_layout.next_view();
+        }
         k_sleep(K_MSEC(50));
     }
 }
@@ -477,6 +536,8 @@ static void mtk3333_gnss_data_cb(const struct device* dev, const struct gnss_dat
         mtk3333_nav_sat_fix_msg.longitude = (double)data->nav_data.longitude / 1e9;
 
         mtk3333_nav_sat_fix_msg.altitude = data->nav_data.altitude / 1e3;  // mm → meters
+        oled_layout.display_mtk3333_location(mtk3333_nav_sat_fix_msg.latitude, mtk3333_nav_sat_fix_msg.longitude,
+                                             mtk3333_nav_sat_fix_msg.altitude);
 
         // ── Fix Status ───────────────────────────────────────────────
         switch (data->info.fix_status) {
@@ -556,6 +617,8 @@ static void ublox_gnss_data_cb(const struct device* dev, const struct gnss_data*
         ublox_nav_sat_fix_msg.latitude = data->nav_data.latitude / 1e9;  // nanodegrees → degrees
         ublox_nav_sat_fix_msg.longitude = data->nav_data.longitude / 1e9;
         ublox_nav_sat_fix_msg.altitude = data->nav_data.altitude / 1e3;  // mm → meters
+        oled_layout.display_ublox_location(ublox_nav_sat_fix_msg.latitude, ublox_nav_sat_fix_msg.longitude,
+                                           ublox_nav_sat_fix_msg.altitude);
 
         // ── Fix Status ───────────────────────────────────────────────
         switch (data->info.fix_status) {
@@ -661,6 +724,7 @@ int main(void) {
         LOG_ERR("OLED init failed");
         return -ENODEV;
     }
+
     storage.init();
 
     storage.print_storage_stats();
@@ -725,11 +789,7 @@ int main(void) {
                                   zephyr_transport_read);
 #endif
 
-    char waiting_message[64];
-    snprintf(waiting_message, sizeof(waiting_message), "Waiting for ROS Agent");
-
-    oled_layout.display_status_message(waiting_message);
-    oled_layout.finalize_screen();
+    oled_layout.display_agent_waiting_message();
 
     LOG_DBG("Waiting for micro-ROS agent...\n");
     while (rmw_uros_ping_agent(100, 10) != RMW_RET_OK) {
@@ -738,8 +798,15 @@ int main(void) {
         k_sleep(K_MSEC(1000));
     }
     LOG_DBG("Agent connected!\n");
+
+    oled_layout.show_startup_splash();
+    k_sleep(K_MSEC(1800));
+    oled_layout.set_display_updates_enabled(true);
     oled_layout.clear_screen();
-    oled_layout.draw_default_grid();
+
+    oled_layout.set_view(OLEDLayout::View::SATELLITE);
+    atomic_clear(&oled_view_switch_request);
+    (void)init_view_switch_button();
 
     /* Allocator */
     rcl_allocator_t allocator = rcl_get_default_allocator();
@@ -781,14 +848,17 @@ int main(void) {
                                     time_sync_timer_callback));
     RCCHECK(rclc_timer_init_default(&lps22hb_timer, &support, RCL_MS_TO_NS(LPS22HB_PUBLISH_PERIOD_MS),
                                     lps22hb_timer_callback));
+    RCCHECK(rclc_timer_init_default(&oled_view_timer, &support, RCL_MS_TO_NS(OLED_VIEW_SWITCH_PERIOD_MS),
+                                    oled_view_timer_callback));
 
     /* Executor */
-    RCCHECK(rclc_executor_init(&executor, &support.context, 4, &allocator));
+    RCCHECK(rclc_executor_init(&executor, &support.context, 5, &allocator));
 
     RCCHECK(rclc_executor_add_timer(&executor, &imu_timer));
     RCCHECK(rclc_executor_add_timer(&executor, &gnss_timer));
     RCCHECK(rclc_executor_add_timer(&executor, &time_sync_timer));
     RCCHECK(rclc_executor_add_timer(&executor, &lps22hb_timer));
+    RCCHECK(rclc_executor_add_timer(&executor, &oled_view_timer));
     msg.data = 0;
 
     /* Start executor thread */
