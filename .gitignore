@@ -64,8 +64,8 @@ build_host
 build_target
 *_build
 ros2_ws/utils/
-build_*
-build*
+build_*/
+build*/
 zephyr_workspace/.west
 zephyr_workspace/zephyr
 zephyr_workspace/modules
@@ -82,3 +82,7 @@ zephyr_workspace/astro_custom_modules/libmicroros/micro_ros_dev
 zephyr_workspace/astro_custom_modules/libmicroros/micro_ros_src
 *.cmake
 local.conf
+install_pi4/
+log_pi4/
+*.pyc
+__pycache__/

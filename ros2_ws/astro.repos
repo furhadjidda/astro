@@ -15,7 +15,3 @@ repositories:
     type: git
     url: https://github.com/Slamtec/sllidar_ros2.git
     version: main
-  utils/luxonis_depthai_ros:
-    type: git
-    url: https://github.com/luxonis/depthai-ros.git
-    version: d316224dad20235db9d42db1189c30eeba98979f
