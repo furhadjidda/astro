@@ -8,6 +8,25 @@ import sys
 from pathlib import Path
 
 
+class _Color:
+    RED = "\033[31m"
+    GREEN = "\033[32m"
+    YELLOW = "\033[33m"
+    RESET = "\033[0m"
+
+
+def print_error(msg: str) -> None:
+    print(f"{_Color.RED}{msg}{_Color.RESET}", file=sys.stderr)
+
+
+def print_warn(msg: str) -> None:
+    print(f"{_Color.YELLOW}{msg}{_Color.RESET}")
+
+
+def print_success(msg: str) -> None:
+    print(f"{_Color.GREEN}{msg}{_Color.RESET}")
+
+
 def run(cmd: list[str], *, check: bool = True) -> int:
     print("+", " ".join(shlex.quote(x) for x in cmd))
     completed = subprocess.run(cmd)
@@ -23,7 +42,7 @@ def ensure_cmd_exists(name: str) -> None:
         ).returncode
         != 0
     ):
-        print(f"{name} is required", file=sys.stderr)
+        print_error(f"{name} is required")
         raise SystemExit(1)
 
 
@@ -71,7 +90,7 @@ def find_workspace_root(start_dir: Path) -> Path:
         return fallback
 
     raise SystemExit(
-        "Could not find workspace root. Expected a parent directory containing 'src/'."
+        f"{_Color.RED}Could not find workspace root. Expected a parent directory containing 'src/'.{_Color.RESET}"
     )
 
 
@@ -81,7 +100,7 @@ def resolve_dockerfile(script_dir: Path) -> Path:
         if candidate.is_file():
             return candidate
     raise SystemExit(
-        f"Dockerfile not found in {script_dir}. Expected one of: Dockerfile, dockerfile"
+        f"{_Color.RED}Dockerfile not found in {script_dir}. Expected one of: Dockerfile, dockerfile{_Color.RESET}"
     )
 
 
@@ -288,15 +307,14 @@ def main() -> int:
     effective_skip_rosdep = False
 
     if args.skip_rosdep:
-        print("[warn] --skip-rosdep is ignored; dependency checks are always enforced")
+        print_warn(
+            "[warn] --skip-rosdep is ignored; dependency checks are always enforced"
+        )
 
     ensure_cmd_exists("docker")
 
     if not arm64_emulation_ready():
-        print(
-            "ARM64 container emulation is not configured (exec format error).",
-            file=sys.stderr,
-        )
+        print_error("ARM64 container emulation is not configured (exec format error).")
         if args.setup_binfmt:
             print(
                 "Attempting one-time setup: docker run --privileged --rm tonistiigi/binfmt --install arm64"
@@ -313,23 +331,19 @@ def main() -> int:
                 ]
             )
             if not arm64_emulation_ready():
-                print(
-                    "ARM64 emulation setup was attempted but is still failing.",
-                    file=sys.stderr,
-                )
+                print_error("ARM64 emulation setup was attempted but is still failing.")
                 return 1
-            print("ARM64 emulation configured successfully.")
+            print_success("ARM64 emulation configured successfully.")
         else:
-            print("Run this once, then retry:", file=sys.stderr)
-            print(
-                "  docker run --privileged --rm tonistiigi/binfmt --install arm64",
-                file=sys.stderr,
+            print_error("Run this once, then retry:")
+            print_error(
+                "  docker run --privileged --rm tonistiigi/binfmt --install arm64"
             )
-            print("Or rerun this script with --setup-binfmt", file=sys.stderr)
+            print_error("Or rerun this script with --setup-binfmt")
             return 1
 
     if not args.skip_deploy and not args.pi_target:
-        print("--pi is required unless --skip-deploy is used", file=sys.stderr)
+        print_error("--pi is required unless --skip-deploy is used")
         return 1
 
     image_exists = docker_image_exists(image_name)
@@ -338,7 +352,7 @@ def main() -> int:
     )
 
     if should_build_image:
-        print(f"[1/4] Building ARM64 image {image_name}")
+        print_success(f"[1/4] Building ARM64 image {image_name}")
         build_cmd = [
             "docker",
             "buildx",
@@ -362,29 +376,30 @@ def main() -> int:
     else:
         if args.skip_image_build:
             if not image_exists:
-                print(
-                    f"--skip-image-build was requested but image does not exist: {image_name}",
-                    file=sys.stderr,
+                print_error(
+                    f"--skip-image-build was requested but image does not exist: {image_name}"
                 )
                 return 1
-            print(f"[1/4] Skipping image build (using existing {image_name})")
+            print_success(f"[1/4] Skipping image build (using existing {image_name})")
         elif image_exists:
-            print(
+            print_success(
                 f"[1/4] Reusing existing image {image_name} (pass --rebuild-image to rebuild)"
             )
         else:
             # Fallback guard; this branch should be unreachable with should_build_image logic.
-            print(
+            print_success(
                 f"[1/4] Building image is required because {image_name} does not exist"
             )
 
     if args.prepare_deps_image:
-        print("[2/4] Deps image preparation complete; exiting as requested")
-        print(f"Use this image for fast builds: {image_name}")
+        print_success("[2/4] Deps image preparation complete; exiting as requested")
+        print_success(f"Use this image for fast builds: {image_name}")
         return 0
 
     if args.clean:
-        print("[2/4] Cleaning build/install/log directories (default and pi4 trees)")
+        print_success(
+            "[2/4] Cleaning build/install/log directories (default and pi4 trees)"
+        )
         run(
             [
                 "docker",
@@ -406,7 +421,7 @@ def main() -> int:
 
     if args.clean_packages.strip():
         pkgs = shlex.split(args.clean_packages)
-        print(f"[2/4] Cleaning selected package caches: {' '.join(pkgs)}")
+        print_success(f"[2/4] Cleaning selected package caches: {' '.join(pkgs)}")
         # Remove only package-related artifacts to preserve incremental builds for the rest.
         cleanup_cmds = []
         for pkg in pkgs:
@@ -455,7 +470,7 @@ def main() -> int:
                 "if [ -f astro.repos ]; then vcs import . < astro.repos; fi"
             )
         else:
-            print(
+            print_warn(
                 "[warn] --import-repos requested but astro.repos was not found at workspace root"
             )
 
@@ -517,7 +532,7 @@ def main() -> int:
         )
     else:
         if args.deps_image and not args.runtime_rosdep:
-            print("[info] Skipping runtime rosdep because --deps-image is enabled")
+            print_warn("[info] Skipping runtime rosdep because --deps-image is enabled")
 
     colcon_cmd = [
         "colcon",
@@ -569,7 +584,7 @@ def main() -> int:
 
     container_cmd = " && ".join(container_steps)
 
-    print("[3/4] Building workspace for ARM64")
+    print_success("[3/4] Building workspace for ARM64")
     run(
         [
             "docker",
@@ -589,24 +604,25 @@ def main() -> int:
     )
 
     if args.skip_deploy:
-        print("[3/4] Deploy skipped")
-        print(f"Build output is ready at: {ws_root / args.install_base}")
+        print_success("[3/4] Deploy skipped")
+        print_success(f"Build output is ready at: {ws_root / args.install_base}")
         return 0
 
     if "@" in args.pi_target and args.pi_dir.startswith("/home/"):
         remote_user = args.pi_target.split("@", 1)[0]
         match = re.match(r"^/home/([^/]+)(/.*)?$", args.pi_dir)
         if match and match.group(1) != remote_user:
-            print(
+            print_error(
                 "Remote deploy path user mismatch: "
                 f"target user is '{remote_user}' but --pi-dir is under '/home/{match.group(1)}'.\n"
                 "Use a writable path for the target user, for example:\n"
-                f"  --pi-dir /home/{remote_user}/ros2_ws",
-                file=sys.stderr,
+                f"  --pi-dir /home/{remote_user}/ros2_ws"
             )
             return 1
 
-    print(f"[4/4] Syncing install tree to {args.pi_target}:{args.pi_dir}/install")
+    print_success(
+        f"[4/4] Syncing install tree to {args.pi_target}:{args.pi_dir}/install"
+    )
     run(
         [
             "rsync",
@@ -619,7 +635,7 @@ def main() -> int:
     )
 
     if sync_src_runtime:
-        print(
+        print_success(
             "[5/5] Syncing runtime assets from src (launch/config/params/rviz/urdf/meshes)"
         )
         run(
@@ -641,12 +657,12 @@ def main() -> int:
             ]
         )
     else:
-        print("[5/5] Runtime src asset sync skipped")
+        print_warn("[5/5] Runtime src asset sync skipped")
 
-    print("Done. Run on Pi with:")
-    print(f"  source /opt/ros/{args.ros_distro}/setup.bash")
-    print(f"  source {args.pi_dir}/install/setup.bash")
-    print("  ros2 launch <your_package> <your_launch>.launch.py")
+    print_success("Done. Run on Pi with:")
+    print_success(f"  source /opt/ros/{args.ros_distro}/setup.bash")
+    print_success(f"  source {args.pi_dir}/install/setup.bash")
+    print_success("  ros2 launch <your_package> <your_launch>.launch.py")
     return 0
 
 
