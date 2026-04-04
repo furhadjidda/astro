@@ -86,7 +86,7 @@ Example with package subset:
 # Build only the package(s) you changed (fast iteration)
 ./target_deploy_script/build_and_deploy_pi4.py \
   --pi ubuntu@192.168.1.50 \
-  --packages-select "astro_dynamixel_odomtery"
+  --packages-select "astro_dynamixel_odometry"
 
 # Skip known non-critical packages and keep building others
 ./target_deploy_script/build_and_deploy_pi4.py \
@@ -115,17 +115,18 @@ Example with package subset:
   --pi ubuntu@192.168.1.50 \
   --clean
 
-# Faster alternative: clean only one problematic package and force CMake cache refresh
+# Faster alternative: clean only one problematic package in your workspace and force CMake cache refresh
 ./target_deploy_script/build_and_deploy_pi4.py \
   --pi ubuntu@192.168.1.50 \
-  --clean-packages "depthai_ros_driver" \
+  --clean-packages "<problematic_package>" \
   --cmake-clean-cache
 
-# If OpenSSL detection still fails, force explicit CMake hints (defaults already set in script)
+# If OpenSSL detection still fails for a package in your workspace, force explicit CMake hints
+# (defaults already set in script)
 ./target_deploy_script/build_and_deploy_pi4.py \
   --pi ubuntu@192.168.1.50 \
-  --packages-select "depthai_ros_driver" \
-  --clean-packages "depthai_ros_driver" \
+  --packages-select "<problematic_package>" \
+  --clean-packages "<problematic_package>" \
   --cmake-clean-cache \
   --openssl-root-dir /usr \
   --openssl-lib-dir /usr/lib/aarch64-linux-gnu
@@ -185,7 +186,7 @@ For quick iterations after code changes:
   --packages-select "<changed_pkg_name>"
 ```
 
-For the fastest loop when dependencies are stable, add `--skip-rosdep`.
+This is the recommended fast loop when dependencies are stable: reuse the deps image and limit the build with `--packages-select`. The script still runs `rosdep`, so do not expect `--skip-rosdep` to shorten this path.
 
 If one optional package fails (for example `dynamixel_sdk_examples`), use `--packages-skip` and `--continue-on-error` so unrelated packages still build and deploy.
 
