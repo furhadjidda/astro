@@ -1,7 +1,7 @@
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch_ros.actions import Node
-from launch.substitutions import LaunchConfiguration, TextSubstitution
+from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.conditions import IfCondition
 import os
@@ -43,6 +43,21 @@ def generate_launch_description():
     def is_enabled(node_name):
         return IfCondition(LaunchConfiguration(node_name))
 
+    def microros_mode_is(mode_name):
+        return IfCondition(
+            PythonExpression(
+                [
+                    "'",
+                    LaunchConfiguration("enable_microros"),
+                    "' == 'true' and '",
+                    LaunchConfiguration("microros_transport"),
+                    "' == '",
+                    mode_name,
+                    "'",
+                ]
+            )
+        )
+
     # Define launch arguments for lidar node
     lidar_args = [
         ("channel_type", channel_type, "Specifying channel type of lidar"),
@@ -75,13 +90,34 @@ def generate_launch_description():
             description="Serial device path for micro-ROS Agent",
         )
     )
+    ld.add_action(
+        DeclareLaunchArgument(
+            "microros_transport",
+            default_value="serial",
+            description="micro-ROS Agent transport: serial or udp",
+        )
+    )
+    ld.add_action(
+        DeclareLaunchArgument(
+            "microros_udp_port",
+            default_value="8888",
+            description="UDP port for micro-ROS Agent when microros_transport:=udp",
+        )
+    )
 
-    microros_node = Node(
+    microros_serial_node = Node(
         package="micro_ros_agent",
         executable="micro_ros_agent",
-        name="micro_ros_agent",
+        name="micro_ros_agent_serial",
         arguments=["serial", "--dev", LaunchConfiguration("microros_dev")],
-        condition=is_enabled("enable_microros"),
+        condition=microros_mode_is("serial"),
+    )
+    microros_udp_node = Node(
+        package="micro_ros_agent",
+        executable="micro_ros_agent",
+        name="micro_ros_agent_udp",
+        arguments=["udp4", "--port", LaunchConfiguration("microros_udp_port")],
+        condition=microros_mode_is("udp"),
     )
     odometry_tf2_broadcaster = Node(
         package="astro_odometry_tf_broadcaster",
@@ -188,7 +224,8 @@ def generate_launch_description():
     )
 
     ld.add_action(realsense_launch)
-    ld.add_action(microros_node)
+    ld.add_action(microros_serial_node)
+    ld.add_action(microros_udp_node)
     ld.add_action(odometry_tf2_broadcaster)
     ld.add_action(base_link_to_base_footprint)
     ld.add_action(base_link_to_imu_link)

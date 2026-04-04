@@ -1,0 +1,2 @@
+SUBSYSTEM=="tty",ATTRS{idVendor}=="303a",ATTRS{serial}=="3C:DC:75:6F:95:4C",ATTRS{idProduct}=="1001",SYMLINK+="rak_wireless_esp32s3"
+SUBSYSTEM=="tty",ATTRS{idVendor}=="303a",ATTRS{serial}=="3C:DC:75:6F:82:80",ATTRS{idProduct}=="1001",SYMLINK+="rak_19007_esp32s3"
