@@ -18,8 +18,10 @@
 #include <dynamixel_sdk/dynamixel_sdk.h>
 #include <tf2_ros/transform_broadcaster.h>
 
+#include <algorithm>
 #include <cmath>
 #include <geometry_msgs/msg/quaternion.hpp>
+#include <geometry_msgs/msg/transform_stamped.hpp>
 #include <geometry_msgs/msg/twist.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -97,12 +99,12 @@ class OdometryNode : public rclcpp::Node {
 
         if (!port_handler_->openPort()) {
             RCLCPP_ERROR(this->get_logger(), "Failed to open the port");
-            rclcpp::shutdown();
+            throw std::runtime_error("Failed to open the port");
         }
 
         if (!port_handler_->setBaudRate(BAUDRATE)) {
             RCLCPP_ERROR(this->get_logger(), "Failed to set baud rate");
-            rclcpp::shutdown();
+            throw std::runtime_error("Failed to set baud rate");
         }
 
         // Configure motors to velocity mode
@@ -254,10 +256,18 @@ class OdometryNode : public rclcpp::Node {
      * @param velocity The desired velocity in meters per second (m/s).
      */
     void setGoalVelocity(int motor_id, float velocity) {
-        // Convert velocity (m/s) to Dynamixel raw value
+        // Convert velocity (m/s) to Dynamixel raw value (0.229 rpm per unit, XL430 spec)
         float rpm = velocity / (2 * M_PI * WHEEL_RADIUS) * 60;
-        int raw_velocity = static_cast<int>(rpm / 0.229);  // 0.229 rpm per unit (XL430 spec)
-        int dxl_comm_result = packet_handler_->write4ByteTxRx(port_handler_, motor_id, 104, raw_velocity);
+        int raw_velocity = static_cast<int>(std::lround(rpm / 0.229f));
+
+        // Clamp to XL430 valid range [-1023, 1023]
+        constexpr int DXL_VEL_MAX = 1023;
+        raw_velocity = std::max(-DXL_VEL_MAX, std::min(DXL_VEL_MAX, raw_velocity));
+
+        // Cast to uint32_t: negative values are transmitted as two's complement,
+        // which is what the Dynamixel protocol expects for reverse direction.
+        int dxl_comm_result =
+            packet_handler_->write4ByteTxRx(port_handler_, motor_id, 104, static_cast<uint32_t>(raw_velocity));
         if (dxl_comm_result != COMM_SUCCESS) {
             RCLCPP_ERROR(this->get_logger(), "Failed to set velocity for motor %d", motor_id);
         }
@@ -349,7 +359,7 @@ class OdometryNode : public rclcpp::Node {
     void publishOdometry(float distance, float delta_theta) {
         auto odom_msg = std::make_unique<nav_msgs::msg::Odometry>();
         odom_msg->header.stamp = this->get_clock()->now();
-        odom_msg->header.frame_id = "/odom";
+        odom_msg->header.frame_id = "odom";
         odom_msg->child_frame_id = "base_link";
 
         // Position
@@ -365,6 +375,17 @@ class OdometryNode : public rclcpp::Node {
         odom_msg->twist.twist.angular.z = delta_theta * UPDATE_RATE;
 
         odom_publisher_->publish(std::move(odom_msg));
+
+        // Broadcast odom -> base_link TF
+        geometry_msgs::msg::TransformStamped tf_msg;
+        tf_msg.header.stamp = this->get_clock()->now();
+        tf_msg.header.frame_id = "odom";
+        tf_msg.child_frame_id = "base_link";
+        tf_msg.transform.translation.x = x_;
+        tf_msg.transform.translation.y = y_;
+        tf_msg.transform.translation.z = 0.0;
+        tf_msg.transform.rotation = yawToQuaternion(theta_);
+        tf_broadcaster_->sendTransform(tf_msg);
     }
 
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_publisher_;
@@ -372,18 +393,22 @@ class OdometryNode : public rclcpp::Node {
     std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
     rclcpp::TimerBase::SharedPtr timer_;
 
-    dynamixel::PortHandler *port_handler_;
-    dynamixel::PacketHandler *packet_handler_;
+    dynamixel::PortHandler* port_handler_;
+    dynamixel::PacketHandler* packet_handler_;
 
     float x_, y_, theta_;
     int prev_left_ticks_, prev_right_ticks_;
 };
 
 // Main function to initialize and run the ROS 2 node
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     rclcpp::init(argc, argv);
-    auto node = std::make_shared<OdometryNode>();
-    rclcpp::spin(node);
+    try {
+        auto node = std::make_shared<OdometryNode>();
+        rclcpp::spin(node);
+    } catch (const std::exception& e) {
+        RCLCPP_ERROR(rclcpp::get_logger("main"), "Exception: %s", e.what());
+    }
     rclcpp::shutdown();
     return 0;
 }
