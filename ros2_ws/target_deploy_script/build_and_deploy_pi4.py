@@ -283,6 +283,7 @@ def main() -> int:
         args.rebuild_image = True
         args.cmake_clean_cache = True
         args.rosdep_continue_on_error = True
+        args.setup_binfmt = True
         # args.runtime_rosdep = True  # Removed redundant rosdep mode toggle
         # args.skip_rosdep = False  # Removed redundant rosdep mode toggle
 
