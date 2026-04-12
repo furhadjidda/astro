@@ -227,6 +227,12 @@ def main() -> int:
 
     script_dir = Path(__file__).resolve().parent
     ws_root = find_workspace_root(script_dir)
+    base_paths = [p for p in ("src", "utils") if (ws_root / p).is_dir()]
+    if not base_paths:
+        print_error(
+            "Workspace does not contain any base paths to build (expected src and/or utils)."
+        )
+        return 1
     dockerfile = next(
         (
             script_dir / n
@@ -327,8 +333,7 @@ def main() -> int:
         args.log_base,
         "build",
         "--base-paths",
-        "src",
-        "utils",
+        *base_paths,
         "--merge-install",
         "--build-base",
         args.build_base,
@@ -359,7 +364,7 @@ def main() -> int:
 
     container_steps: list[str] = [
         "set -e",
-        "export CMAKE_BUILD_PARALLEL_LEVEL=$(nproc)",
+        "export CMAKE_BUILD_PARALLEL_LEVEL=${CMAKE_BUILD_PARALLEL_LEVEL:-$(nproc)}",
         f"source /opt/ros/{shlex.quote(args.ros_distro)}/setup.bash",
         # Source local install overlay so AMENT_PREFIX_PATH includes any
         # previously-built packages; ament_cmake reads this env var via
@@ -371,6 +376,7 @@ def main() -> int:
     ]
 
     if args.install_deps:
+        rosdep_from_paths = " ".join(shlex.quote(p) for p in base_paths)
         container_steps.extend(
             [
                 # Refresh apt lists (cleared during image build) then run rosdep.
@@ -380,7 +386,7 @@ def main() -> int:
                 " then rosdep init; fi",
                 "if [ ! -d /root/.ros/rosdep/sources.cache ]; then rosdep update; fi",
                 (
-                    f"rosdep install --from-paths src utils --ignore-src -r -y"
+                    f"rosdep install --from-paths {rosdep_from_paths} --ignore-src -r -y"
                     f" --rosdistro {shlex.quote(args.ros_distro)}"
                     f" --skip-keys {shlex.quote(rosdep_skip_keys)}"
                     f" || true"

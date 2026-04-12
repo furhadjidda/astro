@@ -1,5 +1,5 @@
 ARG ROS_DISTRO=humble
-FROM ros:${ROS_DISTRO}
+FROM ros:${ROS_DISTRO}-ros-base-jammy
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -32,7 +32,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-rosdep \
     python3-vcstool \
     rsync \
-    # ROS packages required by workspace source packages \
+   # ROS packages required by workspace source packages \
+   ros-${ROS_DISTRO}-ros-base \
+   ros-${ROS_DISTRO}-rcutils \
+   ros-${ROS_DISTRO}-builtin-interfaces \
+   ros-${ROS_DISTRO}-rosidl-default-generators \
     ros-${ROS_DISTRO}-cv-bridge \
     ros-${ROS_DISTRO}-yaml-cpp-vendor \
     ros-${ROS_DISTRO}-turtlebot3-msgs \
@@ -43,8 +47,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # If apt cannot find the package, enable the ROS testing repo first:
     #   echo "deb http://packages.ros.org/ros-testing/ubuntu jammy main" \
     #        > /etc/apt/sources.list.d/ros-testing.list
-    ros-${ROS_DISTRO}-depthai-ros-v3 \
+      ros-${ROS_DISTRO}-depthai-ros-v3 \
     && rm -rf /var/lib/apt/lists/*
+
+# Fail image build early if core ROS shared libraries are missing.
+RUN test -f /opt/ros/${ROS_DISTRO}/lib/librcutils.so \
+   && test -f /opt/ros/${ROS_DISTRO}/lib/libbuiltin_interfaces__rosidl_generator_c.so
 
 # Intel RealSense SDK 2.0 (librealsense2).
 # Required to build realsense2_camera from source (utils/realsense_ros).

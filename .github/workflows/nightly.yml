@@ -13,5 +13,8 @@ jobs:
   ros2:
     uses: ./.github/workflows/ros2.yml
 
+  pi4_cross_compile:
+    uses: ./.github/workflows/pi4-cross-compile.yml
+
   zephyr:
     uses: ./.github/workflows/zephyr.yml
