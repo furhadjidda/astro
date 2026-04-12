@@ -1,197 +1,171 @@
 # Build ROS 2 for Raspberry Pi 4 on Host
 
-This folder contains a host-side pipeline that builds your ROS 2 workspace for Raspberry Pi 4 (ARM64), then deploys runtime files to the Pi so you can run without building on the robot.
+Cross-compiles the Astro ROS 2 workspace for Raspberry Pi 4 (ARM64) inside a Docker container on your development machine, then deploys the result to the Pi over `rsync`.
 
-The implementation is in `build_and_deploy_pi4.py` and is aligned with your CI flow in `.github/workflows/ros2.yml`.
+Script: `build_and_deploy_pi4.py`
+
+---
 
 ## What it does
 
-1. Builds an ARM64 Docker image with ROS tools.
-2. Runs `colcon build` in ARM64 mode on your host.
-3. Produces a Pi-specific install tree: `install_pi4/`.
-4. Syncs `install_pi4/` (and runtime assets) to your Pi over `rsync`.
+1. Builds an ARM64 Docker image containing ROS tools + depthai binaries.
+2. Runs `colcon build` inside that container (ARM64 via QEMU emulation).
+3. Produces `install_pi4/` — the Pi-ready install tree.
+4. Rsyncs `install_pi4/` and runtime assets (`launch`, `config`, `params`, …) to the Pi.
+
+---
 
 ## Prerequisites
 
-- Docker with `buildx` support.
-- QEMU binfmt for ARM64 emulation (`linux/arm64` container execution).
-- SSH access from host to Pi.
-- Same ROS distro installed on Pi (default in scripts: `humble`).
+| Requirement | Notes |
+|---|---|
+| Docker with `buildx` | Comes with Docker Desktop; on Linux `apt install docker-buildx` |
+| QEMU binfmt for ARM64 | One-time setup — see below |
+| SSH access to Pi | Key-based recommended |
+| ROS Humble on Pi | Must match the distro used to build |
 
-## One-time host setup
-
-```bash
-# Install QEMU emulation handlers for cross-architecture containers
-docker run --privileged --rm tonistiigi/binfmt --install all
-
-# Optional: verify buildx is available
-docker buildx version
-```
-
-## Build + deploy
-
-From `ros2_ws`:
-
-```bash
-./target_deploy_script/build_and_deploy_pi4.py --quick --pi ubuntu@astro-pi --target "robot_bringup"
-
-# One-time setup: build deps image and exit
-./target_deploy_script/build_and_deploy_pi4.py --init
-
-# Full refresh when environment or dependencies changed
-./target_deploy_script/build_and_deploy_pi4.py --full --pi ubuntu@astro-pi
-
-# If this is your first run on this host, auto-setup ARM64 emulation
-./target_deploy_script/build_and_deploy_pi4.py --setup-binfmt --quick --pi ubuntu@astro-pi
-```
-
-## Simple Modes
-
-Use these for most workflows:
-
-```bash
-# One-time prep
---init
-
-# Fast daily loop
---quick
-
-# Full rebuild/refresh
---full
-
-# Package targeting shortcut
---target "pkg_a pkg_b"
-
-```
-
-Detailed/advanced examples:
-
-```bash
-./target_deploy_script/build_and_deploy_pi4.py --pi ubuntu@astro-pi
-
-# One-time: bake rosdeps into a dedicated image for faster daily builds
-./target_deploy_script/build_and_deploy_pi4.py --prepare-deps-image
-
-# Daily: use deps image and build/deploy your packages
-./target_deploy_script/build_and_deploy_pi4.py --deps-image --pi ubuntu@astro-pi
-```
-
-Example with package subset:
-
-```bash
-./target_deploy_script/build_and_deploy_pi4.py \
-  --pi ubuntu@192.168.1.50 \
-  --packages-up-to "robot_bringup astro_sensor_publisher"
-
-# Build only the package(s) you changed (fast iteration)
-./target_deploy_script/build_and_deploy_pi4.py \
-  --pi ubuntu@192.168.1.50 \
-  --packages-select "astro_dynamixel_odometry"
-
-# Skip known non-critical packages and keep building others
-./target_deploy_script/build_and_deploy_pi4.py \
-  --pi ubuntu@192.168.1.50 \
-  --packages-skip "dynamixel_sdk_examples" \
-  --continue-on-error
-
-# Ignore known unresolved rosdep keys and continue
-./target_deploy_script/build_and_deploy_pi4.py \
-  --pi ubuntu@192.168.1.50 \
-  --rosdep-skip-keys "micro_ros_agent" \
-  --rosdep-continue-on-error
-
-# Force refresh rosdep cache (usually not needed on every run)
-./target_deploy_script/build_and_deploy_pi4.py \
-  --pi ubuntu@192.168.1.50 \
-  --force-rosdep-update
-
-# Optionally import external repos from astro.repos before building
-./target_deploy_script/build_and_deploy_pi4.py \
-  --pi ubuntu@192.168.1.50 \
-  --import-repos
-
-# If CMake package exports are stale/inconsistent, clean caches once
-./target_deploy_script/build_and_deploy_pi4.py \
-  --pi ubuntu@192.168.1.50 \
-  --clean
-
-# Faster alternative: clean only one problematic package in your workspace and force CMake cache refresh
-./target_deploy_script/build_and_deploy_pi4.py \
-  --pi ubuntu@192.168.1.50 \
-  --clean-packages "<problematic_package>" \
-  --cmake-clean-cache
-
-# If OpenSSL detection still fails for a package in your workspace, force explicit CMake hints
-# (defaults already set in script)
-./target_deploy_script/build_and_deploy_pi4.py \
-  --pi ubuntu@192.168.1.50 \
-  --packages-select "<problematic_package>" \
-  --clean-packages "<problematic_package>" \
-  --cmake-clean-cache \
-  --openssl-root-dir /usr \
-  --openssl-lib-dir /usr/lib/aarch64-linux-gnu
-```
-
-## Build only (no deploy)
-
-```bash
-./target_deploy_script/build_and_deploy_pi4.py --skip-deploy
-```
-
-## On the Pi (run only)
-
-```bash
-source /opt/ros/humble/setup.bash
-source ~/astro/ros2_ws/install/setup.bash
-ros2 launch <your_package> <your_launch>.launch.py
-```
-
-## Notes
-
-- The script uses separate build output paths (`build_pi4`, `install_pi4`, `log_pi4`) to avoid mixing host-native and Pi-target builds.
-- Incremental builds are enabled by default because `build_pi4/` and `install_pi4/` are reused between runs.
-- Default package skip includes `dynamixel_sdk_examples` to prevent optional examples from blocking deploy builds; override with `--packages-skip`.
-- Docker image is now reused by default if it already exists; use `--rebuild-image` when you change `Dockerfile` or toolchain dependencies.
-- For fastest Docker workflow, build a deps image once with `--prepare-deps-image`, then use `--deps-image` in normal runs.
-- Runtime assets synced from `src`: `launch`, `config`, `params`, `rviz`, `urdf`, `meshes`.
-- Runtime asset sync intentionally does not use `--delete` because it copies only filtered subpaths; this avoids noisy `cannot delete non-empty directory` warnings in remote `src` trees.
-- If your package installs all runtime assets correctly, you can use `--no-sync-src-runtime`.
-- The script now runs `apt-get update` inside the container before `rosdep install`, which is required when apt indexes are cleaned during image build.
-- Dependency checking/install via `rosdep install --from-paths src --ignore-src -r -y` is always enforced before build.
-- Default rosdep skip keys are `micro_ros_agent realsense2_camera nav2_bringup`; override with `--rosdep-skip-keys` or `ROSDEP_SKIP_KEYS`.
-- Container setup follows CI dependency pattern and includes: `python3-colcon-common-extensions`, `build-essential`, `libyaml-dev`, `git`, plus `python3-rosdep`, `python3-vcstool`, `rsync`.
-- `build_and_deploy_pi4.sh` remains as a compatibility wrapper that calls the Python tool.
-- rosdep update is now cache-aware by default; use `--force-rosdep-update` when you want a fresh dependency index.
-
-## Troubleshooting
-
-- `exec /bin/sh: exec format error` during Docker build means ARM64 emulation is not set up yet.
-- Fix once with:
+### One-time ARM64 emulation setup
 
 ```bash
 docker run --privileged --rm tonistiigi/binfmt --install arm64
 ```
 
-- Or run the script with `--setup-binfmt` to have it attempt setup automatically.
-- `Warning: running 'rosdep update' as root is not recommended.` is expected in Docker container builds and is harmless for this workflow.
+Verify it works:
 
-## Fast Dev Loop
+```bash
+docker run --rm --platform linux/arm64 alpine uname -m   # should print aarch64
+```
 
-For quick iterations after code changes:
+---
+
+## Common commands
+
+All commands are run from the `ros2_ws/` directory.
+
+### First-time build + deploy
+
+```bash
+./target_deploy_script/build_and_deploy_pi4.py --pi ubuntu@<pi-ip> --first-run
+```
+
+This builds the Docker image (if it doesn't exist), installs missing apt/rosdep dependencies, compiles the workspace, and syncs to the Pi.
+
+### Everyday quick build + deploy (after code changes)
+
+```bash
+./target_deploy_script/build_and_deploy_pi4.py --pi ubuntu@<pi-ip>
+```
+
+Docker image is reused automatically. Only changed packages are recompiled.
+Dependency installation is skipped in this quick path for speed.
+
+### Build only (no deploy)
+
+```bash
+./target_deploy_script/build_and_deploy_pi4.py --skip-deploy
+```
+
+### Build a specific package only
 
 ```bash
 ./target_deploy_script/build_and_deploy_pi4.py \
-  --deps-image \
-  --pi ubuntu@astro-pi \
-  --packages-select "<changed_pkg_name>"
+  --packages-select astro_sensor_publisher \
+  --skip-deploy
 ```
 
-This is the recommended fast loop when dependencies are stable: reuse the deps image and limit the build with `--packages-select`. The script still runs `rosdep`, so do not expect `--skip-rosdep` to shorten this path.
+### Full clean rebuild
 
-If one optional package fails (for example `dynamixel_sdk_examples`), use `--packages-skip` and `--continue-on-error` so unrelated packages still build and deploy.
+Use this after Dockerfile changes or when you suspect stale build state:
 
-If `FindOpenSSL` or other CMake `find_package` results look stale after dependency/image updates, prefer `--clean-packages <pkg> --cmake-clean-cache` before doing a full `--clean`.
+```bash
+./target_deploy_script/build_and_deploy_pi4.py \
+  --clean --rebuild-image --install-deps --skip-deploy
+```
 
-Advanced flags are still supported; the mode flags above are shortcuts to reduce option overload.
+---
 
-`--full` enables `--rosdep-continue-on-error` so one unavailable apt rosdep key does not stop the build.
+## Start from scratch (Docker cleanup)
+
+### Prune builder image + containers + dangling cache
+
+```bash
+./target_deploy_script/build_and_deploy_pi4.py --prune-docker
+```
+
+This removes:
+- The `astro-ros2-pi4-builder:humble` image
+- Stopped containers
+- Dangling build cache
+
+Then rebuild from scratch:
+
+```bash
+./target_deploy_script/build_and_deploy_pi4.py --clean --skip-deploy
+```
+
+### Nuclear option — remove ALL unused Docker images
+
+```bash
+docker image prune -af
+docker builder prune -af
+```
+
+---
+
+## All options
+
+```
+--pi <user@host>          SSH target for the Pi  [env: PI_TARGET]
+--pi-dir <path>           Remote workspace path  [env: PI_DIR]  (default: ~/astro/ros2_ws)
+--ros-distro <distro>     ROS distro  [env: ROS_DISTRO]         (default: humble)
+--image-name <name>       Override Docker image name
+--rebuild-image           Force rebuild Docker image
+--install-deps            Run apt/rosdep dependency installation before build (slower)
+--first-run               Alias for --install-deps (easier first-time command)
+--skip-deploy             Build only; skip rsync to Pi
+--clean                   Delete build_pi4 / install_pi4 / log_pi4 before building
+--continue-on-error       Keep building even if a package fails
+--packages-select <pkgs>  Build only these packages
+--packages-up-to <pkgs>   Build up to and including these packages
+--packages-skip <pkgs>    Skip these packages  [env: PACKAGES_SKIP]
+--build-base              Build directory name  (default: build_pi4)
+--install-base            Install directory name  (default: install_pi4)
+--log-base                Log directory name  (default: log_pi4)
+--prune-docker            Remove builder image, prune containers and build cache, then exit
+```
+
+---
+
+## On the Pi (run)
+
+```bash
+source /opt/ros/humble/setup.bash
+source ~/astro/ros2_ws/install/setup.bash
+ros2 launch robot_bringup bringup.launch.py
+```
+
+---
+
+## Notes
+
+- Build output uses separate paths (`build_pi4`, `install_pi4`, `log_pi4`) so host-native and Pi-target builds never mix.
+- depthai ROS packages (`depthai-ros-v3`) are installed from apt inside the Docker image — no source build needed.
+- `vision_msgs` is also installed as an apt dependency of `depthai-ros-v3`, removing the need to clone it via `astro.repos`.
+- Dependency installation is opt-in via `--install-deps` (recommended for first run, dependency updates, or after fresh Docker prune).
+- Default skip: `dynamixel_sdk_examples`; override with `--packages-skip`.
+
+---
+
+## Troubleshooting
+
+**`exec /bin/sh: exec format error`**
+ARM64 emulation is not set up. Run:
+```bash
+docker run --privileged --rm tonistiigi/binfmt --install arm64
+```
+
+**`docker: Error response from daemon: … image not found`**
+The builder image doesn't exist yet. It will be built automatically on the first run, or force it with `--rebuild-image`.
+
+**Stale cmake cache after changing dependencies**
+Run with `--clean` to delete `build_pi4` and `install_pi4` before the next build.
