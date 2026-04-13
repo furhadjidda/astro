@@ -1,25 +1,12 @@
 name: Pi4 Cross-Compile CI
 
 on:
-  push:
-    paths:
-      - .github/workflows/pi4-cross-compile.yml
-      - ros2_ws/astro.repos
-      - ros2_ws/src/**
-      - ros2_ws/utils/**
-      - ros2_ws/target_deploy_script/**
-  pull_request:
-    paths:
-      - .github/workflows/pi4-cross-compile.yml
-      - ros2_ws/astro.repos
-      - ros2_ws/src/**
-      - ros2_ws/utils/**
-      - ros2_ws/target_deploy_script/**
   workflow_dispatch:
   workflow_call:
 
 jobs:
   cross_compile_pi4:
+    if: false # Temporarily disable this workflow until we can address the build timeouts
     name: Cross-compile ROS 2 workspace for Pi4 (ARM64)
     runs-on: ubuntu-latest
     timeout-minutes: 90
