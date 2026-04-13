@@ -54,6 +54,11 @@ jobs:
           docker buildx version
           docker run --rm --platform linux/arm64 alpine:3.20 uname -m
 
+      - name: CI diagnostics (commit + Dockerfile)
+        run: |
+          git rev-parse HEAD
+          sed -n '1,80p' ros2_ws/target_deploy_script/Dockerfile
+
       - name: Cross-compile Pi4 workspace (build-only)
         working-directory: ros2_ws
         env:

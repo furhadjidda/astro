@@ -369,7 +369,9 @@ def main() -> int:
         # Source local install overlay so AMENT_PREFIX_PATH includes any
         # previously-built packages; ament_cmake reads this env var via
         # ament_index_get_prefix_path() to locate cmake package configs.
-        f"if [ -f /ws/{args.install_base}/setup.bash ];"
+        f'if [ -n "${{CI:-}}" ]; then'
+        f" echo 'CI detected: skipping existing /ws/{args.install_base} overlay';"
+        f" elif [ -f /ws/{args.install_base}/setup.bash ];"
         f" then source /ws/{args.install_base}/setup.bash; fi",
         f"export LD_LIBRARY_PATH=/ws/{args.install_base}/lib"
         f":/opt/ros/{shlex.quote(args.ros_distro)}/lib:${{LD_LIBRARY_PATH:-}}",
@@ -381,6 +383,19 @@ def main() -> int:
             [
                 # Refresh apt lists (cleared during image build) then run rosdep.
                 "apt-get update -qq",
+                # Ensure core ROS interface/runtime libraries exist in the live container.
+                (
+                    "apt-get install -y --no-install-recommends "
+                    f"ros-{shlex.quote(args.ros_distro)}-ros-base "
+                    f"ros-{shlex.quote(args.ros_distro)}-rcutils "
+                    f"ros-{shlex.quote(args.ros_distro)}-builtin-interfaces "
+                    f"ros-{shlex.quote(args.ros_distro)}-rosidl-default-generators"
+                ),
+                (
+                    f"test -f /opt/ros/{shlex.quote(args.ros_distro)}/lib/librcutils.so"
+                    f" && test -f /opt/ros/{shlex.quote(args.ros_distro)}/lib/"
+                    "libbuiltin_interfaces__rosidl_generator_c.so"
+                ),
                 # Initialize rosdep and install any remaining deps from source packages.
                 "if [ ! -f /etc/ros/rosdep/sources.list.d/20-default.list ];"
                 " then rosdep init; fi",
