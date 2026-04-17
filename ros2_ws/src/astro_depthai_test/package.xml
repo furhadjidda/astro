@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>astro_depthai_test</name>
+  <version>0.0.1</version>
+  <description>Quick smoke-test launchers for DepthAI on Astro.</description>
+
+  <maintainer email="furhad@example.com">furhad</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <exec_depend>depth_image_proc</exec_depend>
+  <exec_depend>depthai_descriptions_v3</exec_depend>
+  <exec_depend>depthai_examples_v3</exec_depend>
+  <exec_depend>rviz2</exec_depend>
+  <exec_depend>rclcpp_components</exec_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

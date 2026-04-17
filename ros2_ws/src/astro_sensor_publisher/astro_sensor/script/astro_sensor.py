@@ -1,8 +1,6 @@
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Imu, NavSatFix
-from builtin_interfaces.msg import Time as BuiltinTime
-from tf2_ros import TransformListener, TransformBroadcaster, Buffer
 from signal import signal, SIGINT
 from nav_msgs.msg import Odometry
 
@@ -13,13 +11,10 @@ class SensorSynchronization(Node):
 
         # Subscribers
         self.imu_subscriber = self.create_subscription(
-            Imu, "/imu_raw", self.imu_callback, 10
+            Imu, "/bno055_imu_raw", self.imu_callback, 10
         )
         self.laser_subscriber = self.create_subscription(
-            NavSatFix, "/gnss_data_raw", self.gnss_callback, 10
-        )
-        self.time_subscriber = self.create_subscription(
-            BuiltinTime, "/ros_time", self.time_callback, 10
+            NavSatFix, "/ublox_gnss_raw", self.gnss_callback, 10
         )
         # Subscriber for Odometry messages (odom frame)
         self.odom_subscriber = self.create_subscription(
@@ -30,73 +25,46 @@ class SensorSynchronization(Node):
         self.imu_raw_publisher = self.create_publisher(Imu, "/imu/data_raw", 10)
         self.imu_publisher = self.create_publisher(Imu, "/imu", 10)
         self.gnss_publisher = self.create_publisher(NavSatFix, "/gnss", 10)
-        # Publisher for synchronized Odometry
         self.synchronized_odom_publisher = self.create_publisher(Odometry, "/odom", 10)
 
-        self.latest_odom_time = None
-        self.latest_odom_pose = None
-        self.latest_odom_twist = None
-
-        # Time and message tracking
-        self.latest_imu_time = None
-        self.latest_gnss_time = None
-        self.latest_odom_time = None
-        self.latest_ros_time = None
-        self.previous_ros_time = None
-        self.latest_imu_message = None
-        self.latest_gnss_message = None
-        self.ros_time = None
         self.alpha = 0.1  # Smoothing factor (0 < alpha <= 1)
         self.filtered_angular_velocity = None
         self.filtered_linear_acceleration = None
 
     def imu_callback(self, msg: Imu):
-        self.latest_imu_time = msg.header.stamp
-        self.latest_imu_message = msg
-        # print("imu_callback called")
-        if self.ros_time:
-            self.sync_imu()
+        now = self.get_clock().now().to_msg()
+
+        smoothed_angular_velocity, smoothed_linear_acceleration = self.smooth_imu_data(
+            msg.angular_velocity,
+            msg.linear_acceleration,
+        )
+
+        imu_out = Imu()
+        imu_out.header.stamp = now
+        imu_out.header.frame_id = "imu_link"
+        imu_out.orientation = msg.orientation
+        imu_out.angular_velocity = smoothed_angular_velocity
+        imu_out.linear_acceleration = smoothed_linear_acceleration
+        self.imu_publisher.publish(imu_out)
+        self.imu_raw_publisher.publish(imu_out)
 
     def odom_callback(self, msg: Odometry):
-        # Update the latest odom time
-        self.latest_odom_time = msg.header.stamp
-        self.latest_odom_pose = msg.pose  # Assign pose data here
-        self.latest_odom_twist = msg.twist  # Assign pose data here
-        if self.ros_time:
-            self.sync_odom()
+        now = self.get_clock().now().to_msg()
+
+        odom_out = Odometry()
+        odom_out.header.stamp = now
+        odom_out.header.frame_id = "odom"
+        odom_out.child_frame_id = "base_link"
+        odom_out.pose = msg.pose
+        odom_out.twist = msg.twist
+        self.synchronized_odom_publisher.publish(odom_out)
 
     def gnss_callback(self, msg: NavSatFix):
-        self.latest_gnss_time = msg.header.stamp
-        self.latest_gnss_message = msg
-        if self.ros_time:
-            self.sync_gnss()
+        now = self.get_clock().now().to_msg()
 
-    def time_callback(self, msg: BuiltinTime):
-        # print("time_callback called")
-        self.ros_time = msg
-        self.latest_ros_time = msg
-
-    def sync_gnss(self):
-        if self.latest_gnss_time and self.ros_time:
-            if not self.previous_ros_time:
-                self.previous_ros_time = self.latest_ros_time
-                self.get_logger().info("Initialized ROS time tracking.")
-                return
-
-            # Initialize synced_time
-            synced_time = BuiltinTime()
-            if (self.latest_ros_time.sec > self.previous_ros_time.sec) or (
-                self.latest_ros_time.sec == self.previous_ros_time.sec
-                and self.latest_ros_time.nanosec > self.previous_ros_time.nanosec
-            ):
-                synced_time = self.latest_ros_time
-
-            synchronized_gnss = NavSatFix()
-            synchronized_gnss.header.stamp = synced_time
-            self.gnss_publisher.publish(synchronized_gnss)
-
-            self.previous_ros_time = self.latest_ros_time
-            # self.get_logger().info(f">>Synchronized GNSS time: {synced_time}")
+        gnss_out = NavSatFix()
+        gnss_out.header.stamp = now
+        self.gnss_publisher.publish(gnss_out)
 
     def smooth_imu_data(self, new_angular_velocity, new_linear_acceleration):
         """Applies an Exponential Moving Average (EMA) filter to smooth IMU data."""
@@ -132,69 +100,6 @@ class SensorSynchronization(Node):
             )
 
         return self.filtered_angular_velocity, self.filtered_linear_acceleration
-
-    def sync_imu(self):
-        if self.latest_imu_time and self.ros_time:
-            if not self.previous_ros_time:
-                self.previous_ros_time = self.latest_ros_time
-                self.get_logger().info("Initialized ROS time tracking.")
-                return
-
-            # Initialize synced_time
-            synced_time = BuiltinTime()
-            if (self.latest_ros_time.sec > self.previous_ros_time.sec) or (
-                self.latest_ros_time.sec == self.previous_ros_time.sec
-                and self.latest_ros_time.nanosec > self.previous_ros_time.nanosec
-            ):
-                synced_time = self.latest_ros_time
-
-                synchronized_imu = Imu()
-                synchronized_imu.header.stamp = synced_time
-                synchronized_imu.header.frame_id = "imu_link"
-                synchronized_imu.orientation = self.latest_imu_message.orientation
-                smoothed_angular_velocity, smoothed_linear_acceleration = (
-                    self.smooth_imu_data(
-                        self.latest_imu_message.angular_velocity,
-                        self.latest_imu_message.linear_acceleration,
-                    )
-                )
-                synchronized_imu.angular_velocity = smoothed_angular_velocity
-                synchronized_imu.linear_acceleration = smoothed_linear_acceleration
-                self.imu_publisher.publish(synchronized_imu)
-                self.imu_raw_publisher.publish(synchronized_imu)
-                self.previous_ros_time = self.latest_ros_time
-                # self.get_logger().info(f">>Synchronized IMU time: {synced_time}")
-
-    def sync_odom(self):
-        if self.latest_odom_time and self.ros_time:
-            if not self.previous_ros_time:
-                self.previous_ros_time = self.latest_ros_time
-                self.get_logger().info("Initialized ROS time tracking.")
-                return
-
-            # Initialize synced_time
-            synced_time = BuiltinTime()
-            if (self.latest_ros_time.sec > self.previous_ros_time.sec) or (
-                self.latest_ros_time.sec == self.previous_ros_time.sec
-                and self.latest_ros_time.nanosec > self.previous_ros_time.nanosec
-            ):
-                synced_time = self.latest_ros_time
-
-                synchronized_odom = Odometry()
-                synchronized_odom.header.stamp = (
-                    synced_time  # Update with the synchronized time
-                )
-                synchronized_odom.header.frame_id = "odom"
-                synchronized_odom.child_frame_id = "base_link"
-                # You can copy over the rest of the data from the original odometry message if needed
-                synchronized_odom.pose = (
-                    self.latest_odom_pose
-                )  # Example: copy pose data
-                synchronized_odom.twist = self.latest_twist  # Example: copy twist data
-                self.synchronized_odom_publisher.publish(synchronized_odom)
-
-                self.previous_ros_time = self.latest_ros_time
-                self.get_logger().info(f">>Synchronized Odom time: {synced_time}")
 
 
 def main(args=None):

@@ -7,11 +7,10 @@ repositories:
     type: git
     url: https://github.com/IntelRealSense/realsense-ros.git
     version: r/4.56.4
-  utils/slamtech_rplidar_ros:
-    type: git
-    url: https://github.com/Slamtec/rplidar_ros.git
-    version: ros2
   utils/sllidar_ros2:
     type: git
     url: https://github.com/Slamtec/sllidar_ros2.git
     version: main
+  # depthai-core and depthai-ros are installed from apt (ros-humble-depthai-ros-v3).
+  # vision_msgs is also pulled in as a transitive apt dependency.
+  # No source clones needed.
