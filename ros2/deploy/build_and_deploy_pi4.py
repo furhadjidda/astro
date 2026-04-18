@@ -227,11 +227,9 @@ def main() -> int:
 
     script_dir = Path(__file__).resolve().parent
     ws_root = find_workspace_root(script_dir)
-    base_paths = [p for p in ("src", "utils") if (ws_root / p).is_dir()]
-    if not base_paths:
-        print_error(
-            "Workspace does not contain any base paths to build (expected src and/or utils)."
-        )
+    base_paths = ["src"]
+    if not (ws_root / "src").is_dir():
+        print_error("Workspace does not contain a src/ directory.")
         return 1
     dockerfile = next(
         (

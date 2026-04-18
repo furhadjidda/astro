@@ -65,7 +65,7 @@ target_include_directories(microros INTERFACE ${MICROROS_DIR}/include)
 
 execute_process(
     COMMAND
-        make -f libmicroros.mk get_package_names
+        make --no-print-directory -f libmicroros.mk get_package_names
             COMPONENT_PATH=${MICROROS_DIR}
     WORKING_DIRECTORY
         ${MICROROS_DIR}

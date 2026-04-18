@@ -7,6 +7,8 @@ build/
 build_*/
 build*/
 *_build/
+install/
+log/
 install_pi4/
 log_pi4/
 
@@ -24,7 +26,7 @@ ros2/install_pi4/
 ros2/log_pi4/
 
 # Vendored ROS packages pulled via vcs-import (regenerated from astro.repos)
-ros2/utils/
+ros2/src/external
 
 # ==============================================================================
 # Pico firmware

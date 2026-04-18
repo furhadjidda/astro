@@ -55,7 +55,7 @@ RUN test -f /opt/ros/${ROS_DISTRO}/lib/librcutils.so \
    && test -f /opt/ros/${ROS_DISTRO}/lib/libbuiltin_interfaces__rosidl_generator_c.so
 
 # Intel RealSense SDK 2.0 (librealsense2).
-# Required to build realsense2_camera from source (utils/realsense_ros).
+# Required to build realsense2_camera from source (external/realsense_ros).
 # The SDK is not in the standard Ubuntu repos; it comes from Intel's own apt repo.
 # We fetch the signing key by its exact fingerprint from the Ubuntu keyserver
 # because the .pgp file Intel hosts does not match the key used to sign the repo.
