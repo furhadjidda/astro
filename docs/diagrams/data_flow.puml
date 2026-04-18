@@ -1,0 +1,50 @@
+@startuml data_flow
+skinparam componentStyle rectangle
+skinparam BackgroundColor #FAFAFA
+skinparam ArrowColor #555555
+skinparam roundcorner 8
+
+component "Microcontroller\n(micro-ROS)" as MCU #FFF8E1
+component "astro_sensor" as AS #E8FDE8
+component "sllidar_node\n(RPLidar)" as LIDAR #E8F4FD
+component "realsense2_camera\n(Intel D455)" as RS #E8F4FD
+component "depthai_ros_driver\n(OAK-D Lite)" as DAI #E8F4FD
+component "astro_odometry_tf_broadcaster" as TF_BC #E8FDE8
+component "teleop_keyboard" as TELEOP #FCE8F4
+component "astro_dynamixel_odometry" as DYN #E8FDE8
+component "ros_time_publisher" as RTP #E8FDE8
+
+MCU  --> AS      : /bno055_imu_raw
+MCU  --> AS      : /ublox_gnss_raw
+MCU  --> AS      : /odom_raw
+AS   --> AS      : /imu/data_raw
+AS   --> AS      : /imu
+AS   --> AS      : /gnss
+AS   --> AS      : /odom
+
+LIDAR --> LIDAR  : /scan
+
+RS   --> RS      : /camera/depth\n/camera/color\n/camera/imu
+
+DAI  --> DAI     : /oak/rgb\n/oak/stereo/depth\n/oak/points
+
+AS   --> TF_BC   : /odom
+TF_BC --> TF_BC  : TF: odom → base_link
+
+TELEOP --> DYN   : /cmd_vel
+DYN  --> DYN     : /odom (encoder-based)
+
+RTP  --> RTP     : /ros_time (1 kHz)
+
+note bottom of AS
+  Re-stamps timestamps on
+  IMU, GNSS, and odometry
+  messages from micro-ROS
+end note
+
+note bottom of DYN
+  Drives Dynamixel XL430 servos
+  and publishes encoder odometry
+end note
+
+@enduml

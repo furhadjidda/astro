@@ -414,6 +414,14 @@ def main() -> int:
 
     container_steps.append(shlex.join(colcon_cmd))
 
+    # Fix ownership so build outputs are not owned by root on the host.
+    host_uid = os.getuid()
+    host_gid = os.getgid()
+    for d in (args.build_base, args.install_base, args.log_base):
+        container_steps.append(
+            f"chown -R {host_uid}:{host_gid} /ws/{shlex.quote(d)} 2>/dev/null || true"
+        )
+
     run(
         [
             "docker",

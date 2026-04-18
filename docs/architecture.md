@@ -4,99 +4,21 @@
 
 Astro is a TurtleBot3-based differential-drive robot built around a **Raspberry Pi 4** running ROS 2 Humble. Low-level sensor reading and motor control run on microcontrollers (**Raspberry Pi Pico** or **Zephyr-based boards**) that communicate with the Pi 4 over micro-ROS (serial or UDP).
 
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                        Development Host (x86)                          │
-│                                                                        │
-│   RViz2 / FoxGlove ◄──── ROS 2 DDS (Domain ID 10) ────►  SLAM /     │
-│                            (same network)                  Nav2       │
-└──────────────────────────────────┬──────────────────────────────────────┘
-                                   │ Wi-Fi / Ethernet
-                                   ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│                     Raspberry Pi 4  (Ubuntu 22.04)                     │
-│                          ROS 2 Humble                                  │
-│                                                                        │
-│  ┌──────────────┐  ┌──────────────┐  ┌───────────────┐  ┌──────────┐ │
-│  │ robot_bringup│  │ astro_slam   │  │astro_navigation│  │ teleop   │ │
-│  │  (launch)    │  │(Cartographer)│  │   (Nav2)       │  │(keyboard)│ │
-│  └──────┬───────┘  └──────────────┘  └───────────────┘  └──────────┘ │
-│         │                                                              │
-│         ├──► micro_ros_agent ◄── serial/UDP ──► Microcontrollers      │
-│         ├──► sllidar_node (RPLidar A1M8 / C1)                        │
-│         ├──► realsense2_camera (Intel D455)                           │
-│         ├──► depthai_ros_driver (OAK-D Lite)                          │
-│         ├──► robot_state_publisher (URDF: burger / waffle)            │
-│         ├──► astro_sensor (re-stamps IMU, GNSS, odom)                │
-│         ├──► astro_dynamixel_odometry (Dynamixel XL430 drive)        │
-│         ├──► ros_time_publisher (1 kHz clock for micro-ROS sync)     │
-│         └──► ros_agent_watcher (micro-ROS watchdog)                  │
-│                                                                        │
-└──────────────────────────────┬─────────────────────────────────────────┘
-                               │ USB serial / UART / UDP
-            ┌──────────────────┼──────────────────┐
-            ▼                  ▼                  ▼
-┌───────────────────┐ ┌────────────────┐ ┌────────────────────────┐
-│  Raspberry Pi     │ │  Raspberry Pi  │ │  Zephyr Board          │
-│  Pico (RP2040)    │ │  Pico 2W       │ │  (RAK3112/ESP32-S3     │
-│                   │ │  (RP2350)      │ │   Adafruit Feather)    │
-│  FreeRTOS +       │ │  FreeRTOS +    │ │                        │
-│  micro-ROS        │ │  micro-ROS     │ │  Zephyr RTOS +         │
-│                   │ │                │ │  micro-ROS             │
-│  Nodes:           │ │  Nodes:        │ │                        │
-│  • bno055 (IMU)   │ │  • sensors     │ │  Apps:                 │
-│  • diff_drive     │ │    (IMU, GNSS, │ │  • sensor_node         │
-│    (motors +      │ │     ToF,       │ │  • microros_node       │
-│     odometry)     │ │     display)   │ │  • bluetooth           │
-│  • gnss           │ │  • diff_drive  │ │  • sd_card_fs          │
-│                   │ │                │ │                        │
-└───────────────────┘ └────────────────┘ └────────────────────────┘
-         │                    │                    │
-         ▼                    ▼                    ▼
-    ┌─────────┐        ┌───────────┐        ┌───────────┐
-    │ Sensors │        │  Sensors  │        │  Sensors  │
-    │ BNO055  │        │  BNO055   │        │  IIM42652 │
-    │ PCA9685 │        │  PA1010D  │        │  PA1010D  │
-    │ Encoders│        │  VL53L0X  │        │  SSD1306  │
-    └─────────┘        │  SSD1306  │        └───────────┘
-                       └───────────┘
-```
+![System Architecture](https://www.plantuml.com/plantuml/svg/dLNHRk8u57tdAwuwBrHRjX1WXQhHQb92MZGKeWJQtMgbo2G6B1mxiXscp6Yb-OZzWlsq-PAvJYWjb9rTBJpWt9npVOxlzUM3DaIP8kEWjzhGB2OgMJ534rCeMjDh9dAYI0Q9p78fg32HsN8A2W54BFbho3L9raib2v7s9PSAtlck_Rv2k4h9JxkNtVBpwcN9JAGIL46lLjll06SUtL0kymntXrkf3TIVUh-Sdm7Hu0tkuTsWvtTy3xxKu4Kcd8NtxBC3b-3BfnikDxJ4X_V3nqDOD7Bl43Kc6wT4sESOqoBAWk5ze_7hFWXN44uYSC3p8gXxCYDCmD23LlEyzkU1vf3eV4wLsaB0e0FmxUjV0BDv8Km1ZlDpiuDxLgbkYspEAtN1i5EwyGQzOpTApgM9vug9PP7_8UgS529PLOTm7Gx7DxFWa42qKJBMd6I8xcEDvLAHV4NL-TxcAO8W6xOaXac1D7ie5NpitX-Y3ULKMY5hkfrBej8ADnsC1fCZ9HbBCB6IEYPB39Iukz0z16dEMKfKB6HACMiOZEmZkAsxtcM_LIKV3JqtF3eMIhYcGbCdJaX65K7kKA0uy3hTRaKBeqDEIdEp8gnKb2gseGf94_TZmuCHTlwkiTpXgGBWRJ4qpeivPtfL4cUXvp_lSxe4A4zQfA8Df6UvXk7TxF9c74MNCfNPhXw3SJG9J_7JhI0PUw8yjcXgr1Pp_JRgj9ixfR-FZvNgsB3iK6OBrhUV8U4oMU_KJeEtjB90yITYaefLhbAvt57SXnzrUS0I2LWvfzdPIGk6_KaBvu3lzmQjuuxs5QNX5A_0Jr1sI0ElGydomsaBeK8Qd3DikJ8W5yz1W34sYBugbz--_Wrp8PlTBjJnIC_tmPGj5bLfePv98vN6JPvFxmMs55hZ0nLfkTc_UdCUIdljxYjxpl-nvvoovvooLpMFBlrTWEsP2vXA_m8jwfoJxIdF_spfaUQhhO9hUr_j9NC_jbijEoC7KT1s6b4RbsvA5gfW1dnAp7vSF0u2DDgta_ROw2xfIQ-FDlh6x7CKmCtpDsRB4R2FbVbiQnv4vxoWHagpUk6cE01K6Y-EAsgdTZd3xN2zWWVMy9brRBq9Qcesl7jlc_KAPj4rAb6CS8JDt71gVxpW4EZy5w0zDFW1iFO1XU9VR-qx)
+
+> Source: [docs/diagrams/system_architecture.puml](diagrams/system_architecture.puml)
 
 ## Data Flow — Key ROS 2 Topics
 
-```
-Microcontroller ──micro-ROS──►  /bno055_imu_raw   ──► astro_sensor ──► /imu/data_raw
-                                                                    ──► /imu
-                                /ublox_gnss_raw    ──► astro_sensor ──► /gnss
-                                /odom_raw          ──► astro_sensor ──► /odom
+![Data Flow](https://www.plantuml.com/plantuml/svg/VLJRJXin47ttLupW1IIYG4kaY8UAa4tQg86W3KYjX6HvToTX5Q-ziXqW_O1-G3-nNzAndSkgRBlxClOvPyxO7llQEc7Skf9G22VuGkfNPbUbgeKH5UIwghL2vUPk8n4CvawefSG6vKRagwNHQrKCjTG6ZiS3_pSO0sFqwnRiXQy11cMkZK83VSRsXd1qM-P6vrevewL4ywHEAZ_JIMVpqoCG5cw7Z-Gs7lT75qsTiAJW5fNL9l06SpWUzSV9gD-aMIdBGXYkT86KExsV-c7CF9qaWpI8BiT9KsHGI9yPF_1SL6W4AIVAeOJaijUBudJUfYomTi-Yv4PRNfZo9IneDlZQIM1QEepIP31fqyOLwK9NwCo6kmNFZ1P5JlCOb_WmvZV3jbLIQQXhli9DfeKf8daq7StkQUk6tkgzKR5HeYhVKEujOt7VxzeS_89SMI6lrvaixVEselJXVizc_gIWq_daZo9yLz3Db3xlzNXPhRaHhwqKIgZV-59P-q-Ahp20OUula79tGrV_Xz0wxorR0M_7M6mF3yN88pONYh5qfqaFcjWetT00JsetpFrzE0nz9SmVVr27OEieLbspp8Zf8t_WgFUv_5IjI-KiEvGRU-5GRXmta2iAhi1ZyFldByY4HIvBjM9isncX13hjM7vLy1UKB4mSa7r-E46Lqnqo7P-eEALDeAEFc-23oDnr2PnSmEhB3s8fxH0oxHobq0lQP0QGOeUUewgsuBdRK2j29hUFP_3vRZu_0w4As3Kc8SIpOeaM5eOoxPy8XaJp7k-Sg7wI9VuEKbFlUXs-JIy_deD5yw8juTvbrz4Mjaiy-1woNrD8poVx0m==)
 
-RPLidar ──USB──► sllidar_node ──► /scan
-
-Intel D455 ──USB──► realsense2_camera ──► /camera/depth, /camera/color, /camera/imu
-
-OAK-D Lite ──USB──► depthai_ros_driver ──► /oak/rgb, /oak/stereo/depth, /oak/points
-
-                                /odom ──► astro_odometry_tf_broadcaster ──► TF: odom → base_link
-                                /cmd_vel ◄── teleop_keyboard
-                                /cmd_vel ──► astro_dynamixel_odometry ──► Dynamixel servos
-                                                                      ──► /odom (encoder-based)
-
-ros_time_publisher ──► /ros_time (1 kHz clock reference for micro-ROS nodes)
-```
+> Source: [docs/diagrams/data_flow.puml](diagrams/data_flow.puml)
 
 ## TF Tree
 
-```
-map
- └── odom                          (published by Cartographer or EKF)
-      └── base_link                (published by astro_odometry_tf_broadcaster)
-           ├── base_footprint      (static)
-           ├── imu_link            (static)
-           ├── laser               (static)
-           ├── camera_link         (static)
-           ├── wheel_left_link     (from URDF joint states)
-           └── wheel_right_link    (from URDF joint states)
-```
+![TF Tree](https://www.plantuml.com/plantuml/svg/bPDHQuCm58NVyoj2-zo7mGQ-R5IhWR5AXwNqKQ96QvlaoasabB7_lfYEAXk3Jb-ydfplwidDqbYEjbUIsZgtA0GnfrPt7BcY9QWEjD1sQozIK1IbvRgHqoKHBqyDGg-h5KX0EcVXS4zMX8Xm_XQV_3KHlRC4r09fG0WKHzU3pXJlPfGRceRlT9u4x975DmqgK5xSn9lKgt4Iq0z2QTSNiZK7XtgcA_TJq23lXjArJjuO-Rmn2cv4Bbjzyg1e_IU66ukG3os5nKlk8YeGU5Mwzm9_0ci0ss6hxPNAN1YC1Sc3frhasjI0ob5TvBOj9_PMzUFdlAQx-vtIDKPlMuVR9BlVM78ba8zTLs5wl_by44BcKjHs1EnTYcmrRDOl_owB6Js2IyQZXFc5mhOvJ5dPlrXac1EwMBpucI1-C8OgMXEtjrSbOkEpItWiV6vZwN8OY_q4iCy8MGfTkQD2lW0=)
+
+> Source: [docs/diagrams/tf_tree.puml](diagrams/tf_tree.puml)
 
 ## Repository Layout
 

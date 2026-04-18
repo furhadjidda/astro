@@ -199,15 +199,17 @@ ros2:
     bash -c 'cd {{ ros2_dir }} && colcon build --event-handlers console_direct+'
 
 # Cross-compile ROS 2 for Pi4 (optionally deploy: just ros2-pi4 ubuntu@<ip>)
+# Extra flags are forwarded to build_and_deploy_pi4.py, e.g.:
+#   just ros2-pi4 '' --rebuild-image --first-run
 [group('ros2')]
-ros2-pi4 pi="":
+ros2-pi4 pi="" *FLAGS="":
     #!/usr/bin/env bash
     set -euo pipefail
     cd {{ ros2_dir }}
     if [[ -n "{{ pi }}" ]]; then
-        python3 deploy/build_and_deploy_pi4.py --pi "{{ pi }}" --first-run
+        python3 deploy/build_and_deploy_pi4.py --pi "{{ pi }}" {{ FLAGS }}
     else
-        python3 deploy/build_and_deploy_pi4.py --skip-deploy --first-run
+        python3 deploy/build_and_deploy_pi4.py --skip-deploy {{ FLAGS }}
     fi
 
 # ==============================================================================
