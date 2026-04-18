@@ -92,7 +92,6 @@ $(COMPONENT_PATH)/micro_ros_src/src:
 	git clone -b humble https://github.com/micro-ROS/rosidl_typesupport src/rosidl_typesupport; \
 	git clone -b humble https://github.com/micro-ROS/rosidl_typesupport_microxrcedds src/rosidl_typesupport_microxrcedds; \
 	git clone -b humble https://github.com/ros2/rosidl src/rosidl; \
-	git clone -b humble https://github.com/ros2/rosidl_dynamic_typesupport src/rosidl_dynamic_typesupport; \
 	git clone -b humble https://github.com/ros2/rmw src/rmw; \
 	git clone -b humble https://github.com/ros2/rcl_interfaces src/rcl_interfaces; \
 	git clone -b humble https://github.com/ros2/rosidl_defaults src/rosidl_defaults; \
@@ -103,9 +102,7 @@ $(COMPONENT_PATH)/micro_ros_src/src:
 	git clone -b humble https://github.com/ros2/rcl_logging src/rcl_logging; \
 	git clone -b humble https://github.com/ros2/ros2_tracing src/ros2_tracing; \
 	git clone -b humble https://github.com/micro-ROS/micro_ros_utilities src/micro_ros_utilities; \
-	git clone -b humble https://github.com/ros2/rosidl_core src/rosidl_core; \
 	touch src/ros2_tracing/test_tracetools/COLCON_IGNORE; \
-	touch src/ros2_tracing/lttngpy/COLCON_IGNORE; \
     touch src/rosidl/rosidl_typesupport_introspection_cpp/COLCON_IGNORE; \
     touch src/rclc/rclc_examples/COLCON_IGNORE; \
     touch src/common_interfaces/actionlib_msgs/COLCON_IGNORE; \

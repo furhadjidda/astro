@@ -40,12 +40,12 @@ docker run --rm --platform linux/arm64 alpine uname -m   # should print aarch64
 
 ## Common commands
 
-All commands are run from the `ros2_ws/` directory.
+All commands are run from the `ros2/` directory.
 
 ### First-time build + deploy
 
 ```bash
-./target_deploy_script/build_and_deploy_pi4.py --pi ubuntu@<pi-ip> --first-run
+./deploy/build_and_deploy_pi4.py --pi ubuntu@<pi-ip> --first-run
 ```
 
 This builds the Docker image (if it doesn't exist), installs missing apt/rosdep dependencies, compiles the workspace, and syncs to the Pi.
@@ -53,7 +53,7 @@ This builds the Docker image (if it doesn't exist), installs missing apt/rosdep 
 ### Everyday quick build + deploy (after code changes)
 
 ```bash
-./target_deploy_script/build_and_deploy_pi4.py --pi ubuntu@<pi-ip>
+./deploy/build_and_deploy_pi4.py --pi ubuntu@<pi-ip>
 ```
 
 Docker image is reused automatically. Only changed packages are recompiled.
@@ -62,13 +62,13 @@ Dependency installation is skipped in this quick path for speed.
 ### Build only (no deploy)
 
 ```bash
-./target_deploy_script/build_and_deploy_pi4.py --skip-deploy
+./deploy/build_and_deploy_pi4.py --skip-deploy
 ```
 
 ### Build a specific package only
 
 ```bash
-./target_deploy_script/build_and_deploy_pi4.py \
+./deploy/build_and_deploy_pi4.py \
   --packages-select astro_sensor_publisher \
   --skip-deploy
 ```
@@ -78,7 +78,7 @@ Dependency installation is skipped in this quick path for speed.
 Use this after Dockerfile changes or when you suspect stale build state:
 
 ```bash
-./target_deploy_script/build_and_deploy_pi4.py \
+./deploy/build_and_deploy_pi4.py \
   --clean --rebuild-image --install-deps --skip-deploy
 ```
 
@@ -89,7 +89,7 @@ Use this after Dockerfile changes or when you suspect stale build state:
 ### Prune builder image + containers + dangling cache
 
 ```bash
-./target_deploy_script/build_and_deploy_pi4.py --prune-docker
+./deploy/build_and_deploy_pi4.py --prune-docker
 ```
 
 This removes:
@@ -100,7 +100,7 @@ This removes:
 Then rebuild from scratch:
 
 ```bash
-./target_deploy_script/build_and_deploy_pi4.py --clean --skip-deploy
+./deploy/build_and_deploy_pi4.py --clean --skip-deploy
 ```
 
 ### Nuclear option — remove ALL unused Docker images

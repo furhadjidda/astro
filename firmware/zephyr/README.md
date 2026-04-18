@@ -61,7 +61,7 @@ Console # 1
 
 This is what you should see
 ```
-(zephyr_ws) furhad@workstation:/projects/github_repos/astro/zephyr_workspace/zephyr_sensor_node$ openocd   -f board/esp32s3-builtin.cfg
+(zephyr_ws) furhad@workstation:/projects/github_repos/astro/firmware/zephyr/app_sensor_node$ openocd   -f board/esp32s3-builtin.cfg
 Open On-Chip Debugger 0.12.0+dev-gcf9c0b41c (2025-03-01-17:39)
 Licensed under GNU GPL v2
 For bug reports, read
@@ -106,10 +106,10 @@ warning: multi-threaded target stopped without sending a thread-id, using first 
 * Run `file build/zephyr_sensor_node/zephyr/zephyr.elf`
 
 ```
-(gdb) file /projects/github_repos/astro/zephyr_workspace/zephyr_sensor_node/build/zephyr_sensor_node/zephyr/zephyr.elf
+(gdb) file /projects/github_repos/astro/firmware/zephyr/build/app_sensor_node/zephyr/zephyr.elf
 A program is being debugged already.
 Are you sure you want to change the file? (y or n) y
-Reading symbols from /projects/github_repos/astro/zephyr_workspace/zephyr_sensor_node/build/zephyr_sensor_node/zephyr/zephyr.elf...
+Reading symbols from /projects/github_repos/astro/firmware/zephyr/build/app_sensor_node/zephyr/zephyr.elf...
 (gdb)
 
 ```
@@ -142,15 +142,15 @@ JTAG tap: esp32s3.cpu1 tap/device found: 0x120034e5 (mfg: 0x272 (Tensilica), par
 [esp32s3.cpu1] Debug controller was reset.
 [esp32s3.cpu1] Core was reset.
 (gdb) b main
-Breakpoint 1 at 0x42000848: file /projects/github_repos/astro/zephyr_workspace/zephyr_sensor_node/sensor_node_app/sensor_test.c, line 16.
+Breakpoint 1 at 0x42000848: file /projects/github_repos/astro/firmware/zephyr/app_sensor_node/sensor_node_app/sensor_test.c, line 16.
 (gdb) r
 The program being debugged has been started already.
 Start it from the beginning? (y or n) y
-Starting program: /projects/github_repos/astro/zephyr_workspace/zephyr_sensor_node/build/zephyr_sensor_node/zephyr/zephyr.elf
+Starting program: /projects/github_repos/astro/firmware/zephyr/build/app_sensor_node/zephyr/zephyr.elf
 Set GDB target to 'esp32s3.cpu0'
 [New Thread 2]
 
-Thread 1 "esp32s3.cpu0" hit Breakpoint 1, main () at /projects/github_repos/astro/zephyr_workspace/zephyr_sensor_node/sensor_node_app/sensor_test.c:16
+Thread 1 "esp32s3.cpu0" hit Breakpoint 1, main () at /projects/github_repos/astro/firmware/zephyr/app_sensor_node/sensor_node_app/sensor_test.c:16
 16	int main(void) {
 (gdb) n
 18	  k_sleep(K_MSEC(BNO055_TIMING_STARTUP));
