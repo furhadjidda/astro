@@ -338,7 +338,7 @@ enum bno055_sensor_channel {
 #define BNO055_TIMING_STARTUP 400            // 400ms
 #define BNO055_TIMING_RESET_CONFIG 650       // 650ms
 #define BNO055_TIMING_SWITCH_FROM_CONFIG 10  // 7 ms
-#define BNO055_TIMING_SWITCH_FROM_ANY 20     // 19 ms
+#define BNO055_TIMING_SWITCH_FROM_ANY 25     // 19 ms + margin for shared bus
 
 /* BNO055 Configuration */
 #define BNO055_PAGE_ID_MASK 0xFF

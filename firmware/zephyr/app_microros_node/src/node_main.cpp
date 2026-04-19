@@ -745,9 +745,6 @@ int main(void) {
     k_sleep(K_MSEC(BNO055_TIMING_STARTUP));
     device_init(bno055_dev);
 #endif
-#if Z_DEVICE_DT_FLAGS(DT_NODELABEL(iim42652)) & DEVICE_FLAG_INIT_DEFERRED
-    device_init(iim42652_dev);
-#endif
     sensor_msgs__msg__Imu__init(&bno055_imu_msg);
     rosidl_runtime_c__String__assign(&bno055_imu_msg.header.frame_id, "bno055_imu_frame");
     sensor_msgs__msg__Temperature__init(&lps22hb_temp_msg);
@@ -784,6 +781,9 @@ int main(void) {
     config.val1 = BNO055_POWER_NORMAL;
     config.val2 = 0;
     sensor_attr_set(bno055_dev, SENSOR_CHAN_ALL, static_cast<sensor_attribute>(BNO055_SENSOR_ATTR_POWER_MODE), &config);
+#if Z_DEVICE_DT_FLAGS(DT_NODELABEL(iim42652)) & DEVICE_FLAG_INIT_DEFERRED
+    device_init(iim42652_dev);
+#endif
     // Starting display
     if (oled_layout.init_screen() != 0) {
         LOG_ERR("OLED init failed");
