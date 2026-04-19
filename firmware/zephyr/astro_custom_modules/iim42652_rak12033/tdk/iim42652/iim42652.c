@@ -110,7 +110,7 @@ static int gyroscope_disable(const struct device* dev) {
         return ret;
     }
 
-    tmp &= 0xF3;
+    tmp &= (uint8_t)~IIM42652_SET_GYRO_TLOW_NOISE_MODE;
     return write_register(dev, IIM42652_REG_PWR_MGMT0, &tmp, 1);
 }
 
@@ -132,7 +132,7 @@ static int accelerometer_disable(const struct device* dev) {
         return ret;
     }
 
-    tmp &= 0xFC;
+    tmp &= (uint8_t)~IIM42652_SET_ACCEL_LOW_NOISE_MODE;
     return write_register(dev, IIM42652_REG_PWR_MGMT0, &tmp, 1);
 }
 
@@ -350,8 +350,12 @@ static int wake_on_motion_configuration(const struct device* dev, uint8_t x_th, 
 }
 
 uint8_t get_WOM_INT(const struct device* dev) {
-    uint8_t data;
-    read_register(dev, IIM42652_REG_INT_STATUS2, &data, 1);
+    uint8_t data = 0;
+    int ret = read_register(dev, IIM42652_REG_INT_STATUS2, &data, 1);
+    if (ret != 0) {
+        LOG_ERR("Failed to read WOM INT status: %d", ret);
+        return 0;
+    }
     LOG_DBG("WOM INT status: 0x%02X", data);
     return data;
 }
@@ -380,6 +384,138 @@ static int enable_accel_low_power_mode(const struct device* dev) {
     return 0;
 }
 
+static int iim42652_attr_set(const struct device* dev, enum sensor_channel chan, enum sensor_attribute attr,
+                             const struct sensor_value* val) {
+    if (attr == SENSOR_ATTR_FULL_SCALE) {
+        if (chan == SENSOR_CHAN_ACCEL_XYZ) {
+            IIM42652_ACCEL_CONFIG0_FS_SEL_t fsr;
+            switch (val->val1) {
+                case 2:
+                    fsr = IIM42652_ACCEL_CONFIG0_FS_SEL_2g;
+                    break;
+                case 4:
+                    fsr = IIM42652_ACCEL_CONFIG0_FS_SEL_4g;
+                    break;
+                case 8:
+                    fsr = IIM42652_ACCEL_CONFIG0_FS_SEL_8g;
+                    break;
+                case 16:
+                    fsr = IIM42652_ACCEL_CONFIG0_FS_SEL_16g;
+                    break;
+                default:
+                    return -EINVAL;
+            }
+            return set_accel_fsr(dev, fsr);
+        }
+        if (chan == SENSOR_CHAN_GYRO_XYZ) {
+            IIM42652_GYRO_CONFIG0_FS_SEL_t fsr;
+            switch (val->val1) {
+                case 16:
+                    fsr = IIM42652_GYRO_CONFIG0_FS_SEL_16dps;
+                    break;
+                case 31:
+                    fsr = IIM42652_GYRO_CONFIG0_FS_SEL_31dps;
+                    break;
+                case 62:
+                    fsr = IIM42652_GYRO_CONFIG0_FS_SEL_62dps;
+                    break;
+                case 125:
+                    fsr = IIM42652_GYRO_CONFIG0_FS_SEL_125dps;
+                    break;
+                case 250:
+                    fsr = IIM42652_GYRO_CONFIG0_FS_SEL_250dps;
+                    break;
+                case 500:
+                    fsr = IIM42652_GYRO_CONFIG0_FS_SEL_500dps;
+                    break;
+                case 1000:
+                    fsr = IIM42652_GYRO_CONFIG0_FS_SEL_1000dps;
+                    break;
+                case 2000:
+                    fsr = IIM42652_GYRO_CONFIG0_FS_SEL_2000dps;
+                    break;
+                default:
+                    return -EINVAL;
+            }
+            return set_gyro_fsr(dev, fsr);
+        }
+        return -ENOTSUP;
+    }
+
+    if (attr == SENSOR_ATTR_SAMPLING_FREQUENCY) {
+        /* val1 is integer Hz, val2 is fractional micro-Hz */
+        if (chan == SENSOR_CHAN_ACCEL_XYZ) {
+            IIM42652_ACCEL_CONFIG0_ODR_t odr;
+            if (val->val1 == 32000)
+                odr = IIM42652_ACCEL_CONFIG0_ODR_32_KHZ;
+            else if (val->val1 == 16000)
+                odr = IIM42652_ACCEL_CONFIG0_ODR_16_KHZ;
+            else if (val->val1 == 8000)
+                odr = IIM42652_ACCEL_CONFIG0_ODR_8_KHZ;
+            else if (val->val1 == 4000)
+                odr = IIM42652_ACCEL_CONFIG0_ODR_4_KHZ;
+            else if (val->val1 == 2000)
+                odr = IIM42652_ACCEL_CONFIG0_ODR_2_KHZ;
+            else if (val->val1 == 1000)
+                odr = IIM42652_ACCEL_CONFIG0_ODR_1_KHZ;
+            else if (val->val1 == 500)
+                odr = IIM42652_ACCEL_CONFIG0_ODR_500_HZ;
+            else if (val->val1 == 200)
+                odr = IIM42652_ACCEL_CONFIG0_ODR_200_HZ;
+            else if (val->val1 == 100)
+                odr = IIM42652_ACCEL_CONFIG0_ODR_100_HZ;
+            else if (val->val1 == 50)
+                odr = IIM42652_ACCEL_CONFIG0_ODR_50_HZ;
+            else if (val->val1 == 25)
+                odr = IIM42652_ACCEL_CONFIG0_ODR_25_HZ;
+            else if (val->val1 == 12 && val->val2 == 500000)
+                odr = IIM42652_ACCEL_CONFIG0_ODR_12_5_HZ;
+            else if (val->val1 == 6 && val->val2 == 250000)
+                odr = IIM42652_ACCEL_CONFIG0_ODR_6_25_HZ;
+            else if (val->val1 == 3 && val->val2 == 125000)
+                odr = IIM42652_ACCEL_CONFIG0_ODR_3_125_HZ;
+            else if (val->val1 == 1 && val->val2 == 562500)
+                odr = IIM42652_ACCEL_CONFIG0_ODR_1_5625_HZ;
+            else
+                return -EINVAL;
+            return set_accel_frequency(dev, odr);
+        }
+        if (chan == SENSOR_CHAN_GYRO_XYZ) {
+            IIM42652_GYRO_CONFIG0_ODR_t odr;
+            if (val->val1 == 32000)
+                odr = IIM42652_GYRO_CONFIG0_ODR_32_KHZ;
+            else if (val->val1 == 16000)
+                odr = IIM42652_GYRO_CONFIG0_ODR_16_KHZ;
+            else if (val->val1 == 8000)
+                odr = IIM42652_GYRO_CONFIG0_ODR_8_KHZ;
+            else if (val->val1 == 4000)
+                odr = IIM42652_GYRO_CONFIG0_ODR_4_KHZ;
+            else if (val->val1 == 2000)
+                odr = IIM42652_GYRO_CONFIG0_ODR_2_KHZ;
+            else if (val->val1 == 1000)
+                odr = IIM42652_GYRO_CONFIG0_ODR_1_KHZ;
+            else if (val->val1 == 500)
+                odr = IIM42652_GYRO_CONFIG0_ODR_500_HZ;
+            else if (val->val1 == 200)
+                odr = IIM42652_GYRO_CONFIG0_ODR_200_HZ;
+            else if (val->val1 == 100)
+                odr = IIM42652_GYRO_CONFIG0_ODR_100_HZ;
+            else if (val->val1 == 50)
+                odr = IIM42652_GYRO_CONFIG0_ODR_50_HZ;
+            else if (val->val1 == 25)
+                odr = IIM42652_GYRO_CONFIG0_ODR_25_HZ;
+            else if (val->val1 == 12 && val->val2 == 500000)
+                odr = IIM42652_GYRO_CONFIG0_ODR_12_5_HZ;
+            else
+                return -EINVAL;
+            return set_gyro_frequency(dev, odr);
+        }
+        return -ENOTSUP;
+    }
+
+    return -ENOTSUP;
+}
+
 static void float_to_sensor_value(float f, struct sensor_value* v) {
     v->val1 = (int32_t)f;
     v->val2 = (int32_t)((f - v->val1) * 1000000.0f);
@@ -402,6 +538,11 @@ static int iim42652_channel_get(const struct device* dev, enum sensor_channel ch
         return 0;
     }
 
+    if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
+        float_to_sensor_value(data->temperature, &val[0]);
+        return 0;
+    }
+
     return -ENOTSUP;
 }
 
@@ -410,17 +551,24 @@ static int iim42652_sample_fetch(const struct device* dev, enum sensor_channel c
     IIM42652_axis_t accel_data;
     IIM42652_axis_t gyro_data;
     float temperature;
+    int ret;
+    int fetch_ret = 0;
 
     // Enable sensors
-    ex_idle(dev);
-    accelerometer_enable(dev);
-    gyroscope_enable(dev);
-    temperature_enable(dev);
+    ret = ex_idle(dev);
+    if (ret != 0) return ret;
+    ret = accelerometer_enable(dev);
+    if (ret != 0) return ret;
+    ret = gyroscope_enable(dev);
+    if (ret != 0) return ret;
+    ret = temperature_enable(dev);
+    if (ret != 0) return ret;
 
     k_sleep(K_MSEC(100));
 
     // Read sensor data
-    if (get_accel_data(dev, &accel_data) == 0) {
+    ret = get_accel_data(dev, &accel_data);
+    if (ret == 0) {
         // Convert to g (±16g range: 2048 LSB/g)
         float acc_x = (float)accel_data.x / 2048.0f;
         float acc_y = (float)accel_data.y / 2048.0f;
@@ -430,9 +578,12 @@ static int iim42652_sample_fetch(const struct device* dev, enum sensor_channel c
         data->acc.z = acc_z;
 
         LOG_INF("Accel X: %.3f g, Y: %.3f g, Z: %.3f g", acc_x, acc_y, acc_z);
+    } else {
+        fetch_ret = ret;
     }
 
-    if (get_gyro_data(dev, &gyro_data) == 0) {
+    ret = get_gyro_data(dev, &gyro_data);
+    if (ret == 0) {
         // Convert to °/s (±2000°/s range: 16.4 LSB/(°/s))
         float gyro_x = (float)gyro_data.x / 16.4f;
         float gyro_y = (float)gyro_data.y / 16.4f;
@@ -442,26 +593,30 @@ static int iim42652_sample_fetch(const struct device* dev, enum sensor_channel c
         data->gyro.z = gyro_z;
 
         LOG_INF("Gyro X: %.2f °/s, Y: %.2f °/s, Z: %.2f °/s", gyro_x, gyro_y, gyro_z);
+    } else if (fetch_ret == 0) {
+        fetch_ret = ret;
     }
 
-    if (get_temperature(dev, &temperature) == 0) {
+    ret = get_temperature(dev, &temperature);
+    if (ret == 0) {
         LOG_INF("Temperature: %.2f °C", temperature);
         data->temperature = temperature;
+    } else if (fetch_ret == 0) {
+        fetch_ret = ret;
     }
 
-    // Disable sensors to save power
+    // Disable sensors to save power (best-effort, do not override fetch error)
     accelerometer_disable(dev);
     gyroscope_disable(dev);
     temperature_disable(dev);
     idle(dev);
 
-    return 0;
+    return fetch_ret;
 }
 
 static int iim42652_init(const struct device* dev) {
     // Initialize I2C bus
     const struct iim42652_config* config = dev->config;
-    struct iim42652_data* data = dev->data;
     uint8_t sensor_id;
 
     if (!i2c_is_ready_dt(&config->i2c_bus)) {
@@ -494,15 +649,15 @@ static int iim42652_init(const struct device* dev) {
 }
 
 static const struct sensor_driver_api iim42652_driver_api = {
-    //    .attr_set = iim42652_attr_set,
+    .attr_set = iim42652_attr_set,
     .sample_fetch = iim42652_sample_fetch,
     .channel_get = iim42652_channel_get,
-#if BNO055_USE_IRQ
+#if IIM42652_USE_IRQ
     .trigger_set = iim42652_trigger_set,
 #endif
 };
 
-#define BNO055_INIT(n)                                                                                   \
+#define IIM42652_INIT(n)                                                                                 \
     static struct iim42652_config iim42652_config_##n = {                                                \
         .i2c_bus = I2C_DT_SPEC_INST_GET(n),                                                              \
     };                                                                                                   \
@@ -510,4 +665,4 @@ static const struct sensor_driver_api iim42652_driver_api = {
     DEVICE_DT_INST_DEFINE(n, iim42652_init, NULL, &iim42652_data_##n, &iim42652_config_##n, POST_KERNEL, \
                           CONFIG_SENSOR_INIT_PRIORITY, &iim42652_driver_api);
 
-DT_INST_FOREACH_STATUS_OKAY(BNO055_INIT)
+DT_INST_FOREACH_STATUS_OKAY(IIM42652_INIT)

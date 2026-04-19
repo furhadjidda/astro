@@ -68,6 +68,8 @@ OLEDWrapper oled_wrapper(display_dev);
 OLEDLayout oled_layout(&oled_wrapper);
 // imu driver
 static const struct device* const bno055_dev = DEVICE_DT_GET(DT_NODELABEL(bno055));
+// iim42652 driver
+static const struct device* const iim42652_dev = DEVICE_DT_GET(DT_NODELABEL(iim42652));
 // gnss driver
 #define mtk3333_gnss DEVICE_DT_GET(DT_ALIAS(gnss))
 #define ublox_gnss DEVICE_DT_GET(DT_ALIAS(ubloxgnss))
@@ -91,6 +93,7 @@ static bool bno055_fusion = true;
 
 #define GNSS_PUBLISH_PERIOD_MS 1000
 #define IMU_PUBLISH_PERIOD_MS 200
+#define IIM42652_PUBLISH_PERIOD_MS 200
 #define TIME_SYNC_PERIOD_MS 1000
 #define LPS22HB_PUBLISH_PERIOD_MS 2000
 #define OLED_VIEW_SWITCH_PERIOD_MS 5000
@@ -136,8 +139,10 @@ static rcl_publisher_t ublox_gnss_publisher;
 static rcl_publisher_t bno055_imu_publisher;
 static rcl_publisher_t lps22hb_temp_publisher;
 static rcl_publisher_t lps22hb_pressure_publisher;
+static rcl_publisher_t iim42652_imu_publisher;
 // Timers
 static rcl_timer_t imu_timer;
+static rcl_timer_t iim42652_timer;
 static rcl_timer_t gnss_timer;
 static rcl_timer_t time_sync_timer;
 static rcl_timer_t lps22hb_timer;
@@ -145,6 +150,7 @@ static rcl_timer_t oled_view_timer;
 
 static rclc_executor_t executor;
 static sensor_msgs__msg__Imu bno055_imu_msg;
+static sensor_msgs__msg__Imu iim42652_imu_msg;
 static sensor_msgs__msg__Temperature lps22hb_temp_msg;
 static sensor_msgs__msg__FluidPressure lps22hb_pressure_msg;
 static std_msgs__msg__Int32 msg;
@@ -442,6 +448,59 @@ static void time_sync_timer_callback(rcl_timer_t* timer, int64_t last_call_time)
     }
 }
 
+static void iim42652_timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
+    ARG_UNUSED(last_call_time);
+    if (timer == NULL || iim42652_dev == NULL) {
+        return;
+    }
+
+    struct sensor_value accel[3];
+    struct sensor_value gyro[3];
+
+    int rc = sensor_sample_fetch(iim42652_dev);
+    if (rc < 0) {
+        LOG_ERR("IIM42652 sensor_sample_fetch error: %d", rc);
+        return;
+    }
+
+    rc = sensor_channel_get(iim42652_dev, SENSOR_CHAN_ACCEL_XYZ, accel);
+    if (rc < 0) {
+        LOG_ERR("IIM42652 sensor_channel_get accel error: %d", rc);
+        return;
+    }
+
+    rc = sensor_channel_get(iim42652_dev, SENSOR_CHAN_GYRO_XYZ, gyro);
+    if (rc < 0) {
+        LOG_ERR("IIM42652 sensor_channel_get gyro error: %d", rc);
+        return;
+    }
+
+    rcl_time_point_value_t now = rmw_uros_epoch_nanos();
+    iim42652_imu_msg.header.stamp.sec = now / 1000000000LL;
+    iim42652_imu_msg.header.stamp.nanosec = now % 1000000000LL;
+
+    iim42652_imu_msg.linear_acceleration.x = sensor_value_to_double(&accel[0]);
+    iim42652_imu_msg.linear_acceleration.y = sensor_value_to_double(&accel[1]);
+    iim42652_imu_msg.linear_acceleration.z = sensor_value_to_double(&accel[2]);
+
+    iim42652_imu_msg.angular_velocity.x = sensor_value_to_double(&gyro[0]);
+    iim42652_imu_msg.angular_velocity.y = sensor_value_to_double(&gyro[1]);
+    iim42652_imu_msg.angular_velocity.z = sensor_value_to_double(&gyro[2]);
+
+    // Orientation unknown — mark covariance as -1 per REP-145
+    iim42652_imu_msg.orientation_covariance[0] = -1.0;
+    for (int i = 1; i < 9; ++i) {
+        iim42652_imu_msg.orientation_covariance[i] = 0.0;
+        iim42652_imu_msg.linear_acceleration_covariance[i] = 0.0;
+        iim42652_imu_msg.angular_velocity_covariance[i] = 0.0;
+    }
+
+    LOG_DBG("IIM42652 accel x=%.3f y=%.3f z=%.3f", iim42652_imu_msg.linear_acceleration.x,
+            iim42652_imu_msg.linear_acceleration.y, iim42652_imu_msg.linear_acceleration.z);
+
+    RCSOFTCHECK(rcl_publish(&iim42652_imu_publisher, &iim42652_imu_msg, NULL));
+}
+
 static void lps22hb_timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
     ARG_UNUSED(last_call_time);
     if (timer != NULL) {
@@ -686,6 +745,9 @@ int main(void) {
     k_sleep(K_MSEC(BNO055_TIMING_STARTUP));
     device_init(bno055_dev);
 #endif
+#if Z_DEVICE_DT_FLAGS(DT_NODELABEL(iim42652)) & DEVICE_FLAG_INIT_DEFERRED
+    device_init(iim42652_dev);
+#endif
     sensor_msgs__msg__Imu__init(&bno055_imu_msg);
     rosidl_runtime_c__String__assign(&bno055_imu_msg.header.frame_id, "bno055_imu_frame");
     sensor_msgs__msg__Temperature__init(&lps22hb_temp_msg);
@@ -700,6 +762,9 @@ int main(void) {
     rosidl_runtime_c__String__assign(&mtk3333_nav_sat_fix_msg.header.frame_id, "mtk3333_gnss_frame");
     sensor_msgs__msg__NavSatFix__init(&ublox_nav_sat_fix_msg);
     rosidl_runtime_c__String__assign(&ublox_nav_sat_fix_msg.header.frame_id, "ublox_gnss_frame");
+
+    sensor_msgs__msg__Imu__init(&iim42652_imu_msg);
+    rosidl_runtime_c__String__assign(&iim42652_imu_msg.header.frame_id, "iim42652_imu_frame");
 
     if (!device_is_ready(st_lps22hb_dev)) {
         LOG_ERR("LPS22HB device not ready");
@@ -838,6 +903,8 @@ int main(void) {
     RCCHECK(rclc_publisher_init_default(&lps22hb_pressure_publisher, &node,
                                         ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, FluidPressure),
                                         "/lps22hb_pressure_raw"));
+    RCCHECK(rclc_publisher_init_default(&iim42652_imu_publisher, &node,
+                                        ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, Imu), "/iim42652_imu_raw"));
 
     /* Timer */
     RCCHECK(
@@ -850,15 +917,18 @@ int main(void) {
                                     lps22hb_timer_callback));
     RCCHECK(rclc_timer_init_default(&oled_view_timer, &support, RCL_MS_TO_NS(OLED_VIEW_SWITCH_PERIOD_MS),
                                     oled_view_timer_callback));
+    RCCHECK(rclc_timer_init_default(&iim42652_timer, &support, RCL_MS_TO_NS(IIM42652_PUBLISH_PERIOD_MS),
+                                    iim42652_timer_callback));
 
     /* Executor */
-    RCCHECK(rclc_executor_init(&executor, &support.context, 5, &allocator));
+    RCCHECK(rclc_executor_init(&executor, &support.context, 6, &allocator));
 
     RCCHECK(rclc_executor_add_timer(&executor, &imu_timer));
     RCCHECK(rclc_executor_add_timer(&executor, &gnss_timer));
     RCCHECK(rclc_executor_add_timer(&executor, &time_sync_timer));
     RCCHECK(rclc_executor_add_timer(&executor, &lps22hb_timer));
     RCCHECK(rclc_executor_add_timer(&executor, &oled_view_timer));
+    RCCHECK(rclc_executor_add_timer(&executor, &iim42652_timer));
     msg.data = 0;
 
     /* Start executor thread */
