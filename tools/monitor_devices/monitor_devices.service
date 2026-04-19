@@ -1,0 +1,19 @@
+[Unit]
+Description=USB/Device Monitor with Desktop Notifications
+Documentation=file://%h/astro/tools/monitor_devices/README.md
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 %h/astro/tools/monitor_devices/monitor_devices.py
+Restart=on-failure
+RestartSec=5s
+
+# Pass the DBUS session address so notify-send works
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/%U/bus
+# Disable Python output buffering so logs appear in journalctl immediately
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=graphical-session.target

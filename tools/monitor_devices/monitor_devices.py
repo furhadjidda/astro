@@ -8,6 +8,7 @@ import time
 from pathlib import Path
 
 UDEV_SETTLE_DELAY_SEC = 0.5
+DEDUPE_WINDOW_SEC = 3.0
 
 
 def send_notification(title: str, message: str):
@@ -50,9 +51,12 @@ def format_device_info(device: pyudev.Device) -> tuple[str, str]:
 
     symlinks = find_symlinks(device_node)
 
-    short = f"{product} ({manufacturer})"
+    path_line = device_node or "Unknown"
     if symlinks:
-        short += f" → {', '.join(symlinks)}"
+        path_line += f" → {', '.join(symlinks)}"
+
+    # Notification body: path/symlinks on first line, product info on second
+    short = f"{path_line}\n{product} ({manufacturer})"
 
     full = (
         f"Path: {device_node or 'Unknown'}\n"
@@ -72,11 +76,26 @@ def main():
 
     print("Monitoring for new devices...\n")
 
+    # Map device_node -> last notification timestamp for deduplication
+    seen: dict[str, float] = {}
+
     for device in iter(monitor.poll, None):
         if device.action != "add":
             continue
 
-        # Wait for udev rules to complete
+        # Skip events that don't correspond to an actual /dev node
+        if not device.device_node:
+            continue
+
+        now = time.monotonic()
+        node = device.device_node
+
+        # Suppress duplicate events for the same node within the dedup window
+        if now - seen.get(node, 0.0) < DEDUPE_WINDOW_SEC:
+            continue
+        seen[node] = now
+
+        # Wait for udev rules to settle so symlinks are created
         time.sleep(UDEV_SETTLE_DELAY_SEC)
 
         short, full = format_device_info(device)
