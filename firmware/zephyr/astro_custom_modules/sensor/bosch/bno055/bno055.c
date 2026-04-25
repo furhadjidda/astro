@@ -87,8 +87,6 @@ static int bno055_set_page(const struct device* dev, enum bno055_PageId page) {
     return 0;
 }
 
-#define BNO055_MODE_VERIFY_RETRIES 5
-
 static int bno055_set_config(const struct device* dev, bno055_opmode_t mode, bool fusion) {
     const struct bno055_config* config = dev->config;
     struct bno055_data* data = dev->data;
@@ -122,22 +120,14 @@ static int bno055_set_config(const struct device* dev, bno055_opmode_t mode, boo
         k_sleep(K_MSEC(BNO055_TIMING_SWITCH_FROM_ANY));
     }
 
-    for (int retry = 0; retry < BNO055_MODE_VERIFY_RETRIES; ++retry) {
-        err = i2c_reg_read_byte_dt(&config->i2c_bus, BNO055_OPR_MODE_ADDR, &reg);
-        if (err < 0) {
-            return err;
-        }
-        if ((reg & BNO055_OPERATION_MODE_MASK) == OPERATION_MODE_CONFIG) {
-            break;
-        }
-        if (retry < BNO055_MODE_VERIFY_RETRIES - 1) {
-            LOG_WRN("CONFIG verify retry %d: got %d", retry + 1, reg & BNO055_OPERATION_MODE_MASK);
-            k_sleep(K_MSEC(BNO055_TIMING_SWITCH_FROM_ANY));
-        } else {
-            LOG_ERR("I2C communication compromised [%d]!=[%d]!!", OPERATION_MODE_CONFIG,
-                    reg & BNO055_OPERATION_MODE_MASK);
-            return -ECANCELED;
-        }
+    err = i2c_reg_read_byte_dt(&config->i2c_bus, BNO055_OPR_MODE_ADDR, &reg);
+    if (err < 0) {
+        return err;
+    }
+
+    if ((reg & BNO055_OPERATION_MODE_MASK) != OPERATION_MODE_CONFIG) {
+        LOG_ERR("I2C communication compromised [%d]!=[%d]!!", OPERATION_MODE_CONFIG, reg & BNO055_OPERATION_MODE_MASK);
+        return -ECANCELED;
     }
     data->mode = reg & BNO055_OPERATION_MODE_MASK;
 
@@ -152,22 +142,14 @@ static int bno055_set_config(const struct device* dev, bno055_opmode_t mode, boo
     }
     k_sleep(K_MSEC(33 * BNO055_TIMING_SWITCH_FROM_CONFIG)); /* /!\ Datasheet not confrom WRONG DATASHEET */
 
-    /* Retry verification: BNO055 mode switch can be slow on a shared bus. */
-    for (int retry = 0; retry < BNO055_MODE_VERIFY_RETRIES; ++retry) {
-        err = i2c_reg_read_byte_dt(&config->i2c_bus, BNO055_OPR_MODE_ADDR, &reg);
-        if (err < 0) {
-            return err;
-        }
-        if ((reg & BNO055_OPERATION_MODE_MASK) == mode) {
-            break;
-        }
-        if (retry < BNO055_MODE_VERIFY_RETRIES - 1) {
-            LOG_WRN("Mode verify retry %d: got %d, expected %d", retry + 1, reg & BNO055_OPERATION_MODE_MASK, mode);
-            k_sleep(K_MSEC(BNO055_TIMING_SWITCH_FROM_CONFIG));
-        } else {
-            LOG_ERR("I2C communication compromised [%d]!=[%d]!!", mode, reg & BNO055_OPERATION_MODE_MASK);
-            return -ECANCELED;
-        }
+    err = i2c_reg_read_byte_dt(&config->i2c_bus, BNO055_OPR_MODE_ADDR, &reg);
+    if (err < 0) {
+        return err;
+    }
+
+    if ((reg & BNO055_PAGE_ID_MASK) != mode) {
+        LOG_ERR("I2C communication compromised [%d]!=[%d]!!", mode, reg & BNO055_OPERATION_MODE_MASK);
+        return -ECANCELED;
     }
 
     data->mode = reg & BNO055_OPERATION_MODE_MASK;
@@ -183,8 +165,12 @@ static int bno055_set_power(const struct device* dev, bno055_powermode_t power) 
 
     LOG_DBG("FUNC POWER[%d]", power);
 
-    /* PWR_MODE register is readable in any operating mode — check first to
-     * avoid an unnecessary CONFIG roundtrip that could disrupt fusion. */
+    bno055_opmode_t mode = data->mode;
+    err = bno055_set_config(dev, OPERATION_MODE_CONFIG, false);
+    if (err < 0) {
+        return err;
+    }
+
     err = i2c_reg_read_byte_dt(&config->i2c_bus, BNO055_PWR_MODE_ADDR, &reg);
     if (err < 0) {
         return err;
@@ -195,34 +181,25 @@ static int bno055_set_power(const struct device* dev, bno055_powermode_t power) 
         data->power = reg & BNO055_POWER_MODE_MASK;
     }
 
-    if ((reg & BNO055_POWER_MODE_MASK) == (uint8_t)power) {
+    if ((reg & BNO055_POWER_MODE_MASK) == power) {
         LOG_DBG("I2C power register already good!!");
-        return 0;
-    }
+    } else {
+        err = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_PWR_MODE_ADDR, power);
+        if (err < 0) {
+            return err;
+        }
 
-    /* Power differs — must switch to CONFIG, update, then restore. */
-    bno055_opmode_t mode = data->mode;
-    err = bno055_set_config(dev, OPERATION_MODE_CONFIG, false);
-    if (err < 0) {
-        return err;
-    }
+        err = i2c_reg_read_byte_dt(&config->i2c_bus, BNO055_PWR_MODE_ADDR, &power);
+        if (err < 0) {
+            return err;
+        }
 
-    err = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_PWR_MODE_ADDR, power);
-    if (err < 0) {
-        return err;
+        if ((reg & BNO055_POWER_MODE_MASK) != mode) {
+            LOG_ERR("I2C communication compromised [%d]!=[%d]!!", mode, reg & BNO055_POWER_MODE_MASK);
+            return -ECANCELED;
+        }
+        data->power = reg & BNO055_POWER_MODE_MASK;
     }
-
-    uint8_t pwr_reg;
-    err = i2c_reg_read_byte_dt(&config->i2c_bus, BNO055_PWR_MODE_ADDR, &pwr_reg);
-    if (err < 0) {
-        return err;
-    }
-
-    if ((pwr_reg & BNO055_POWER_MODE_MASK) != (uint8_t)power) {
-        LOG_ERR("I2C communication compromised [%d]!=[%d]!!", power, pwr_reg & BNO055_POWER_MODE_MASK);
-        return -ECANCELED;
-    }
-    data->power = pwr_reg & BNO055_POWER_MODE_MASK;
 
     err = bno055_set_config(dev, mode, mode < OPERATION_MODE_IMUPLUS ? false : true);
     if (err < 0) {

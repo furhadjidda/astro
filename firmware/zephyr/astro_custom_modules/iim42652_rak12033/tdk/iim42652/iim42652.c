@@ -627,19 +627,7 @@ static int iim42652_init(const struct device* dev) {
     LOG_INF("Initializing IIM42652");
     k_msleep(100);
 
-    /* Retry chip ID read — shared I2C bus may have transient errors at startup. */
-    int ret;
-    for (int retry = 0; retry < 3; ++retry) {
-        ret = get_device_id(dev, &sensor_id);
-        if (ret == 0 && sensor_id == IIM42652_CHIP_ID) {
-            break;
-        }
-        if (retry < 2) {
-            LOG_WRN("IIM42652 chip ID read retry (got 0x%02X)", sensor_id);
-            k_msleep(10);
-        }
-    }
-
+    int ret = get_device_id(dev, &sensor_id);
     if (ret != 0) {
         return ret;
     }
