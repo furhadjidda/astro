@@ -45,18 +45,14 @@
 #endif
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#if defined(CONFIG_MICROROS_TRANSPORT_UDP)
-#include <zephyr/net/net_event.h>
-#include <zephyr/net/net_if.h>
-#include <zephyr/net/net_ip.h>
-#include <zephyr/net/wifi_mgmt.h>
-#endif
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/printk.h>
 
+#include "node_callbacks.hpp"
 #include "oled_layout.hpp"
 #include "oled_wrapper.hpp"
 #include "storage.hpp"
+#include "wifi_handler.hpp"
 static ATOMIC_DEFINE(init_complete, 1);  // single-bit flag, starts 0
 
 LOG_MODULE_REGISTER(all_sensors_module, LOG_LEVEL_DBG);
@@ -114,12 +110,6 @@ const struct device* st_lps22hb_dev = DEVICE_DT_GET_ANY(st_lps22hb_press);
 #define TIME_SYNC_PERIOD_MS 1000
 #define LPS22HB_PUBLISH_PERIOD_MS 2000
 #define OLED_VIEW_SWITCH_PERIOD_MS 5000
-
-#if defined(CONFIG_MICROROS_TRANSPORT_UDP)
-#define WIFI_CONNECT_TIMEOUT_S 30
-#define WIFI_MAX_RETRIES 5
-#define WIFI_RETRY_DELAY_S 5
-#endif
 
 /* =========================================================
  * Error handling macros
@@ -225,380 +215,12 @@ static int init_view_switch_button(void) {
 static int init_view_switch_button(void) { return -ENOTSUP; }
 #endif
 
-#if defined(CONFIG_MICROROS_TRANSPORT_UDP)
-static K_SEM_DEFINE(wifi_connected_sem, 0, 1);
-static K_SEM_DEFINE(wifi_disconnected_sem, 0, 1);
-
-static struct net_mgmt_event_callback wifi_cb;
-static struct net_mgmt_event_callback ipv4_cb;
-static struct net_if* sta_iface;
-
-static void wifi_event_handler(struct net_mgmt_event_callback* cb, uint64_t mgmt_event, struct net_if* iface) {
-    ARG_UNUSED(iface);
-
-    if (mgmt_event == NET_EVENT_WIFI_CONNECT_RESULT) {
-        const struct wifi_status* status = static_cast<const struct wifi_status*>(cb->info);
-        if (status && status->status == 0) {
-            LOG_INF("WiFi connected");
-            k_sem_give(&wifi_connected_sem);
-        } else {
-            LOG_ERR("WiFi connect failed (status=%d)", status ? status->status : -1);
-            k_sem_give(&wifi_disconnected_sem);
-        }
-    } else if (mgmt_event == NET_EVENT_WIFI_DISCONNECT_RESULT) {
-        LOG_WRN("WiFi disconnected");
-        k_sem_give(&wifi_disconnected_sem);
-    }
-}
-
-static void ipv4_event_handler(struct net_mgmt_event_callback* cb, uint64_t mgmt_event, struct net_if* iface) {
-    ARG_UNUSED(cb);
-
-    if (mgmt_event != NET_EVENT_IPV4_ADDR_ADD) {
-        return;
-    }
-
-    struct net_if_ipv4* ipv4_cfg = NULL;
-    if (net_if_config_ipv4_get(iface, &ipv4_cfg) < 0 || !ipv4_cfg) {
-        return;
-    }
-
-    char ip_buf[NET_IPV4_ADDR_LEN];
-    for (int i = 0; i < NET_IF_MAX_IPV4_ADDR; ++i) {
-        struct net_if_addr_ipv4* entry = &ipv4_cfg->unicast[i];
-        if (entry->ipv4.is_added) {
-            LOG_INF("DHCP IP: %s", net_addr_ntop(AF_INET, &entry->ipv4.address.in_addr, ip_buf, sizeof(ip_buf)));
-            return;
-        }
-    }
-}
-
-static int wifi_try_connect(void) {
-    k_sem_reset(&wifi_connected_sem);
-    k_sem_reset(&wifi_disconnected_sem);
-
-    struct wifi_connect_req_params params;
-    memset(&params, 0, sizeof(params));
-    params.ssid = reinterpret_cast<const uint8_t*>(CONFIG_MICROROS_WIFI_SSID);
-    params.ssid_length = sizeof(CONFIG_MICROROS_WIFI_SSID) - 1;
-    params.psk = reinterpret_cast<const uint8_t*>(CONFIG_MICROROS_WIFI_PASSWORD);
-    params.psk_length = sizeof(CONFIG_MICROROS_WIFI_PASSWORD) - 1;
-    params.sae_password = NULL;
-    params.sae_password_length = 0;
-    params.channel = WIFI_CHANNEL_ANY;
-    params.band = WIFI_FREQ_BAND_2_4_GHZ;
-    params.security = (params.psk_length > 0) ? WIFI_SECURITY_TYPE_PSK : WIFI_SECURITY_TYPE_NONE;
-    params.mfp = WIFI_MFP_OPTIONAL;
-
-    int ret = net_mgmt(NET_REQUEST_WIFI_CONNECT, sta_iface, &params, sizeof(params));
-    if (ret) {
-        LOG_ERR("Connect request rejected (%d)", ret);
-        return ret;
-    }
-
-    if (k_sem_take(&wifi_connected_sem, K_SECONDS(WIFI_CONNECT_TIMEOUT_S)) == 0) {
-        return 0;
-    }
-
-    LOG_WRN("WiFi connect timeout");
-    return -ETIMEDOUT;
-}
-
-static int wifi_connect_with_retry(void) {
-    if (!sta_iface) {
-        return -ENODEV;
-    }
-
-    for (int attempt = 1; attempt <= WIFI_MAX_RETRIES; ++attempt) {
-        LOG_INF("Connecting to WiFi SSID '%s' (%d/%d)", CONFIG_MICROROS_WIFI_SSID, attempt, WIFI_MAX_RETRIES);
-        if (wifi_try_connect() == 0) {
-            return 0;
-        }
-
-        if (attempt < WIFI_MAX_RETRIES) {
-            k_sleep(K_SECONDS(WIFI_RETRY_DELAY_S));
-        }
-    }
-
-    return -ETIMEDOUT;
-}
-
-static int init_wifi_station(void) {
-    net_mgmt_init_event_callback(&wifi_cb, wifi_event_handler,
-                                 NET_EVENT_WIFI_CONNECT_RESULT | NET_EVENT_WIFI_DISCONNECT_RESULT);
-    net_mgmt_add_event_callback(&wifi_cb);
-
-    net_mgmt_init_event_callback(&ipv4_cb, ipv4_event_handler, NET_EVENT_IPV4_ADDR_ADD);
-    net_mgmt_add_event_callback(&ipv4_cb);
-    oled_layout.display_wifi_waiting_message(CONFIG_MICROROS_WIFI_SSID);
-    oled_layout.finalize_screen();
-
-    k_sleep(K_SECONDS(2));
-
-    sta_iface = net_if_get_wifi_sta();
-    if (!sta_iface) {
-        LOG_ERR("No STA interface available. Enable WiFi board support.");
-        return -ENODEV;
-    }
-
-    return wifi_connect_with_retry();
-}
-#endif
-
 /* =========================================================
  * Thread objects
  * ========================================================= */
 
 K_THREAD_STACK_DEFINE(executor_stack, EXECUTOR_STACK_SIZE);
 static struct k_thread executor_thread;
-
-/* =========================================================
- * Timer callback (runs inside executor thread)
- * ========================================================= */
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(bno055), okay)
-static void bno055_imu_timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
-    ARG_UNUSED(last_call_time);
-    if (timer != NULL && NULL != bno055_dev) {
-        struct sensor_value eul[3];
-        struct sensor_value quat[4];
-        struct sensor_value accel[4];
-        struct sensor_value gyro[4];
-
-        int rc = sensor_sample_fetch(bno055_dev);
-        if (rc < 0) {
-            LOG_ERR("BNO055 sensor_sample_fetch error: %d", rc);
-            return;
-        }
-
-        rc = sensor_channel_get(bno055_dev, static_cast<sensor_channel>(BNO055_SENSOR_CHAN_EULER_YRP), eul);
-        if (rc < 0) {
-            LOG_ERR("BNO055 sensor_channel_get euler error: %d", rc);
-            return;
-        }
-
-        rc = sensor_channel_get(bno055_dev, static_cast<sensor_channel>(BNO055_SENSOR_CHAN_QUATERNION_WXYZ), quat);
-        if (rc < 0) {
-            LOG_ERR("BNO055 sensor_channel_get quaternion error: %d", rc);
-            return;
-        }
-
-        rc = sensor_channel_get(bno055_dev, static_cast<sensor_channel>(BNO055_SENSOR_CHAN_LINEAR_ACCEL_XYZ), accel);
-        if (rc < 0) {
-            LOG_ERR("BNO055 sensor_channel_get accel error: %d", rc);
-            return;
-        }
-
-        rc = sensor_channel_get(bno055_dev, static_cast<sensor_channel>(BNO055_SENSOR_CHAN_GRAVITY_XYZ), gyro);
-        if (rc < 0) {
-            LOG_ERR("BNO055 sensor_channel_get gyro error: %d", rc);
-            return;
-        }
-
-        rcl_time_point_value_t now = rmw_uros_epoch_nanos();
-
-        // CORRECT - use integer arithmetic
-        bno055_imu_msg.header.stamp.sec = now / 1000000000LL;
-        bno055_imu_msg.header.stamp.nanosec = now % 1000000000LL;
-
-        // Fill accelerometer data
-        bno055_imu_msg.linear_acceleration.x = sensor_value_to_double(&accel[0]);
-        bno055_imu_msg.linear_acceleration.y = sensor_value_to_double(&accel[1]);
-        bno055_imu_msg.linear_acceleration.z = sensor_value_to_double(&accel[2]);
-
-        // Fill gyroscope data
-        bno055_imu_msg.angular_velocity.x = sensor_value_to_double(&gyro[0]);
-        bno055_imu_msg.angular_velocity.y = sensor_value_to_double(&gyro[1]);
-        bno055_imu_msg.angular_velocity.z = sensor_value_to_double(&gyro[2]);
-
-        // Fill orientation
-        bno055_imu_msg.orientation.w = sensor_value_to_double(&quat[0]);
-        bno055_imu_msg.orientation.x = sensor_value_to_double(&quat[1]);
-        bno055_imu_msg.orientation.y = sensor_value_to_double(&quat[2]);
-        bno055_imu_msg.orientation.z = sensor_value_to_double(&quat[3]);
-
-        // Add covariance if needed
-        // For simplicity, leaving covariances as zero
-        for (int i = 0; i < 9; ++i) {
-            bno055_imu_msg.linear_acceleration_covariance[i] = 0.0;
-            bno055_imu_msg.angular_velocity_covariance[i] = 0.0;
-            bno055_imu_msg.orientation_covariance[i] = 0.0;
-        }
-
-        LOG_DBG("Publishing IMU quat x=%.3f y=%.3f z=%.3f", bno055_imu_msg.orientation.x, bno055_imu_msg.orientation.y,
-                bno055_imu_msg.orientation.z);
-        // Format for the screen
-        char buffer[64];
-        oled_layout.display_imu_orientation(bno055_imu_msg.orientation.x, bno055_imu_msg.orientation.y,
-                                            bno055_imu_msg.orientation.z);
-        oled_layout.finalize_screen();
-        memset(buffer, 0, sizeof(buffer));
-        snprintf(buffer, sizeof(buffer), "X=%.3f Y=%.3f Z=%.3f", bno055_imu_msg.orientation.x,
-                 bno055_imu_msg.orientation.y, bno055_imu_msg.orientation.z);
-        storage.log_write(buffer);
-
-        RCSOFTCHECK(rcl_publish(&bno055_imu_publisher, &bno055_imu_msg, NULL));
-    }
-}
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_ALIAS(gnss), okay) || DT_NODE_HAS_STATUS(DT_ALIAS(ubloxgnss), okay)
-static void gnss_publish_timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
-    ARG_UNUSED(last_call_time);
-
-    if (timer == NULL) {
-        return;
-    }
-
-#if DT_NODE_HAS_STATUS(DT_ALIAS(gnss), okay)
-    if (atomic_test_and_clear_bit(mtk3333_msg_ready, 0)) {
-        RCSOFTCHECK(rcl_publish(&mtk3333_gnss_publisher, &mtk3333_nav_sat_fix_msg, NULL));
-    }
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_ALIAS(ubloxgnss), okay)
-    if (atomic_test_and_clear_bit(ublox_msg_ready, 0)) {
-        RCSOFTCHECK(rcl_publish(&ublox_gnss_publisher, &ublox_nav_sat_fix_msg, NULL));
-    }
-#endif
-}
-#endif
-
-static void oled_view_timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
-    ARG_UNUSED(last_call_time);
-
-    if (timer == NULL) {
-        return;
-    }
-
-    LOG_INF("OLED auto view switch");
-    oled_layout.next_view();
-}
-
-static void time_sync_timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
-    ARG_UNUSED(last_call_time);
-
-    if (timer == NULL) {
-        return;
-    }
-
-    if (rmw_uros_sync_session(50) != RMW_RET_OK) {
-        LOG_DBG("micro-ROS time sync failed");
-        return;
-    }
-
-    int64_t epoch_ms = rmw_uros_epoch_millis();
-    if (epoch_ms <= 0) {
-        LOG_WRN("Invalid epoch from agent, skipping clock update");
-        return;
-    }
-
-    struct timespec ts = {
-        .tv_sec = (time_t)(epoch_ms / 1000),
-        .tv_nsec = (long)((epoch_ms % 1000) * 1000000L),
-    };
-
-    if (clock_settime(CLOCK_REALTIME, &ts) == 0) {
-        atomic_set(&time_is_valid, 1);
-    }
-}
-
-static void iim42652_timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
-    ARG_UNUSED(last_call_time);
-    if (timer == NULL || iim42652_dev == NULL || !device_is_ready(iim42652_dev)) {
-        return;
-    }
-
-    struct sensor_value accel[3];
-    struct sensor_value gyro[3];
-
-    int rc = sensor_sample_fetch(iim42652_dev);
-    if (rc < 0) {
-        LOG_ERR("IIM42652 sensor_sample_fetch error: %d", rc);
-        return;
-    }
-
-    rc = sensor_channel_get(iim42652_dev, SENSOR_CHAN_ACCEL_XYZ, accel);
-    if (rc < 0) {
-        LOG_ERR("IIM42652 sensor_channel_get accel error: %d", rc);
-        return;
-    }
-
-    rc = sensor_channel_get(iim42652_dev, SENSOR_CHAN_GYRO_XYZ, gyro);
-    if (rc < 0) {
-        LOG_ERR("IIM42652 sensor_channel_get gyro error: %d", rc);
-        return;
-    }
-
-    rcl_time_point_value_t now = rmw_uros_epoch_nanos();
-    iim42652_imu_msg.header.stamp.sec = now / 1000000000LL;
-    iim42652_imu_msg.header.stamp.nanosec = now % 1000000000LL;
-
-    iim42652_imu_msg.linear_acceleration.x = sensor_value_to_double(&accel[0]);
-    iim42652_imu_msg.linear_acceleration.y = sensor_value_to_double(&accel[1]);
-    iim42652_imu_msg.linear_acceleration.z = sensor_value_to_double(&accel[2]);
-
-    iim42652_imu_msg.angular_velocity.x = sensor_value_to_double(&gyro[0]);
-    iim42652_imu_msg.angular_velocity.y = sensor_value_to_double(&gyro[1]);
-    iim42652_imu_msg.angular_velocity.z = sensor_value_to_double(&gyro[2]);
-
-    // Orientation unknown — mark covariance as -1 per REP-145
-    iim42652_imu_msg.orientation_covariance[0] = -1.0;
-    for (int i = 1; i < 9; ++i) {
-        iim42652_imu_msg.orientation_covariance[i] = 0.0;
-        iim42652_imu_msg.linear_acceleration_covariance[i] = 0.0;
-        iim42652_imu_msg.angular_velocity_covariance[i] = 0.0;
-    }
-
-    LOG_DBG("IIM42652 accel x=%.3f y=%.3f z=%.3f", iim42652_imu_msg.linear_acceleration.x,
-            iim42652_imu_msg.linear_acceleration.y, iim42652_imu_msg.linear_acceleration.z);
-
-    RCSOFTCHECK(rcl_publish(&iim42652_imu_publisher, &iim42652_imu_msg, NULL));
-}
-
-static void lps22hb_timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
-    ARG_UNUSED(last_call_time);
-    if (timer != NULL) {
-        struct sensor_value temp, press;
-        int rc = sensor_sample_fetch(st_lps22hb_dev);
-        if (rc < 0) {
-            LOG_ERR("LPS22HB sensor_sample_fetch error: %d", rc);
-            return;
-        }
-
-        rc = sensor_channel_get(st_lps22hb_dev, SENSOR_CHAN_AMBIENT_TEMP, &temp);
-        if (rc < 0) {
-            LOG_ERR("LPS22HB sensor_channel_get ambient temp error: %d", rc);
-            return;
-        }
-
-        rc = sensor_channel_get(st_lps22hb_dev, SENSOR_CHAN_PRESS, &press);
-        if (rc < 0) {
-            LOG_ERR("LPS22HB sensor_channel_get pressure error: %d", rc);
-            return;
-        }
-
-        rcl_time_point_value_t now = rmw_uros_epoch_nanos();
-        lps22hb_temp_msg.header.stamp.sec = now / 1000000000LL;
-        lps22hb_temp_msg.header.stamp.nanosec = now % 1000000000LL;
-        lps22hb_pressure_msg.header.stamp = lps22hb_temp_msg.header.stamp;
-
-        lps22hb_temp_msg.temperature = sensor_value_to_double(&temp);
-        lps22hb_pressure_msg.fluid_pressure = sensor_value_to_double(&press) * 1000.0;
-
-        RCSOFTCHECK(rcl_publish(&lps22hb_temp_publisher, &lps22hb_temp_msg, NULL));
-        RCSOFTCHECK(rcl_publish(&lps22hb_pressure_publisher, &lps22hb_pressure_msg, NULL));
-
-        char buffer[64];
-        oled_layout.display_temperature_pressure(temp.val1, temp.val2, press.val1, press.val2);
-        // storage log
-        memset(buffer, 0, sizeof(buffer));
-        snprintf(buffer, sizeof(buffer), "T=%d.%02dC P=%d.%02dkPa", temp.val1, abs(temp.val2) / 10000, press.val1,
-                 abs(press.val2) / 10000);
-        storage.log_write(buffer);
-        oled_layout.finalize_screen();
-    }
-}
 
 /* =========================================================
  * micro-ROS executor thread
@@ -611,11 +233,7 @@ static void executor_thread_entry(void* a, void* b, void* c) {
 
     while (1) {
         rclc_executor_spin_some(&executor, RCL_MS_TO_NS(10));
-
-        if (atomic_cas(&oled_view_switch_request, 1, 0)) {
-            LOG_INF("OLED button view switch");
-            oled_layout.next_view();
-        }
+        NodeCallbacks::handleExecutorIteration();
         k_sleep(K_MSEC(50));
     }
 }
@@ -924,7 +542,8 @@ int main(void) {
 
     /* Configure custom transport */
 #if defined(CONFIG_MICROROS_TRANSPORT_UDP)
-    if (init_wifi_station() != 0) {
+    WifiHandler wifi_handler;
+    if (wifi_handler.initStation(oled_layout) != 0) {
         LOG_ERR("WiFi initialization failed");
         char waiting_message[64];
         snprintf(waiting_message, sizeof(waiting_message), "Failed to connect WiFi '%s'", CONFIG_MICROROS_WIFI_SSID);
@@ -947,13 +566,17 @@ int main(void) {
 
     oled_layout.display_agent_waiting_message();
 
-    LOG_DBG("Waiting for micro-ROS agent...\n");
-    while (rmw_uros_ping_agent(100, 10) != RMW_RET_OK) {
-        // 100ms timeout, 10 attempts per call
-        LOG_DBG("Agent not reachable, retrying...\n");
-        k_sleep(K_MSEC(1000));
+    LOG_INF("Waiting for micro-ROS agent at %s:%s", CONFIG_MICROROS_AGENT_IP, CONFIG_MICROROS_AGENT_PORT);
+    uint32_t agent_wait_round = 0;
+    while (rmw_uros_ping_agent(100, 3) != RMW_RET_OK) {
+        // Keep ping calls short so WiFi/network threads get enough runtime on constrained targets.
+        agent_wait_round++;
+        if ((agent_wait_round % 5U) == 0U) {
+            LOG_WRN("micro-ROS agent still unreachable (%u checks)", agent_wait_round);
+        }
+        k_sleep(K_MSEC(500));
     }
-    LOG_DBG("Agent connected!\n");
+    LOG_INF("micro-ROS agent connected");
 
     oled_layout.show_startup_splash();
     k_sleep(K_MSEC(1800));
@@ -1004,24 +627,59 @@ int main(void) {
                                         ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, Imu), "/iim42652_imu_raw"));
 #endif
 
+    NodeCallbacks::Context callbacks_context = {};
+    callbacks_context.oled_layout = &oled_layout;
+    callbacks_context.storage = &storage;
+    callbacks_context.time_is_valid = &time_is_valid;
+    callbacks_context.oled_view_switch_request = &oled_view_switch_request;
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(bno055), okay)
+    callbacks_context.bno055_dev = bno055_dev;
+    callbacks_context.bno055_imu_publisher = &bno055_imu_publisher;
+    callbacks_context.bno055_imu_msg = &bno055_imu_msg;
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_ALIAS(gnss), okay)
+    callbacks_context.mtk3333_gnss_publisher = &mtk3333_gnss_publisher;
+    callbacks_context.mtk3333_nav_sat_fix_msg = &mtk3333_nav_sat_fix_msg;
+    callbacks_context.mtk3333_msg_ready = mtk3333_msg_ready;
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_ALIAS(ubloxgnss), okay)
+    callbacks_context.ublox_gnss_publisher = &ublox_gnss_publisher;
+    callbacks_context.ublox_nav_sat_fix_msg = &ublox_nav_sat_fix_msg;
+    callbacks_context.ublox_msg_ready = ublox_msg_ready;
+#endif
+
+    callbacks_context.iim42652_dev = iim42652_dev;
+    callbacks_context.iim42652_imu_publisher = &iim42652_imu_publisher;
+    callbacks_context.iim42652_imu_msg = &iim42652_imu_msg;
+    callbacks_context.st_lps22hb_dev = st_lps22hb_dev;
+    callbacks_context.lps22hb_temp_publisher = &lps22hb_temp_publisher;
+    callbacks_context.lps22hb_pressure_publisher = &lps22hb_pressure_publisher;
+    callbacks_context.lps22hb_temp_msg = &lps22hb_temp_msg;
+    callbacks_context.lps22hb_pressure_msg = &lps22hb_pressure_msg;
+
+    NodeCallbacks::initialize(callbacks_context);
+
     /* Timer */
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(bno055), okay)
-    RCCHECK(
-        rclc_timer_init_default(&imu_timer, &support, RCL_MS_TO_NS(IMU_PUBLISH_PERIOD_MS), bno055_imu_timer_callback));
+    RCCHECK(rclc_timer_init_default(&imu_timer, &support, RCL_MS_TO_NS(IMU_PUBLISH_PERIOD_MS),
+                                    NodeCallbacks::bno055ImuTimerCallback));
 #endif
 #if DT_NODE_HAS_STATUS(DT_ALIAS(gnss), okay) || DT_NODE_HAS_STATUS(DT_ALIAS(ubloxgnss), okay)
     RCCHECK(rclc_timer_init_default(&gnss_timer, &support, RCL_MS_TO_NS(GNSS_PUBLISH_PERIOD_MS),
-                                    gnss_publish_timer_callback));
+                                    NodeCallbacks::gnssPublishTimerCallback));
 #endif
     RCCHECK(rclc_timer_init_default(&time_sync_timer, &support, RCL_MS_TO_NS(TIME_SYNC_PERIOD_MS),
-                                    time_sync_timer_callback));
+                                    NodeCallbacks::timeSyncTimerCallback));
     RCCHECK(rclc_timer_init_default(&lps22hb_timer, &support, RCL_MS_TO_NS(LPS22HB_PUBLISH_PERIOD_MS),
-                                    lps22hb_timer_callback));
+                                    NodeCallbacks::lps22hbTimerCallback));
     RCCHECK(rclc_timer_init_default(&oled_view_timer, &support, RCL_MS_TO_NS(OLED_VIEW_SWITCH_PERIOD_MS),
-                                    oled_view_timer_callback));
+                                    NodeCallbacks::oledViewTimerCallback));
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(iim42652), okay)
     RCCHECK(rclc_timer_init_default(&iim42652_timer, &support, RCL_MS_TO_NS(IIM42652_PUBLISH_PERIOD_MS),
-                                    iim42652_timer_callback));
+                                    NodeCallbacks::iim42652TimerCallback));
 #endif
 
     /* Executor */
