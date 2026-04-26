@@ -9,6 +9,10 @@
 
 #include <math.h>
 #include <zephyr/drivers/gpio.h>
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846f
+#endif
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/logging/log.h>
@@ -43,7 +47,7 @@ static int read_register(const struct device* dev, uint8_t reg_addr, uint8_t* re
     const struct iim42652_config* config = dev->config;
     int ret = i2c_write_read_dt(&config->i2c_bus, &reg_addr, 1, read_data, size);
     if (ret != 0) {
-        // LOG_ERR("I2C read failed: %d", ret);
+        LOG_ERR("I2C read reg 0x%02X failed: %d", reg_addr, ret);
         return ret;
     }
     return 0;
@@ -100,7 +104,10 @@ static int gyroscope_enable(const struct device* dev) {
     }
 
     tmp |= IIM42652_SET_GYRO_TLOW_NOISE_MODE;
-    return write_register(dev, IIM42652_REG_PWR_MGMT0, &tmp, 1);
+    int ret2 = write_register(dev, IIM42652_REG_PWR_MGMT0, &tmp, 1);
+    if (ret2 != 0) return ret2;
+    k_usleep(200); /* datasheet: wait 200µs after transitioning from OFF before next register write */
+    return 0;
 }
 
 static int gyroscope_disable(const struct device* dev) {
@@ -122,7 +129,10 @@ static int accelerometer_enable(const struct device* dev) {
     }
 
     tmp |= IIM42652_SET_ACCEL_LOW_NOISE_MODE;
-    return write_register(dev, IIM42652_REG_PWR_MGMT0, &tmp, 1);
+    int ret2 = write_register(dev, IIM42652_REG_PWR_MGMT0, &tmp, 1);
+    if (ret2 != 0) return ret2;
+    k_usleep(200); /* datasheet: wait 200µs after transitioning from OFF before next register write */
+    return 0;
 }
 
 static int accelerometer_disable(const struct device* dev) {
@@ -554,18 +564,6 @@ static int iim42652_sample_fetch(const struct device* dev, enum sensor_channel c
     int ret;
     int fetch_ret = 0;
 
-    // Enable sensors
-    ret = ex_idle(dev);
-    if (ret != 0) return ret;
-    ret = accelerometer_enable(dev);
-    if (ret != 0) return ret;
-    ret = gyroscope_enable(dev);
-    if (ret != 0) return ret;
-    ret = temperature_enable(dev);
-    if (ret != 0) return ret;
-
-    k_sleep(K_MSEC(100));
-
     // Read sensor data
     ret = get_accel_data(dev, &accel_data);
     if (ret == 0) {
@@ -577,7 +575,7 @@ static int iim42652_sample_fetch(const struct device* dev, enum sensor_channel c
         data->acc.y = acc_y;
         data->acc.z = acc_z;
 
-        LOG_INF("Accel X: %.3f g, Y: %.3f g, Z: %.3f g", acc_x, acc_y, acc_z);
+        LOG_DBG("Accel X: %.3f g, Y: %.3f g, Z: %.3f g", acc_x, acc_y, acc_z);
     } else {
         fetch_ret = ret;
     }
@@ -592,24 +590,10 @@ static int iim42652_sample_fetch(const struct device* dev, enum sensor_channel c
         data->gyro.y = gyro_y;
         data->gyro.z = gyro_z;
 
-        LOG_INF("Gyro X: %.2f °/s, Y: %.2f °/s, Z: %.2f °/s", gyro_x, gyro_y, gyro_z);
+        LOG_DBG("Gyro X: %.2f °/s, Y: %.2f °/s, Z: %.2f °/s", gyro_x, gyro_y, gyro_z);
     } else if (fetch_ret == 0) {
         fetch_ret = ret;
     }
-
-    ret = get_temperature(dev, &temperature);
-    if (ret == 0) {
-        LOG_INF("Temperature: %.2f °C", temperature);
-        data->temperature = temperature;
-    } else if (fetch_ret == 0) {
-        fetch_ret = ret;
-    }
-
-    // Disable sensors to save power (best-effort, do not override fetch error)
-    accelerometer_disable(dev);
-    gyroscope_disable(dev);
-    temperature_disable(dev);
-    idle(dev);
 
     return fetch_ret;
 }
@@ -636,16 +620,38 @@ static int iim42652_init(const struct device* dev) {
 
     if (sensor_id == IIM42652_CHIP_ID) {
         ret = soft_reset(dev);
-        if (ret == 0) {
-            LOG_INF("IIM42652 initialized successfully");
+        if (ret != 0) {
+            return ret;
         }
-        return ret;
+
+        /* Enable all sensors persistently — they stay on between fetches */
+        ret = ex_idle(dev);
+        if (ret != 0) return ret;
+        ret = accelerometer_enable(dev);
+        if (ret != 0) return ret;
+        ret = gyroscope_enable(dev);
+        if (ret != 0) return ret;
+        ret = temperature_enable(dev);
+        if (ret != 0) return ret;
+
+        /* Gyro needs 45ms minimum on-time before first valid sample (datasheet) */
+        k_msleep(50);
+
+        /* Read back PWR_MGMT0 to verify sensors are enabled */
+        uint8_t pwr_check;
+        if (read_register(dev, IIM42652_REG_PWR_MGMT0, &pwr_check, 1) == 0) {
+            LOG_INF("PWR_MGMT0 after init: 0x%02X (expected 0x1F)", pwr_check);
+            if ((pwr_check & 0x0F) != 0x0F) {
+                LOG_ERR("IIM42652: sensors not enabled (PWR_MGMT0=0x%02X) - accel/gyro bits wrong", pwr_check);
+            }
+        }
+
+        LOG_INF("IIM42652 initialized successfully");
+        return 0;
     } else {
         LOG_ERR("Invalid chip ID: 0x%02X (expected 0x%02X)", sensor_id, IIM42652_CHIP_ID);
         return -EINVAL;
     }
-
-    return 0;  // Initialization successful
 }
 
 static const struct sensor_driver_api iim42652_driver_api = {

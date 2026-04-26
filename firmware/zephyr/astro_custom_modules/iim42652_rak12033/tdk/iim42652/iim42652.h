@@ -92,11 +92,11 @@
 #define BIT_GYRO_CONFIG0_ODR_POS 0
 #define BIT_GYRO_CONFIG0_ODR_MASK 0x0F
 #define BIT_PWR_MGMT_0_ACCEL_MODE_MASK 0x03
-#define BIT_ACCEL_LP_CLK_SEL_MASK 0x07
+#define BIT_ACCEL_LP_CLK_SEL_MASK 0x08 /* bit 3 of INTF_CONFIG1 */
 
 // Power Management Constants
 #define IIM42652_PWR_MGMT_0_ACCEL_MODE_LP 0x02
-#define IIM42652_INTF_CONFIG1_ACCEL_LP_CLK_WUOSC 0x03
+#define IIM42652_INTF_CONFIG1_ACCEL_LP_CLK_WUOSC 0x00 /* bit 3 = 0: use Wake-Up oscillator */
 
 // Wake on Motion
 #define X_INT1_EN 0x01

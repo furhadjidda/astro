@@ -312,7 +312,7 @@ static int mtk3333_init(const struct device* dev) {
     k_work_init_delayable(&data->poll_work, mtk3333_poll_work);
 
     /* Schedule first poll after 200 ms */
-    k_work_schedule(&data->poll_work, K_MSEC(5));
+    k_work_schedule(&data->poll_work, K_MSEC(50));
 
     LOG_INF("MTK3333 simulated GNSS driver initialized");
 

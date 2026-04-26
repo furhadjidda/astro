@@ -15,8 +15,6 @@
  *   along with astro.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <bno055.h>  // Required for custom SENSOR_CHAN_*
-#include <bno055.h>
 #include <errno.h>
 #include <microros_transports.h>
 #include <rcl/error_handling.h>
@@ -37,9 +35,14 @@
 #include <version.h>
 #include <zephyr/device.h>
 #include <zephyr/display/cfb.h>
+#if DT_NODE_HAS_STATUS(DT_ALIAS(gnss), okay) || DT_NODE_HAS_STATUS(DT_ALIAS(ubloxgnss), okay)
 #include <zephyr/drivers/gnss.h>
+#endif
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sensor.h>
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(bno055), okay)
+#include <bno055.h>  // Required for custom SENSOR_CHAN_*
+#endif
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #if defined(CONFIG_MICROROS_TRANSPORT_UDP)
@@ -57,7 +60,6 @@
 static ATOMIC_DEFINE(init_complete, 1);  // single-bit flag, starts 0
 
 LOG_MODULE_REGISTER(all_sensors_module, LOG_LEVEL_DBG);
-#define BNO055_TIMING_STARTUP 400  // 400ms
 
 // Storage instance
 Storage storage;
@@ -67,18 +69,33 @@ static const struct device* display_dev = DEVICE_DT_GET(DT_NODELABEL(ssd1306));
 OLEDWrapper oled_wrapper(display_dev);
 OLEDLayout oled_layout(&oled_wrapper);
 // imu driver
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(bno055), okay)
+#define BNO055_TIMING_STARTUP 400  // 400ms
 static const struct device* const bno055_dev = DEVICE_DT_GET(DT_NODELABEL(bno055));
+static bool bno055_fusion = true;
+static rcl_publisher_t bno055_imu_publisher;
+static rcl_timer_t imu_timer;
+static sensor_msgs__msg__Imu bno055_imu_msg;
+#endif
 // iim42652 driver
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(iim42652), okay)
+#define IIM42652_TIMING_STARTUP 400  // 400ms
 static const struct device* const iim42652_dev = DEVICE_DT_GET(DT_NODELABEL(iim42652));
+#else
+static const struct device* const iim42652_dev = NULL;
+#endif
+static rcl_publisher_t iim42652_imu_publisher;
+static rcl_timer_t iim42652_timer;
+static sensor_msgs__msg__Imu iim42652_imu_msg;
 // gnss driver
+#if DT_NODE_HAS_STATUS(DT_ALIAS(gnss), okay)
 #define mtk3333_gnss DEVICE_DT_GET(DT_ALIAS(gnss))
+#endif
+#if DT_NODE_HAS_STATUS(DT_ALIAS(ubloxgnss), okay)
 #define ublox_gnss DEVICE_DT_GET(DT_ALIAS(ubloxgnss))
+#endif
 // lps22hb driver
 const struct device* st_lps22hb_dev = DEVICE_DT_GET_ANY(st_lps22hb_press);
-
-// IMU configuration
-static bool bno055_fusion = true;
-#define BNO055_TIMING_STARTUP 400
 
 /* =========================================================
  * Thread Configuration
@@ -134,30 +151,34 @@ static bool bno055_fusion = true;
 static rclc_support_t support;
 static rcl_node_t node;
 // Publishers
+#if DT_NODE_HAS_STATUS(DT_ALIAS(gnss), okay)
 static rcl_publisher_t mtk3333_gnss_publisher;
+#endif
+#if DT_NODE_HAS_STATUS(DT_ALIAS(ubloxgnss), okay)
 static rcl_publisher_t ublox_gnss_publisher;
-static rcl_publisher_t bno055_imu_publisher;
+#endif
 static rcl_publisher_t lps22hb_temp_publisher;
 static rcl_publisher_t lps22hb_pressure_publisher;
-static rcl_publisher_t iim42652_imu_publisher;
 // Timers
-static rcl_timer_t imu_timer;
-static rcl_timer_t iim42652_timer;
+#if DT_NODE_HAS_STATUS(DT_ALIAS(gnss), okay) || DT_NODE_HAS_STATUS(DT_ALIAS(ubloxgnss), okay)
 static rcl_timer_t gnss_timer;
+#endif
 static rcl_timer_t time_sync_timer;
 static rcl_timer_t lps22hb_timer;
 static rcl_timer_t oled_view_timer;
 
 static rclc_executor_t executor;
-static sensor_msgs__msg__Imu bno055_imu_msg;
-static sensor_msgs__msg__Imu iim42652_imu_msg;
 static sensor_msgs__msg__Temperature lps22hb_temp_msg;
 static sensor_msgs__msg__FluidPressure lps22hb_pressure_msg;
 static std_msgs__msg__Int32 msg;
+#if DT_NODE_HAS_STATUS(DT_ALIAS(gnss), okay)
 sensor_msgs__msg__NavSatFix mtk3333_nav_sat_fix_msg;
-sensor_msgs__msg__NavSatFix ublox_nav_sat_fix_msg;
 static ATOMIC_DEFINE(mtk3333_msg_ready, 1);
+#endif
+#if DT_NODE_HAS_STATUS(DT_ALIAS(ubloxgnss), okay)
+sensor_msgs__msg__NavSatFix ublox_nav_sat_fix_msg;
 static ATOMIC_DEFINE(ublox_msg_ready, 1);
+#endif
 static atomic_t time_is_valid;
 static atomic_t oled_view_switch_request;
 
@@ -335,6 +356,7 @@ static struct k_thread executor_thread;
  * Timer callback (runs inside executor thread)
  * ========================================================= */
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(bno055), okay)
 static void bno055_imu_timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
     ARG_UNUSED(last_call_time);
     if (timer != NULL && NULL != bno055_dev) {
@@ -392,7 +414,9 @@ static void bno055_imu_timer_callback(rcl_timer_t* timer, int64_t last_call_time
         RCSOFTCHECK(rcl_publish(&bno055_imu_publisher, &bno055_imu_msg, NULL));
     }
 }
+#endif
 
+#if DT_NODE_HAS_STATUS(DT_ALIAS(gnss), okay) || DT_NODE_HAS_STATUS(DT_ALIAS(ubloxgnss), okay)
 static void gnss_publish_timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
     ARG_UNUSED(last_call_time);
 
@@ -400,14 +424,19 @@ static void gnss_publish_timer_callback(rcl_timer_t* timer, int64_t last_call_ti
         return;
     }
 
+#if DT_NODE_HAS_STATUS(DT_ALIAS(gnss), okay)
     if (atomic_test_and_clear_bit(mtk3333_msg_ready, 0)) {
         RCSOFTCHECK(rcl_publish(&mtk3333_gnss_publisher, &mtk3333_nav_sat_fix_msg, NULL));
     }
+#endif
 
+#if DT_NODE_HAS_STATUS(DT_ALIAS(ubloxgnss), okay)
     if (atomic_test_and_clear_bit(ublox_msg_ready, 0)) {
         RCSOFTCHECK(rcl_publish(&ublox_gnss_publisher, &ublox_nav_sat_fix_msg, NULL));
     }
+#endif
 }
+#endif
 
 static void oled_view_timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
     ARG_UNUSED(last_call_time);
@@ -536,13 +565,11 @@ static void lps22hb_timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
 
         char buffer[64];
         oled_layout.display_temperature_pressure(temp.val1, temp.val2, press.val1, press.val2);
-
         // storage log
         memset(buffer, 0, sizeof(buffer));
         snprintf(buffer, sizeof(buffer), "T=%d.%02dC P=%d.%02dkPa", temp.val1, abs(temp.val2) / 10000, press.val1,
                  abs(press.val2) / 10000);
         storage.log_write(buffer);
-
         oled_layout.finalize_screen();
     }
 }
@@ -571,6 +598,7 @@ static void executor_thread_entry(void* a, void* b, void* c) {
  * Time synchronization thread
  * ========================================================= */
 
+#if DT_NODE_HAS_STATUS(DT_ALIAS(gnss), okay)
 static void mtk3333_gnss_data_cb(const struct device* dev, const struct gnss_data* data) {
     if (!atomic_test_bit(init_complete, 0)) return;
     uint64_t timepulse_ns;
@@ -648,8 +676,10 @@ static void gnss_satellites_cb(const struct device* dev, const struct gnss_satel
             size > 1 ? "s" : "", tracked_count, corrected_count);
 }
 GNSS_SATELLITES_CALLBACK_DEFINE(mtk3333_gnss, gnss_satellites_cb);
-#endif
+#endif /* CONFIG_GNSS_SATELLITES */
+#endif /* DT_NODE_HAS_STATUS(DT_ALIAS(gnss), okay) */
 
+#if DT_NODE_HAS_STATUS(DT_ALIAS(ubloxgnss), okay)
 static void ublox_gnss_data_cb(const struct device* dev, const struct gnss_data* data) {
     if (!atomic_test_bit(init_complete, 0)) return;
     uint64_t timepulse_ns;
@@ -729,27 +759,29 @@ static void ublox_gnss_satellites_cb(const struct device* dev, const struct gnss
     oled_layout.finalize_screen();
 }
 GNSS_SATELLITES_CALLBACK_DEFINE(ublox_gnss, ublox_gnss_satellites_cb);
-#endif
+#endif /* CONFIG_GNSS_SATELLITES */
+#endif /* DT_NODE_HAS_STATUS(DT_ALIAS(ubloxgnss), okay) */
 
+#if DT_NODE_HAS_STATUS(DT_ALIAS(gnss), okay) || DT_NODE_HAS_STATUS(DT_ALIAS(ubloxgnss), okay)
 #define GNSS_SYSTEMS_PRINTF(define, supported, enabled)                                                      \
     LOG_DBG("\t%20s: Supported: %3s Enabled: %3s\n", STRINGIFY(define), (supported & define) ? "Yes" : "No", \
             (enabled & define) ? "Yes" : "No");
+#endif
 
 /* =========================================================
  * main()
  * ========================================================= */
 
 int main(void) {
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(bno055), okay)
 #if Z_DEVICE_DT_FLAGS(DT_NODELABEL(bno055)) & DEVICE_FLAG_INIT_DEFERRED
     LOG_DBG("Deferred init enabled, sleeping for %d ms", BNO055_TIMING_STARTUP);
     k_sleep(K_MSEC(BNO055_TIMING_STARTUP));
     device_init(bno055_dev);
 #endif
-#if Z_DEVICE_DT_FLAGS(DT_NODELABEL(iim42652)) & DEVICE_FLAG_INIT_DEFERRED
-    device_init(iim42652_dev);
-#endif
     sensor_msgs__msg__Imu__init(&bno055_imu_msg);
     rosidl_runtime_c__String__assign(&bno055_imu_msg.header.frame_id, "bno055_imu_frame");
+#endif
     sensor_msgs__msg__Temperature__init(&lps22hb_temp_msg);
     rosidl_runtime_c__String__assign(&lps22hb_temp_msg.header.frame_id, "lps22hb_frame");
     lps22hb_temp_msg.variance = 0.0;
@@ -757,20 +789,25 @@ int main(void) {
     sensor_msgs__msg__FluidPressure__init(&lps22hb_pressure_msg);
     rosidl_runtime_c__String__assign(&lps22hb_pressure_msg.header.frame_id, "lps22hb_frame");
     lps22hb_pressure_msg.variance = 0.0;
-
+#if DT_NODE_HAS_STATUS(DT_ALIAS(gnss), okay)
     sensor_msgs__msg__NavSatFix__init(&mtk3333_nav_sat_fix_msg);
     rosidl_runtime_c__String__assign(&mtk3333_nav_sat_fix_msg.header.frame_id, "mtk3333_gnss_frame");
+#endif
+#if DT_NODE_HAS_STATUS(DT_ALIAS(ubloxgnss), okay)
     sensor_msgs__msg__NavSatFix__init(&ublox_nav_sat_fix_msg);
     rosidl_runtime_c__String__assign(&ublox_nav_sat_fix_msg.header.frame_id, "ublox_gnss_frame");
-
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(iim42652), okay)
     sensor_msgs__msg__Imu__init(&iim42652_imu_msg);
     rosidl_runtime_c__String__assign(&iim42652_imu_msg.header.frame_id, "iim42652_imu_frame");
+#endif
 
     if (!device_is_ready(st_lps22hb_dev)) {
         LOG_ERR("LPS22HB device not ready");
         return -ENODEV;
     }
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(bno055), okay)
     if (!device_is_ready(bno055_dev)) {
         LOG_ERR("Device %s is not ready\n", bno055_dev->name);
         return -ENODEV;
@@ -784,6 +821,26 @@ int main(void) {
     config.val1 = BNO055_POWER_NORMAL;
     config.val2 = 0;
     sensor_attr_set(bno055_dev, SENSOR_CHAN_ALL, static_cast<sensor_attribute>(BNO055_SENSOR_ATTR_POWER_MODE), &config);
+#endif
+
+    /* Delay between BNO055 and IIM42652 init to avoid I2C bus contention
+     * and allow the first IMU to settle before the second is powered on. */
+    k_msleep(100);
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(iim42652), okay)
+#if Z_DEVICE_DT_FLAGS(DT_NODELABEL(iim42652)) & DEVICE_FLAG_INIT_DEFERRED
+    LOG_DBG("Deferred init enabled, sleeping for %d ms", IIM42652_TIMING_STARTUP);
+    k_sleep(K_MSEC(IIM42652_TIMING_STARTUP));
+    device_init(iim42652_dev);
+#endif
+
+    if (!device_is_ready(iim42652_dev)) {
+        LOG_ERR("Device %s is not ready\n", iim42652_dev->name);
+        return -ENODEV;
+    }
+
+    LOG_DBG("IIM42652 Device %s is ready\n", iim42652_dev->name);
+#endif
     // Starting display
     if (oled_layout.init_screen() != 0) {
         LOG_ERR("OLED init failed");
@@ -795,6 +852,7 @@ int main(void) {
     storage.print_storage_stats();
 
     LOG_DBG("Starting GNSS test application\n");
+#if DT_NODE_HAS_STATUS(DT_ALIAS(gnss), okay)
     gnss_systems_t supported, enabled;
     uint32_t fix_interval;
     int rc;
@@ -825,6 +883,7 @@ int main(void) {
         return rc;
     }
     LOG_DBG("Fix rate = %d ms\n", fix_interval);
+#endif
 
     // Micro-ROS initialization
     LOG_DBG("Zephyr micro-ROS example starting\n");
@@ -890,45 +949,64 @@ int main(void) {
     RCCHECK(rclc_node_init_default(&node, "sensor_publisher", "", &support));
 
     /* GNSS publishers reliable for rqt compatibility; IMU best-effort to avoid backpressure stalls. */
+#if DT_NODE_HAS_STATUS(DT_ALIAS(gnss), okay)
     RCCHECK(rclc_publisher_init_default(&mtk3333_gnss_publisher, &node,
                                         ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, NavSatFix), "/mtk3333_gnss_raw"));
+#endif
+#if DT_NODE_HAS_STATUS(DT_ALIAS(ubloxgnss), okay)
     RCCHECK(rclc_publisher_init_default(&ublox_gnss_publisher, &node,
                                         ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, NavSatFix), "/ublox_gnss_raw"));
-
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(bno055), okay)
     RCCHECK(rclc_publisher_init_default(&bno055_imu_publisher, &node,
                                         ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, Imu), "/bno055_imu_raw"));
+#endif
     RCCHECK(rclc_publisher_init_default(&lps22hb_temp_publisher, &node,
                                         ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, Temperature),
                                         "/lps22hb_temperature_raw"));
     RCCHECK(rclc_publisher_init_default(&lps22hb_pressure_publisher, &node,
                                         ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, FluidPressure),
                                         "/lps22hb_pressure_raw"));
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(iim42652), okay)
     RCCHECK(rclc_publisher_init_default(&iim42652_imu_publisher, &node,
                                         ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, Imu), "/iim42652_imu_raw"));
+#endif
 
     /* Timer */
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(bno055), okay)
     RCCHECK(
         rclc_timer_init_default(&imu_timer, &support, RCL_MS_TO_NS(IMU_PUBLISH_PERIOD_MS), bno055_imu_timer_callback));
+#endif
+#if DT_NODE_HAS_STATUS(DT_ALIAS(gnss), okay) || DT_NODE_HAS_STATUS(DT_ALIAS(ubloxgnss), okay)
     RCCHECK(rclc_timer_init_default(&gnss_timer, &support, RCL_MS_TO_NS(GNSS_PUBLISH_PERIOD_MS),
                                     gnss_publish_timer_callback));
+#endif
     RCCHECK(rclc_timer_init_default(&time_sync_timer, &support, RCL_MS_TO_NS(TIME_SYNC_PERIOD_MS),
                                     time_sync_timer_callback));
     RCCHECK(rclc_timer_init_default(&lps22hb_timer, &support, RCL_MS_TO_NS(LPS22HB_PUBLISH_PERIOD_MS),
                                     lps22hb_timer_callback));
     RCCHECK(rclc_timer_init_default(&oled_view_timer, &support, RCL_MS_TO_NS(OLED_VIEW_SWITCH_PERIOD_MS),
                                     oled_view_timer_callback));
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(iim42652), okay)
     RCCHECK(rclc_timer_init_default(&iim42652_timer, &support, RCL_MS_TO_NS(IIM42652_PUBLISH_PERIOD_MS),
                                     iim42652_timer_callback));
+#endif
 
     /* Executor */
     RCCHECK(rclc_executor_init(&executor, &support.context, 6, &allocator));
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(bno055), okay)
     RCCHECK(rclc_executor_add_timer(&executor, &imu_timer));
+#endif
+#if DT_NODE_HAS_STATUS(DT_ALIAS(gnss), okay) || DT_NODE_HAS_STATUS(DT_ALIAS(ubloxgnss), okay)
     RCCHECK(rclc_executor_add_timer(&executor, &gnss_timer));
+#endif
     RCCHECK(rclc_executor_add_timer(&executor, &time_sync_timer));
     RCCHECK(rclc_executor_add_timer(&executor, &lps22hb_timer));
     RCCHECK(rclc_executor_add_timer(&executor, &oled_view_timer));
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(iim42652), okay)
     RCCHECK(rclc_executor_add_timer(&executor, &iim42652_timer));
+#endif
     msg.data = 0;
 
     /* Start executor thread */
