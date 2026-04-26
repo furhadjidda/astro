@@ -60,7 +60,7 @@
         zephyr,deferred-init;
     };
     iim42652: iim42652@69 {
-        status = "disabled";
+        status = "okay";
         compatible = "tdk,iim42652";
         reg = <0x69>;
         zephyr,deferred-init;
