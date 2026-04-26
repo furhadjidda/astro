@@ -137,15 +137,39 @@ void NodeCallbacks::gnssPublishTimerCallback(rcl_timer_t* timer, int64_t last_ca
 
 #if DT_NODE_HAS_STATUS(DT_ALIAS(gnss), okay)
     if (ctx_.mtk3333_msg_ready != nullptr && ctx_.mtk3333_gnss_publisher != nullptr &&
-        ctx_.mtk3333_nav_sat_fix_msg != nullptr && atomic_test_and_clear_bit(ctx_.mtk3333_msg_ready, 0)) {
-        RCSOFTCHECK(rcl_publish(ctx_.mtk3333_gnss_publisher, ctx_.mtk3333_nav_sat_fix_msg, NULL));
+        ctx_.mtk3333_nav_sat_fix_msg != nullptr && ctx_.mtk3333_msg_lock != nullptr) {
+        bool should_publish = false;
+        sensor_msgs__msg__NavSatFix snapshot = {};
+        k_spinlock_key_t key = k_spin_lock(ctx_.mtk3333_msg_lock);
+        if (atomic_test_bit(ctx_.mtk3333_msg_ready, 0)) {
+            snapshot = *ctx_.mtk3333_nav_sat_fix_msg;
+            atomic_clear_bit(ctx_.mtk3333_msg_ready, 0);
+            should_publish = true;
+        }
+        k_spin_unlock(ctx_.mtk3333_msg_lock, key);
+
+        if (should_publish) {
+            RCSOFTCHECK(rcl_publish(ctx_.mtk3333_gnss_publisher, &snapshot, NULL));
+        }
     }
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_ALIAS(ubloxgnss), okay)
     if (ctx_.ublox_msg_ready != nullptr && ctx_.ublox_gnss_publisher != nullptr &&
-        ctx_.ublox_nav_sat_fix_msg != nullptr && atomic_test_and_clear_bit(ctx_.ublox_msg_ready, 0)) {
-        RCSOFTCHECK(rcl_publish(ctx_.ublox_gnss_publisher, ctx_.ublox_nav_sat_fix_msg, NULL));
+        ctx_.ublox_nav_sat_fix_msg != nullptr && ctx_.ublox_msg_lock != nullptr) {
+        bool should_publish = false;
+        sensor_msgs__msg__NavSatFix snapshot = {};
+        k_spinlock_key_t key = k_spin_lock(ctx_.ublox_msg_lock);
+        if (atomic_test_bit(ctx_.ublox_msg_ready, 0)) {
+            snapshot = *ctx_.ublox_nav_sat_fix_msg;
+            atomic_clear_bit(ctx_.ublox_msg_ready, 0);
+            should_publish = true;
+        }
+        k_spin_unlock(ctx_.ublox_msg_lock, key);
+
+        if (should_publish) {
+            RCSOFTCHECK(rcl_publish(ctx_.ublox_gnss_publisher, &snapshot, NULL));
+        }
     }
 #endif
 }

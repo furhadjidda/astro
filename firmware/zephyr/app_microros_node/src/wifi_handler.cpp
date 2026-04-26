@@ -22,28 +22,8 @@ constexpr int WIFI_DHCP_TIMEOUT_S = 20;
 constexpr int WIFI_MAX_RETRIES = 5;
 constexpr int WIFI_RETRY_DELAY_S = 5;
 
-K_SEM_DEFINE(wifi_connected_sem, 0, 1);
-K_SEM_DEFINE(wifi_disconnected_sem, 0, 1);
 K_SEM_DEFINE(ipv4_ready_sem, 0, 1);
 static struct net_if* sta_iface;
-
-void wifi_event_handler(struct net_mgmt_event_callback* cb, uint64_t mgmt_event, struct net_if* iface) {
-    ARG_UNUSED(iface);
-
-    if (mgmt_event == NET_EVENT_WIFI_CONNECT_RESULT) {
-        const struct wifi_status* status = static_cast<const struct wifi_status*>(cb->info);
-        if (status && status->status == 0) {
-            LOG_INF("WiFi connected");
-            k_sem_give(&wifi_connected_sem);
-        } else {
-            LOG_ERR("WiFi connect failed (status=%d)", status ? status->status : -1);
-            k_sem_give(&wifi_disconnected_sem);
-        }
-    } else if (mgmt_event == NET_EVENT_WIFI_DISCONNECT_RESULT) {
-        LOG_WRN("WiFi disconnected");
-        k_sem_give(&wifi_disconnected_sem);
-    }
-}
 
 void ipv4_event_handler(struct net_mgmt_event_callback* cb, uint64_t mgmt_event, struct net_if* iface) {
     ARG_UNUSED(cb);
@@ -53,8 +33,7 @@ void ipv4_event_handler(struct net_mgmt_event_callback* cb, uint64_t mgmt_event,
         return;
     }
 
-    // Keep event callback lightweight to avoid potential lock contention in net management context.
-    LOG_INF("DHCP address assigned");
+    // Keep callback minimal to avoid work in net management context.
     k_sem_give(&ipv4_ready_sem);
 }
 }  // namespace
@@ -62,12 +41,7 @@ void ipv4_event_handler(struct net_mgmt_event_callback* cb, uint64_t mgmt_event,
 
 int WifiHandler::initStation(OLEDLayout& oled_layout) {
 #if defined(CONFIG_MICROROS_TRANSPORT_UDP)
-    static struct net_mgmt_event_callback wifi_cb;
     static struct net_mgmt_event_callback ipv4_cb;
-
-    net_mgmt_init_event_callback(&wifi_cb, wifi_event_handler,
-                                 NET_EVENT_WIFI_CONNECT_RESULT | NET_EVENT_WIFI_DISCONNECT_RESULT);
-    net_mgmt_add_event_callback(&wifi_cb);
 
     net_mgmt_init_event_callback(&ipv4_cb, ipv4_event_handler, NET_EVENT_IPV4_ADDR_ADD);
     net_mgmt_add_event_callback(&ipv4_cb);
@@ -115,8 +89,6 @@ int WifiHandler::connectWithRetry() {
 
 int WifiHandler::tryConnect() {
 #if defined(CONFIG_MICROROS_TRANSPORT_UDP)
-    k_sem_reset(&wifi_connected_sem);
-    k_sem_reset(&wifi_disconnected_sem);
     k_sem_reset(&ipv4_ready_sem);
 
     struct wifi_connect_req_params params;
@@ -138,17 +110,13 @@ int WifiHandler::tryConnect() {
         return ret;
     }
 
-    if (k_sem_take(&wifi_connected_sem, K_SECONDS(WIFI_CONNECT_TIMEOUT_S)) == 0) {
-        if (k_sem_take(&ipv4_ready_sem, K_SECONDS(WIFI_DHCP_TIMEOUT_S)) == 0) {
-            return 0;
-        }
-
-        LOG_WRN("WiFi connected but DHCP address not received");
-        (void)net_mgmt(NET_REQUEST_WIFI_DISCONNECT, sta_iface, NULL, 0);
-        return -ETIMEDOUT;
+    if (k_sem_take(&ipv4_ready_sem, K_SECONDS(WIFI_CONNECT_TIMEOUT_S + WIFI_DHCP_TIMEOUT_S)) == 0) {
+        LOG_INF("WiFi connected and DHCP lease acquired");
+        return 0;
     }
 
-    LOG_WRN("WiFi connect timeout");
+    LOG_WRN("WiFi connect/DHCP timeout");
+    (void)net_mgmt(NET_REQUEST_WIFI_DISCONNECT, sta_iface, NULL, 0);
     return -ETIMEDOUT;
 #else
     return -ENOTSUP;

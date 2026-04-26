@@ -164,10 +164,12 @@ static std_msgs__msg__Int32 msg;
 #if DT_NODE_HAS_STATUS(DT_ALIAS(gnss), okay)
 sensor_msgs__msg__NavSatFix mtk3333_nav_sat_fix_msg;
 static ATOMIC_DEFINE(mtk3333_msg_ready, 1);
+static struct k_spinlock mtk3333_msg_lock;
 #endif
 #if DT_NODE_HAS_STATUS(DT_ALIAS(ubloxgnss), okay)
 sensor_msgs__msg__NavSatFix ublox_nav_sat_fix_msg;
 static ATOMIC_DEFINE(ublox_msg_ready, 1);
+static struct k_spinlock ublox_msg_lock;
 #endif
 static atomic_t time_is_valid;
 static atomic_t oled_view_switch_request;
@@ -244,20 +246,17 @@ static void executor_thread_entry(void* a, void* b, void* c) {
 
 #if DT_NODE_HAS_STATUS(DT_ALIAS(gnss), okay)
 static void mtk3333_gnss_data_cb(const struct device* dev, const struct gnss_data* data) {
-    if (!atomic_test_bit(init_complete, 0)) return;
-    uint64_t timepulse_ns;
+    if (!atomic_test_bit(init_complete, 0) || data == NULL) return;
     k_ticks_t timepulse;
     if (data->info.fix_status != GNSS_FIX_STATUS_NO_FIX) {
         if (gnss_get_latest_timepulse(dev, &timepulse) == 0) {
-            timepulse_ns = k_ticks_to_ns_near64(timepulse);
+            (void)k_ticks_to_ns_near64(timepulse);
         }
         char buffer[128] = {0};
         LOG_DBG("UTC Time: %02d %02d:%02d", data->utc.month, data->utc.hour, data->utc.minute);
         snprintf(buffer, sizeof(buffer), "%02d:%02d", data->utc.hour, data->utc.minute);
 
-        oled_layout.display_mtk3333_time(buffer);
-        oled_layout.finalize_screen();
-
+        k_spinlock_key_t key = k_spin_lock(&mtk3333_msg_lock);
         rcl_time_point_value_t now = rmw_uros_epoch_nanos();
         mtk3333_nav_sat_fix_msg.header.stamp.sec = now / 1000000000LL;
         mtk3333_nav_sat_fix_msg.header.stamp.nanosec = now % 1000000000LL;
@@ -267,8 +266,6 @@ static void mtk3333_gnss_data_cb(const struct device* dev, const struct gnss_dat
         mtk3333_nav_sat_fix_msg.longitude = (double)data->nav_data.longitude / 1e9;
 
         mtk3333_nav_sat_fix_msg.altitude = data->nav_data.altitude / 1e3;  // mm → meters
-        oled_layout.display_mtk3333_location(mtk3333_nav_sat_fix_msg.latitude, mtk3333_nav_sat_fix_msg.longitude,
-                                             mtk3333_nav_sat_fix_msg.altitude);
 
         // ── Fix Status ───────────────────────────────────────────────
         switch (data->info.fix_status) {
@@ -299,14 +296,15 @@ static void mtk3333_gnss_data_cb(const struct device* dev, const struct gnss_dat
         memset(buffer, 0, sizeof(buffer));
         snprintf(buffer, sizeof(buffer), "MTK3333: Lat=%.6f Lon=%.6f Alt=%.2f Fix=%d", mtk3333_nav_sat_fix_msg.latitude,
                  mtk3333_nav_sat_fix_msg.longitude, mtk3333_nav_sat_fix_msg.altitude, data->info.fix_status);
-        storage.log_write(buffer);
         atomic_set_bit(mtk3333_msg_ready, 0);
+        k_spin_unlock(&mtk3333_msg_lock, key);
     }
 }
 GNSS_DATA_CALLBACK_DEFINE(mtk3333_gnss, mtk3333_gnss_data_cb);
 
 #if CONFIG_GNSS_SATELLITES
 static void gnss_satellites_cb(const struct device* dev, const struct gnss_satellite* satellites, uint16_t size) {
+    ARG_UNUSED(dev);
     unsigned int tracked_count = 0;
     unsigned int corrected_count = 0;
 
@@ -314,8 +312,6 @@ static void gnss_satellites_cb(const struct device* dev, const struct gnss_satel
         tracked_count += satellites[i].is_tracked;
         corrected_count += satellites[i].is_corrected;
     }
-    oled_layout.display_mtk3333_satellites(tracked_count);
-    oled_layout.finalize_screen();
     LOG_DBG("%u satellite%s reported (of which %u tracked, of which %u has RTK corrections)!\n", size,
             size > 1 ? "s" : "", tracked_count, corrected_count);
 }
@@ -325,13 +321,12 @@ GNSS_SATELLITES_CALLBACK_DEFINE(mtk3333_gnss, gnss_satellites_cb);
 
 #if DT_NODE_HAS_STATUS(DT_ALIAS(ubloxgnss), okay)
 static void ublox_gnss_data_cb(const struct device* dev, const struct gnss_data* data) {
-    if (!atomic_test_bit(init_complete, 0)) return;
-    uint64_t timepulse_ns;
+    if (!atomic_test_bit(init_complete, 0) || data == NULL) return;
     k_ticks_t timepulse;
 
     if (data->info.fix_status != GNSS_FIX_STATUS_NO_FIX) {
         if (gnss_get_latest_timepulse(dev, &timepulse) == 0) {
-            timepulse_ns = k_ticks_to_ns_near64(timepulse);
+            (void)k_ticks_to_ns_near64(timepulse);
         }
     }
     {
@@ -339,9 +334,7 @@ static void ublox_gnss_data_cb(const struct device* dev, const struct gnss_data*
         LOG_DBG("UTC Time: %02d %02d:%02d", data->utc.month, data->utc.hour, data->utc.minute);
         snprintf(buffer, sizeof(buffer), "%02d:%02d", data->utc.hour, data->utc.minute);
 
-        oled_layout.display_ublox_time(buffer);
-        oled_layout.finalize_screen();
-
+        k_spinlock_key_t key = k_spin_lock(&ublox_msg_lock);
         rcl_time_point_value_t now = rmw_uros_epoch_nanos();
         ublox_nav_sat_fix_msg.header.stamp.sec = now / 1000000000LL;
         ublox_nav_sat_fix_msg.header.stamp.nanosec = now % 1000000000LL;
@@ -350,8 +343,6 @@ static void ublox_gnss_data_cb(const struct device* dev, const struct gnss_data*
         ublox_nav_sat_fix_msg.latitude = data->nav_data.latitude / 1e9;  // nanodegrees → degrees
         ublox_nav_sat_fix_msg.longitude = data->nav_data.longitude / 1e9;
         ublox_nav_sat_fix_msg.altitude = data->nav_data.altitude / 1e3;  // mm → meters
-        oled_layout.display_ublox_location(ublox_nav_sat_fix_msg.latitude, ublox_nav_sat_fix_msg.longitude,
-                                           ublox_nav_sat_fix_msg.altitude);
 
         // ── Fix Status ───────────────────────────────────────────────
         switch (data->info.fix_status) {
@@ -382,14 +373,15 @@ static void ublox_gnss_data_cb(const struct device* dev, const struct gnss_data*
         memset(buffer, 0, sizeof(buffer));
         snprintf(buffer, sizeof(buffer), "Ublox: Lat=%.6f Lon=%.6f Alt=%.2f Fix=%d", ublox_nav_sat_fix_msg.latitude,
                  ublox_nav_sat_fix_msg.longitude, ublox_nav_sat_fix_msg.altitude, data->info.fix_status);
-        storage.log_write(buffer);
         atomic_set_bit(ublox_msg_ready, 0);
+        k_spin_unlock(&ublox_msg_lock, key);
     }
 }
 GNSS_DATA_CALLBACK_DEFINE(ublox_gnss, ublox_gnss_data_cb);
 
 #if CONFIG_GNSS_SATELLITES
 static void ublox_gnss_satellites_cb(const struct device* dev, const struct gnss_satellite* satellites, uint16_t size) {
+    ARG_UNUSED(dev);
     unsigned int tracked_count = 0;
     unsigned int corrected_count = 0;
 
@@ -399,8 +391,6 @@ static void ublox_gnss_satellites_cb(const struct device* dev, const struct gnss
     }
     LOG_DBG("%u satellite%s reported (of which %u tracked, of which %u has RTK corrections)!\n", size,
             size > 1 ? "s" : "", tracked_count, corrected_count);
-    oled_layout.display_ublox_satellites(tracked_count);
-    oled_layout.finalize_screen();
 }
 GNSS_SATELLITES_CALLBACK_DEFINE(ublox_gnss, ublox_gnss_satellites_cb);
 #endif /* CONFIG_GNSS_SATELLITES */
@@ -643,12 +633,14 @@ int main(void) {
     callbacks_context.mtk3333_gnss_publisher = &mtk3333_gnss_publisher;
     callbacks_context.mtk3333_nav_sat_fix_msg = &mtk3333_nav_sat_fix_msg;
     callbacks_context.mtk3333_msg_ready = mtk3333_msg_ready;
+    callbacks_context.mtk3333_msg_lock = &mtk3333_msg_lock;
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_ALIAS(ubloxgnss), okay)
     callbacks_context.ublox_gnss_publisher = &ublox_gnss_publisher;
     callbacks_context.ublox_nav_sat_fix_msg = &ublox_nav_sat_fix_msg;
     callbacks_context.ublox_msg_ready = ublox_msg_ready;
+    callbacks_context.ublox_msg_lock = &ublox_msg_lock;
 #endif
 
     callbacks_context.iim42652_dev = iim42652_dev;

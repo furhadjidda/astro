@@ -6,6 +6,7 @@
 #include <sensor_msgs/msg/nav_sat_fix.h>
 #include <sensor_msgs/msg/temperature.h>
 #include <zephyr/device.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/atomic.h>
 
 class OLEDLayout;
@@ -29,12 +30,14 @@ class NodeCallbacks {
         rcl_publisher_t* mtk3333_gnss_publisher;
         sensor_msgs__msg__NavSatFix* mtk3333_nav_sat_fix_msg;
         atomic_t* mtk3333_msg_ready;
+        struct k_spinlock* mtk3333_msg_lock;
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_ALIAS(ubloxgnss), okay)
         rcl_publisher_t* ublox_gnss_publisher;
         sensor_msgs__msg__NavSatFix* ublox_nav_sat_fix_msg;
         atomic_t* ublox_msg_ready;
+        struct k_spinlock* ublox_msg_lock;
 #endif
 
         const struct device* iim42652_dev;
