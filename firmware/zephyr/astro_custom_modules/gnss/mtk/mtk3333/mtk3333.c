@@ -183,14 +183,14 @@ static void mtk3333_poll_work(struct k_work* work) {
         mtk3333_process_char(data, (char)raw[i], &gnss_out, &publish);
 
         if (publish) {
-            LOG_INF("Satellites: %d HDOP: %d Fix: %d", gnss_out.info.satellites_cnt, gnss_out.info.hdop,
+            LOG_DBG("Satellites: %d HDOP: %d Fix: %d", gnss_out.info.satellites_cnt, gnss_out.info.hdop,
                     gnss_out.info.fix_status);
             gnss_publish_data(data->dev, &gnss_out);
         }
     }
 
 reschedule:
-    k_work_schedule(&data->poll_work, K_MSEC(5));
+    k_work_schedule(&data->poll_work, K_MSEC(50));
 }
 
 /* --------------------------- GNSS API Stubs ---------------------------- */

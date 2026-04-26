@@ -313,7 +313,7 @@ static void gnss_satellites_cb(const struct device* dev, const struct gnss_satel
         corrected_count += satellites[i].is_corrected;
     }
     atomic_set(&mtk3333_satellites_tracked, (atomic_val_t)tracked_count);
-    LOG_DBG("%u satellite%s reported (of which %u tracked, of which %u has RTK corrections)!\n", size,
+    LOG_DBG("[mtk3333] %u satellite%s reported (of which %u tracked, of which %u has RTK corrections)!\n", size,
             size > 1 ? "s" : "", tracked_count, corrected_count);
 }
 GNSS_SATELLITES_CALLBACK_DEFINE(mtk3333_gnss, gnss_satellites_cb);
@@ -387,7 +387,7 @@ static void ublox_gnss_satellites_cb(const struct device* dev, const struct gnss
         corrected_count += satellites[i].is_corrected;
     }
     atomic_set(&ublox_satellites_tracked, (atomic_val_t)tracked_count);
-    LOG_DBG("%u satellite%s reported (of which %u tracked, of which %u has RTK corrections)!\n", size,
+    LOG_DBG("[ublox] %u satellite%s reported (of which %u tracked, of which %u has RTK corrections)!\n", size,
             size > 1 ? "s" : "", tracked_count, corrected_count);
 }
 GNSS_SATELLITES_CALLBACK_DEFINE(ublox_gnss, ublox_gnss_satellites_cb);
