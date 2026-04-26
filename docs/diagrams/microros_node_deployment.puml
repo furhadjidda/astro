@@ -1,0 +1,56 @@
+@startuml microros_node_deployment
+skinparam componentStyle rectangle
+skinparam BackgroundColor #FAFAFA
+skinparam ArrowColor #555555
+skinparam roundcorner 8
+left to right direction
+
+node "Raspberry Pi 4\nUbuntu 22.04 + ROS 2 Humble" as PI4 #E8FDE8 {
+  artifact "micro_ros_agent" as Agent
+  artifact "ROS 2 tools\nrviz2 / ros2 topic / launch" as Tools
+}
+
+node "ESP32-S3 Board\n(RAK3112 / Feather S3)" as ESP #FFF8E1 {
+  artifact "app_microros_node" as App
+
+  node "Zephyr Kernel" as Zephyr {
+    artifact "Main Thread" as MainThread
+    artifact "Executor Thread" as ExecThread
+    artifact "NET MGMT callback context" as NetCtx
+    artifact "GNSS callback context" as GnssCtx
+  }
+
+  node "Wi-Fi STA Interface" as Sta
+  node "SSD1306 OLED" as Oled
+  node "SD card" as Sd
+  node "BNO055 / IIM42652 / LPS22HB / GNSS" as SensorBus
+}
+
+cloud "2.4 GHz Wi-Fi" as WifiNet
+
+App --> MainThread
+App --> ExecThread
+App --> NetCtx
+App --> GnssCtx
+App --> Sta
+App --> Oled
+App --> Sd
+App --> SensorBus
+
+Sta --> WifiNet
+WifiNet --> Agent : UDP transport (agent IP:port)
+Tools --> Agent : ROS 2 DDS
+
+note right of App
+  Domain ID: 10
+  Transport:
+  - UDP over Wi-Fi (default for this app)
+  - Serial custom transport fallback
+  Runtime responsibilities:
+  - sensor sampling + publish
+  - time sync with agent
+  - OLED state updates
+  - SD logging
+end note
+
+@enduml

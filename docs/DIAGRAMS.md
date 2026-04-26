@@ -76,3 +76,8 @@ Full reference: https://plantuml.com/
 | `docs/diagrams/system_architecture.puml` | `docs/architecture.md` | Full system component/deployment diagram |
 | `docs/diagrams/data_flow.puml` | `docs/architecture.md` | ROS 2 topic data flow |
 | `docs/diagrams/tf_tree.puml` | `docs/architecture.md` | ROS 2 TF transform tree |
+| `docs/diagrams/microros_node_component.puml` | `docs/microros-node-deep-dive.md` | app_microros_node code component architecture |
+| `docs/diagrams/microros_node_deployment.puml` | `docs/microros-node-deep-dive.md` | app_microros_node deployment architecture |
+| `docs/diagrams/microros_node_class_diagram.puml` | `docs/microros-node-deep-dive.md` | app_microros_node class relationships |
+| `docs/diagrams/microros_node_sequence.puml` | `docs/microros-node-deep-dive.md` | Startup and publish sequence |
+| `docs/diagrams/microros_node_activity_flow.puml` | `docs/microros-node-deep-dive.md` | End-to-end runtime activity flow |

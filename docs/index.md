@@ -18,6 +18,7 @@ Astro is a differential-drive robot built on the TurtleBot3 platform, powered by
 | Document | Description |
 |----------|-------------|
 | [Architecture](architecture.md) | System diagram, data flow, TF tree, and build targets |
+| [micro-ROS Node Deep Dive](microros-node-deep-dive.md) | app_microros_node component/deployment/class/sequence/activity diagrams + Wi-Fi and synchronization notes |
 | [ROS 2 Packages](ros2-packages.md) | All ROS 2 nodes, launch instructions, and cross-compile guide |
 | [Pico Firmware](pico-firmware.md) | Pico node descriptions, build commands, and driver library docs |
 | [Zephyr Firmware](zephyr-firmware.md) | Zephyr app builds, supported boards, and debugging |

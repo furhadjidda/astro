@@ -20,6 +20,12 @@ Astro is a TurtleBot3-based differential-drive robot built around a **Raspberry 
 
 > Source: [docs/diagrams/tf_tree.puml](diagrams/tf_tree.puml)
 
+## Zephyr micro-ROS Node Deep Dive
+
+For implementation-level diagrams of `app_microros_node` (component, deployment, class, sequence, and activity), see:
+
+- [micro-ROS Node Deep Dive](microros-node-deep-dive.md)
+
 ## Repository Layout
 
 ```
