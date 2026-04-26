@@ -150,6 +150,19 @@ void NodeCallbacks::gnssPublishTimerCallback(rcl_timer_t* timer, int64_t last_ca
 
         if (should_publish) {
             RCSOFTCHECK(rcl_publish(ctx_.mtk3333_gnss_publisher, &snapshot, NULL));
+            if (ctx_.oled_layout != nullptr) {
+                ctx_.oled_layout->display_mtk3333_location(snapshot.latitude, snapshot.longitude, snapshot.altitude);
+                if (ctx_.mtk3333_satellites_tracked != nullptr) {
+                    ctx_.oled_layout->display_mtk3333_satellites((int)atomic_get(ctx_.mtk3333_satellites_tracked));
+                }
+                ctx_.oled_layout->finalize_screen();
+            }
+            if (ctx_.storage != nullptr) {
+                char buffer[128] = {0};
+                snprintf(buffer, sizeof(buffer), "MTK3333: Lat=%.6f Lon=%.6f Alt=%.2f Fix=%d", snapshot.latitude,
+                         snapshot.longitude, snapshot.altitude, snapshot.status.status);
+                ctx_.storage->log_write(buffer);
+            }
         }
     }
 #endif
@@ -169,6 +182,19 @@ void NodeCallbacks::gnssPublishTimerCallback(rcl_timer_t* timer, int64_t last_ca
 
         if (should_publish) {
             RCSOFTCHECK(rcl_publish(ctx_.ublox_gnss_publisher, &snapshot, NULL));
+            if (ctx_.oled_layout != nullptr) {
+                ctx_.oled_layout->display_ublox_location(snapshot.latitude, snapshot.longitude, snapshot.altitude);
+                if (ctx_.ublox_satellites_tracked != nullptr) {
+                    ctx_.oled_layout->display_ublox_satellites((int)atomic_get(ctx_.ublox_satellites_tracked));
+                }
+                ctx_.oled_layout->finalize_screen();
+            }
+            if (ctx_.storage != nullptr) {
+                char buffer[128] = {0};
+                snprintf(buffer, sizeof(buffer), "UBLOX: Lat=%.6f Lon=%.6f Alt=%.2f Fix=%d", snapshot.latitude,
+                         snapshot.longitude, snapshot.altitude, snapshot.status.status);
+                ctx_.storage->log_write(buffer);
+            }
         }
     }
 #endif

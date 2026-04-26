@@ -31,6 +31,7 @@ class NodeCallbacks {
         sensor_msgs__msg__NavSatFix* mtk3333_nav_sat_fix_msg;
         atomic_t* mtk3333_msg_ready;
         struct k_spinlock* mtk3333_msg_lock;
+        atomic_t* mtk3333_satellites_tracked;
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_ALIAS(ubloxgnss), okay)
@@ -38,6 +39,7 @@ class NodeCallbacks {
         sensor_msgs__msg__NavSatFix* ublox_nav_sat_fix_msg;
         atomic_t* ublox_msg_ready;
         struct k_spinlock* ublox_msg_lock;
+        atomic_t* ublox_satellites_tracked;
 #endif
 
         const struct device* iim42652_dev;

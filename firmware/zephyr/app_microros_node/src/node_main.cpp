@@ -165,11 +165,13 @@ static std_msgs__msg__Int32 msg;
 sensor_msgs__msg__NavSatFix mtk3333_nav_sat_fix_msg;
 static ATOMIC_DEFINE(mtk3333_msg_ready, 1);
 static struct k_spinlock mtk3333_msg_lock;
+static atomic_t mtk3333_satellites_tracked;
 #endif
 #if DT_NODE_HAS_STATUS(DT_ALIAS(ubloxgnss), okay)
 sensor_msgs__msg__NavSatFix ublox_nav_sat_fix_msg;
 static ATOMIC_DEFINE(ublox_msg_ready, 1);
 static struct k_spinlock ublox_msg_lock;
+static atomic_t ublox_satellites_tracked;
 #endif
 static atomic_t time_is_valid;
 static atomic_t oled_view_switch_request;
@@ -248,57 +250,55 @@ static void executor_thread_entry(void* a, void* b, void* c) {
 static void mtk3333_gnss_data_cb(const struct device* dev, const struct gnss_data* data) {
     if (!atomic_test_bit(init_complete, 0) || data == NULL) return;
     k_ticks_t timepulse;
-    if (data->info.fix_status != GNSS_FIX_STATUS_NO_FIX) {
-        if (gnss_get_latest_timepulse(dev, &timepulse) == 0) {
-            (void)k_ticks_to_ns_near64(timepulse);
-        }
-        char buffer[128] = {0};
-        LOG_DBG("UTC Time: %02d %02d:%02d", data->utc.month, data->utc.hour, data->utc.minute);
-        snprintf(buffer, sizeof(buffer), "%02d:%02d", data->utc.hour, data->utc.minute);
-
-        k_spinlock_key_t key = k_spin_lock(&mtk3333_msg_lock);
-        rcl_time_point_value_t now = rmw_uros_epoch_nanos();
-        mtk3333_nav_sat_fix_msg.header.stamp.sec = now / 1000000000LL;
-        mtk3333_nav_sat_fix_msg.header.stamp.nanosec = now % 1000000000LL;
-
-        // ── Position (Zephyr stores as millionths of degrees / mm) ───
-        mtk3333_nav_sat_fix_msg.latitude = (double)data->nav_data.latitude / 1e9;
-        mtk3333_nav_sat_fix_msg.longitude = (double)data->nav_data.longitude / 1e9;
-
-        mtk3333_nav_sat_fix_msg.altitude = data->nav_data.altitude / 1e3;  // mm → meters
-
-        // ── Fix Status ───────────────────────────────────────────────
-        switch (data->info.fix_status) {
-            case GNSS_FIX_STATUS_GNSS_FIX:
-                mtk3333_nav_sat_fix_msg.status.status = sensor_msgs__msg__NavSatStatus__STATUS_FIX;
-                break;
-            case GNSS_FIX_STATUS_DGNSS_FIX:
-                mtk3333_nav_sat_fix_msg.status.status = sensor_msgs__msg__NavSatStatus__STATUS_SBAS_FIX;
-                break;
-            default:
-                mtk3333_nav_sat_fix_msg.status.status = sensor_msgs__msg__NavSatStatus__STATUS_NO_FIX;
-                break;
-        }
-
-        // ── Service (which constellations) ───────────────────────────
-        mtk3333_nav_sat_fix_msg.status.service =
-            sensor_msgs__msg__NavSatStatus__SERVICE_GPS | sensor_msgs__msg__NavSatStatus__SERVICE_GLONASS;
-
-        double hdop = data->info.hdop / 1e3;            // if available
-        double variance = (hdop * 5.0) * (hdop * 5.0);  // rough estimate
-
-        memset(mtk3333_nav_sat_fix_msg.position_covariance, 0, sizeof(mtk3333_nav_sat_fix_msg.position_covariance));
-
-        mtk3333_nav_sat_fix_msg.position_covariance[0] = variance;        // East
-        mtk3333_nav_sat_fix_msg.position_covariance[4] = variance;        // North
-        mtk3333_nav_sat_fix_msg.position_covariance[8] = variance * 4.0;  // Up (typically worse)
-        mtk3333_nav_sat_fix_msg.position_covariance_type = sensor_msgs__msg__NavSatFix__COVARIANCE_TYPE_APPROXIMATED;
-        memset(buffer, 0, sizeof(buffer));
-        snprintf(buffer, sizeof(buffer), "MTK3333: Lat=%.6f Lon=%.6f Alt=%.2f Fix=%d", mtk3333_nav_sat_fix_msg.latitude,
-                 mtk3333_nav_sat_fix_msg.longitude, mtk3333_nav_sat_fix_msg.altitude, data->info.fix_status);
-        atomic_set_bit(mtk3333_msg_ready, 0);
-        k_spin_unlock(&mtk3333_msg_lock, key);
+    if (data->info.fix_status != GNSS_FIX_STATUS_NO_FIX && gnss_get_latest_timepulse(dev, &timepulse) == 0) {
+        (void)k_ticks_to_ns_near64(timepulse);
     }
+    char buffer[128] = {0};
+    LOG_DBG("UTC Time: %02d %02d:%02d", data->utc.month, data->utc.hour, data->utc.minute);
+    snprintf(buffer, sizeof(buffer), "%02d:%02d", data->utc.hour, data->utc.minute);
+
+    k_spinlock_key_t key = k_spin_lock(&mtk3333_msg_lock);
+    rcl_time_point_value_t now = rmw_uros_epoch_nanos();
+    mtk3333_nav_sat_fix_msg.header.stamp.sec = now / 1000000000LL;
+    mtk3333_nav_sat_fix_msg.header.stamp.nanosec = now % 1000000000LL;
+
+    // ── Position (Zephyr stores as millionths of degrees / mm) ───
+    mtk3333_nav_sat_fix_msg.latitude = (double)data->nav_data.latitude / 1e9;
+    mtk3333_nav_sat_fix_msg.longitude = (double)data->nav_data.longitude / 1e9;
+
+    mtk3333_nav_sat_fix_msg.altitude = data->nav_data.altitude / 1e3;  // mm → meters
+
+    // ── Fix Status ───────────────────────────────────────────────
+    switch (data->info.fix_status) {
+        case GNSS_FIX_STATUS_GNSS_FIX:
+            mtk3333_nav_sat_fix_msg.status.status = sensor_msgs__msg__NavSatStatus__STATUS_FIX;
+            break;
+        case GNSS_FIX_STATUS_DGNSS_FIX:
+            mtk3333_nav_sat_fix_msg.status.status = sensor_msgs__msg__NavSatStatus__STATUS_SBAS_FIX;
+            break;
+        default:
+            mtk3333_nav_sat_fix_msg.status.status = sensor_msgs__msg__NavSatStatus__STATUS_NO_FIX;
+            break;
+    }
+
+    // ── Service (which constellations) ───────────────────────────
+    mtk3333_nav_sat_fix_msg.status.service =
+        sensor_msgs__msg__NavSatStatus__SERVICE_GPS | sensor_msgs__msg__NavSatStatus__SERVICE_GLONASS;
+
+    double hdop = data->info.hdop / 1e3;            // if available
+    double variance = (hdop * 5.0) * (hdop * 5.0);  // rough estimate
+
+    memset(mtk3333_nav_sat_fix_msg.position_covariance, 0, sizeof(mtk3333_nav_sat_fix_msg.position_covariance));
+
+    mtk3333_nav_sat_fix_msg.position_covariance[0] = variance;        // East
+    mtk3333_nav_sat_fix_msg.position_covariance[4] = variance;        // North
+    mtk3333_nav_sat_fix_msg.position_covariance[8] = variance * 4.0;  // Up (typically worse)
+    mtk3333_nav_sat_fix_msg.position_covariance_type = sensor_msgs__msg__NavSatFix__COVARIANCE_TYPE_APPROXIMATED;
+    memset(buffer, 0, sizeof(buffer));
+    snprintf(buffer, sizeof(buffer), "MTK3333: Lat=%.6f Lon=%.6f Alt=%.2f Fix=%d", mtk3333_nav_sat_fix_msg.latitude,
+             mtk3333_nav_sat_fix_msg.longitude, mtk3333_nav_sat_fix_msg.altitude, data->info.fix_status);
+    atomic_set_bit(mtk3333_msg_ready, 0);
+    k_spin_unlock(&mtk3333_msg_lock, key);
 }
 GNSS_DATA_CALLBACK_DEFINE(mtk3333_gnss, mtk3333_gnss_data_cb);
 
@@ -312,6 +312,7 @@ static void gnss_satellites_cb(const struct device* dev, const struct gnss_satel
         tracked_count += satellites[i].is_tracked;
         corrected_count += satellites[i].is_corrected;
     }
+    atomic_set(&mtk3333_satellites_tracked, (atomic_val_t)tracked_count);
     LOG_DBG("%u satellite%s reported (of which %u tracked, of which %u has RTK corrections)!\n", size,
             size > 1 ? "s" : "", tracked_count, corrected_count);
 }
@@ -324,58 +325,54 @@ static void ublox_gnss_data_cb(const struct device* dev, const struct gnss_data*
     if (!atomic_test_bit(init_complete, 0) || data == NULL) return;
     k_ticks_t timepulse;
 
-    if (data->info.fix_status != GNSS_FIX_STATUS_NO_FIX) {
-        if (gnss_get_latest_timepulse(dev, &timepulse) == 0) {
-            (void)k_ticks_to_ns_near64(timepulse);
-        }
+    if (data->info.fix_status != GNSS_FIX_STATUS_NO_FIX && gnss_get_latest_timepulse(dev, &timepulse) == 0) {
+        (void)k_ticks_to_ns_near64(timepulse);
     }
-    {
-        char buffer[128] = {0};
-        LOG_DBG("UTC Time: %02d %02d:%02d", data->utc.month, data->utc.hour, data->utc.minute);
-        snprintf(buffer, sizeof(buffer), "%02d:%02d", data->utc.hour, data->utc.minute);
+    char buffer[128] = {0};
+    LOG_DBG("UTC Time: %02d %02d:%02d", data->utc.month, data->utc.hour, data->utc.minute);
+    snprintf(buffer, sizeof(buffer), "%02d:%02d", data->utc.hour, data->utc.minute);
 
-        k_spinlock_key_t key = k_spin_lock(&ublox_msg_lock);
-        rcl_time_point_value_t now = rmw_uros_epoch_nanos();
-        ublox_nav_sat_fix_msg.header.stamp.sec = now / 1000000000LL;
-        ublox_nav_sat_fix_msg.header.stamp.nanosec = now % 1000000000LL;
+    k_spinlock_key_t key = k_spin_lock(&ublox_msg_lock);
+    rcl_time_point_value_t now = rmw_uros_epoch_nanos();
+    ublox_nav_sat_fix_msg.header.stamp.sec = now / 1000000000LL;
+    ublox_nav_sat_fix_msg.header.stamp.nanosec = now % 1000000000LL;
 
-        // ── Position (Zephyr stores as millionths of degrees / mm) ───
-        ublox_nav_sat_fix_msg.latitude = data->nav_data.latitude / 1e9;  // nanodegrees → degrees
-        ublox_nav_sat_fix_msg.longitude = data->nav_data.longitude / 1e9;
-        ublox_nav_sat_fix_msg.altitude = data->nav_data.altitude / 1e3;  // mm → meters
+    // ── Position (Zephyr stores as millionths of degrees / mm) ───
+    ublox_nav_sat_fix_msg.latitude = data->nav_data.latitude / 1e9;  // nanodegrees → degrees
+    ublox_nav_sat_fix_msg.longitude = data->nav_data.longitude / 1e9;
+    ublox_nav_sat_fix_msg.altitude = data->nav_data.altitude / 1e3;  // mm → meters
 
-        // ── Fix Status ───────────────────────────────────────────────
-        switch (data->info.fix_status) {
-            case GNSS_FIX_STATUS_GNSS_FIX:
-                ublox_nav_sat_fix_msg.status.status = sensor_msgs__msg__NavSatStatus__STATUS_FIX;
-                break;
-            case GNSS_FIX_STATUS_DGNSS_FIX:
-                ublox_nav_sat_fix_msg.status.status = sensor_msgs__msg__NavSatStatus__STATUS_SBAS_FIX;
-                break;
-            default:
-                ublox_nav_sat_fix_msg.status.status = sensor_msgs__msg__NavSatStatus__STATUS_NO_FIX;
-                break;
-        }
-
-        // ── Service (which constellations) ───────────────────────────
-        ublox_nav_sat_fix_msg.status.service =
-            sensor_msgs__msg__NavSatStatus__SERVICE_GPS | sensor_msgs__msg__NavSatStatus__SERVICE_GLONASS;
-
-        double hdop = data->info.hdop / 1e3;            // if available
-        double variance = (hdop * 5.0) * (hdop * 5.0);  // rough estimate
-
-        memset(ublox_nav_sat_fix_msg.position_covariance, 0, sizeof(ublox_nav_sat_fix_msg.position_covariance));
-
-        ublox_nav_sat_fix_msg.position_covariance[0] = variance;        // East
-        ublox_nav_sat_fix_msg.position_covariance[4] = variance;        // North
-        ublox_nav_sat_fix_msg.position_covariance[8] = variance * 4.0;  // Up (typically worse)
-        ublox_nav_sat_fix_msg.position_covariance_type = sensor_msgs__msg__NavSatFix__COVARIANCE_TYPE_APPROXIMATED;
-        memset(buffer, 0, sizeof(buffer));
-        snprintf(buffer, sizeof(buffer), "Ublox: Lat=%.6f Lon=%.6f Alt=%.2f Fix=%d", ublox_nav_sat_fix_msg.latitude,
-                 ublox_nav_sat_fix_msg.longitude, ublox_nav_sat_fix_msg.altitude, data->info.fix_status);
-        atomic_set_bit(ublox_msg_ready, 0);
-        k_spin_unlock(&ublox_msg_lock, key);
+    // ── Fix Status ───────────────────────────────────────────────
+    switch (data->info.fix_status) {
+        case GNSS_FIX_STATUS_GNSS_FIX:
+            ublox_nav_sat_fix_msg.status.status = sensor_msgs__msg__NavSatStatus__STATUS_FIX;
+            break;
+        case GNSS_FIX_STATUS_DGNSS_FIX:
+            ublox_nav_sat_fix_msg.status.status = sensor_msgs__msg__NavSatStatus__STATUS_SBAS_FIX;
+            break;
+        default:
+            ublox_nav_sat_fix_msg.status.status = sensor_msgs__msg__NavSatStatus__STATUS_NO_FIX;
+            break;
     }
+
+    // ── Service (which constellations) ───────────────────────────
+    ublox_nav_sat_fix_msg.status.service =
+        sensor_msgs__msg__NavSatStatus__SERVICE_GPS | sensor_msgs__msg__NavSatStatus__SERVICE_GLONASS;
+
+    double hdop = data->info.hdop / 1e3;            // if available
+    double variance = (hdop * 5.0) * (hdop * 5.0);  // rough estimate
+
+    memset(ublox_nav_sat_fix_msg.position_covariance, 0, sizeof(ublox_nav_sat_fix_msg.position_covariance));
+
+    ublox_nav_sat_fix_msg.position_covariance[0] = variance;        // East
+    ublox_nav_sat_fix_msg.position_covariance[4] = variance;        // North
+    ublox_nav_sat_fix_msg.position_covariance[8] = variance * 4.0;  // Up (typically worse)
+    ublox_nav_sat_fix_msg.position_covariance_type = sensor_msgs__msg__NavSatFix__COVARIANCE_TYPE_APPROXIMATED;
+    memset(buffer, 0, sizeof(buffer));
+    snprintf(buffer, sizeof(buffer), "Ublox: Lat=%.6f Lon=%.6f Alt=%.2f Fix=%d", ublox_nav_sat_fix_msg.latitude,
+             ublox_nav_sat_fix_msg.longitude, ublox_nav_sat_fix_msg.altitude, data->info.fix_status);
+    atomic_set_bit(ublox_msg_ready, 0);
+    k_spin_unlock(&ublox_msg_lock, key);
 }
 GNSS_DATA_CALLBACK_DEFINE(ublox_gnss, ublox_gnss_data_cb);
 
@@ -389,6 +386,7 @@ static void ublox_gnss_satellites_cb(const struct device* dev, const struct gnss
         tracked_count += satellites[i].is_tracked;
         corrected_count += satellites[i].is_corrected;
     }
+    atomic_set(&ublox_satellites_tracked, (atomic_val_t)tracked_count);
     LOG_DBG("%u satellite%s reported (of which %u tracked, of which %u has RTK corrections)!\n", size,
             size > 1 ? "s" : "", tracked_count, corrected_count);
 }
@@ -634,6 +632,7 @@ int main(void) {
     callbacks_context.mtk3333_nav_sat_fix_msg = &mtk3333_nav_sat_fix_msg;
     callbacks_context.mtk3333_msg_ready = mtk3333_msg_ready;
     callbacks_context.mtk3333_msg_lock = &mtk3333_msg_lock;
+    callbacks_context.mtk3333_satellites_tracked = &mtk3333_satellites_tracked;
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_ALIAS(ubloxgnss), okay)
@@ -641,6 +640,7 @@ int main(void) {
     callbacks_context.ublox_nav_sat_fix_msg = &ublox_nav_sat_fix_msg;
     callbacks_context.ublox_msg_ready = ublox_msg_ready;
     callbacks_context.ublox_msg_lock = &ublox_msg_lock;
+    callbacks_context.ublox_satellites_tracked = &ublox_satellites_tracked;
 #endif
 
     callbacks_context.iim42652_dev = iim42652_dev;
