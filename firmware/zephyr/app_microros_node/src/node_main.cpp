@@ -364,12 +364,38 @@ static void bno055_imu_timer_callback(rcl_timer_t* timer, int64_t last_call_time
         struct sensor_value quat[4];
         struct sensor_value accel[4];
         struct sensor_value gyro[4];
+
+        int rc = sensor_sample_fetch(bno055_dev);
+        if (rc < 0) {
+            LOG_ERR("BNO055 sensor_sample_fetch error: %d", rc);
+            return;
+        }
+
+        rc = sensor_channel_get(bno055_dev, static_cast<sensor_channel>(BNO055_SENSOR_CHAN_EULER_YRP), eul);
+        if (rc < 0) {
+            LOG_ERR("BNO055 sensor_channel_get euler error: %d", rc);
+            return;
+        }
+
+        rc = sensor_channel_get(bno055_dev, static_cast<sensor_channel>(BNO055_SENSOR_CHAN_QUATERNION_WXYZ), quat);
+        if (rc < 0) {
+            LOG_ERR("BNO055 sensor_channel_get quaternion error: %d", rc);
+            return;
+        }
+
+        rc = sensor_channel_get(bno055_dev, static_cast<sensor_channel>(BNO055_SENSOR_CHAN_LINEAR_ACCEL_XYZ), accel);
+        if (rc < 0) {
+            LOG_ERR("BNO055 sensor_channel_get accel error: %d", rc);
+            return;
+        }
+
+        rc = sensor_channel_get(bno055_dev, static_cast<sensor_channel>(BNO055_SENSOR_CHAN_GRAVITY_XYZ), gyro);
+        if (rc < 0) {
+            LOG_ERR("BNO055 sensor_channel_get gyro error: %d", rc);
+            return;
+        }
+
         rcl_time_point_value_t now = rmw_uros_epoch_nanos();
-        sensor_sample_fetch(bno055_dev);
-        sensor_channel_get(bno055_dev, static_cast<sensor_channel>(BNO055_SENSOR_CHAN_EULER_YRP), eul);
-        sensor_channel_get(bno055_dev, static_cast<sensor_channel>(BNO055_SENSOR_CHAN_QUATERNION_WXYZ), quat);
-        sensor_channel_get(bno055_dev, static_cast<sensor_channel>(BNO055_SENSOR_CHAN_LINEAR_ACCEL_XYZ), accel);
-        sensor_channel_get(bno055_dev, static_cast<sensor_channel>(BNO055_SENSOR_CHAN_GRAVITY_XYZ), gyro);
 
         // CORRECT - use integer arithmetic
         bno055_imu_msg.header.stamp.sec = now / 1000000000LL;
@@ -479,7 +505,7 @@ static void time_sync_timer_callback(rcl_timer_t* timer, int64_t last_call_time)
 
 static void iim42652_timer_callback(rcl_timer_t* timer, int64_t last_call_time) {
     ARG_UNUSED(last_call_time);
-    if (timer == NULL || iim42652_dev == NULL) {
+    if (timer == NULL || iim42652_dev == NULL || !device_is_ready(iim42652_dev)) {
         return;
     }
 
@@ -834,12 +860,18 @@ int main(void) {
     device_init(iim42652_dev);
 #endif
 
-    if (!device_is_ready(iim42652_dev)) {
-        LOG_ERR("Device %s is not ready\n", iim42652_dev->name);
-        return -ENODEV;
+    /* Recovery: retry init if chip ID read failed (e.g. I2C bus not settled) */
+    for (int _retry = 0; !device_is_ready(iim42652_dev) && _retry < 3; _retry++) {
+        LOG_WRN("IIM42652 not ready (attempt %d/3), retrying init in 500 ms...", _retry + 1);
+        k_sleep(K_MSEC(500));
+        device_init(iim42652_dev);
     }
 
-    LOG_DBG("IIM42652 Device %s is ready\n", iim42652_dev->name);
+    if (!device_is_ready(iim42652_dev)) {
+        LOG_WRN("IIM42652 failed to initialize after retries, continuing without IMU");
+    } else {
+        LOG_DBG("IIM42652 Device %s is ready\n", iim42652_dev->name);
+    }
 #endif
     // Starting display
     if (oled_layout.init_screen() != 0) {

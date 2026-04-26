@@ -71,6 +71,15 @@ static int bank_selection(const struct device* dev, uint8_t bank_sel) {
 
     LOG_DBG("Bank selected: %d", tmp);
     k_msleep(1);
+
+    /* Verify the bank switch actually took effect.  After an MCU soft-reset
+     * without a power cycle the sensor can be in a non-zero bank; if the
+     * read-back doesn't match we must signal failure so the caller retries. */
+    if (tmp != bank_sel) {
+        LOG_ERR("Bank select mismatch: wrote %d, read back %d", bank_sel, tmp);
+        return -EIO;
+    }
+
     return 0;
 }
 
@@ -527,8 +536,13 @@ static int iim42652_attr_set(const struct device* dev, enum sensor_channel chan,
 }
 
 static void float_to_sensor_value(float f, struct sensor_value* v) {
-    v->val1 = (int32_t)f;
-    v->val2 = (int32_t)((f - v->val1) * 1000000.0f);
+    /* Zephyr sensor_value requires val1 and val2 to have the same sign,
+     * with val2 representing the *unsigned* fractional part (0..999999).
+     * Casting a negative float like -0.5 gives val1=0, val2=-500000 which
+     * violates the contract and causes sensor_value_to_double() to return 0
+     * for all values in (-1, 0).  Use truncation toward -infinity instead. */
+    v->val1 = (int32_t)floorf(f);
+    v->val2 = (int32_t)((f - (float)v->val1) * 1000000.0f);
 }
 
 static int iim42652_channel_get(const struct device* dev, enum sensor_channel chan, struct sensor_value* val) {
@@ -567,15 +581,17 @@ static int iim42652_sample_fetch(const struct device* dev, enum sensor_channel c
     // Read sensor data
     ret = get_accel_data(dev, &accel_data);
     if (ret == 0) {
-        // Convert to g (±16g range: 2048 LSB/g)
-        float acc_x = (float)accel_data.x / 2048.0f;
-        float acc_y = (float)accel_data.y / 2048.0f;
-        float acc_z = (float)accel_data.z / 2048.0f;
+        /* Convert raw to m/s².
+         * Default FSR = ±16g → sensitivity = 2048 LSB/g.
+         * Zephyr SENSOR_CHAN_ACCEL_XYZ must be in m/s² (not g). */
+        float acc_x = (float)accel_data.x / 2048.0f * 9.80665f;
+        float acc_y = (float)accel_data.y / 2048.0f * 9.80665f;
+        float acc_z = (float)accel_data.z / 2048.0f * 9.80665f;
         data->acc.x = acc_x;
         data->acc.y = acc_y;
         data->acc.z = acc_z;
 
-        LOG_DBG("Accel X: %.3f g, Y: %.3f g, Z: %.3f g", acc_x, acc_y, acc_z);
+        LOG_DBG("Accel X: %.3f m/s2, Y: %.3f m/s2, Z: %.3f m/s2", acc_x, acc_y, acc_z);
     } else {
         fetch_ret = ret;
     }
@@ -611,7 +627,27 @@ static int iim42652_init(const struct device* dev) {
     LOG_INF("Initializing IIM42652");
     k_msleep(100);
 
-    int ret = get_device_id(dev, &sensor_id);
+    /* After a warm MCU reset the I2C bus can be left stuck (SDA held low by
+     * the sensor mid-transaction).  Recover it with 9 SCL pulses before
+     * attempting any register access. */
+    int ret = i2c_recover_bus(config->i2c_bus.bus);
+    if (ret != 0) {
+        LOG_WRN("I2C bus recovery failed: %d (continuing anyway)", ret);
+    }
+    k_msleep(10);
+
+    /* After an MCU soft-reset (without power-cycling the sensor) the IIM42652
+     * retains its register-bank selection.  WHO_AM_I (0x75) only returns 0x6F
+     * when bank 0 is active; any other bank maps that address to a different
+     * register (e.g. 0x5F or 0x7F), causing a spurious "Invalid chip ID" error.
+     * Always select bank 0 before the ID read so init is idempotent. */
+    ret = bank_selection(dev, 0);
+    if (ret != 0) {
+        LOG_ERR("Failed to select bank 0: %d", ret);
+        return ret;
+    }
+
+    ret = get_device_id(dev, &sensor_id);
     if (ret != 0) {
         return ret;
     }
