@@ -1,0 +1,93 @@
+@startuml microros_node_class_diagram
+skinparam BackgroundColor #FAFAFA
+skinparam ArrowColor #555555
+skinparam roundcorner 8
+hide empty members
+
+class NodeCallbacks {
+  - static Context ctx_
+  - static bool initialized_
+  + static void initialize(const Context&)
+  + static void handleExecutorIteration()
+  + static void bno055ImuTimerCallback(rcl_timer_t*, int64_t)
+  + static void gnssPublishTimerCallback(rcl_timer_t*, int64_t)
+  + static void timeSyncTimerCallback(rcl_timer_t*, int64_t)
+  + static void iim42652TimerCallback(rcl_timer_t*, int64_t)
+  + static void lps22hbTimerCallback(rcl_timer_t*, int64_t)
+  + static void oledViewTimerCallback(rcl_timer_t*, int64_t)
+}
+
+class Context {
+  + OLEDLayout* oled_layout
+  + Storage* storage
+  + atomic_t* time_is_valid
+  + atomic_t* oled_view_switch_request
+  + rcl_publisher_t* ...
+  + sensor_msgs__msg__* ...
+  + k_spinlock* mtk3333_msg_lock
+  + k_spinlock* ublox_msg_lock
+}
+
+class WifiHandler {
+  + int initStation(OLEDLayout&)
+  - int connectWithRetry()
+  - int tryConnect()
+}
+
+class OLEDLayout {
+  - OLEDWrapper* oled_wrapper
+  - volatile View active_view
+  - bool display_updates_enabled
+  - k_mutex display_mutex
+  + int init_screen()
+  + void set_view(View)
+  + void next_view()
+  + void display_wifi_waiting_message(const char*)
+  + void display_agent_waiting_message()
+  + void display_mtk3333_location(double,double,double)
+  + void display_ublox_location(double,double,double)
+  + void display_imu_orientation(double,double,double)
+  + void display_temperature_pressure(int,int,int,int)
+  + void finalize_screen()
+}
+
+class OLEDWrapper {
+  - const device* display_dev
+  + int init()
+  + void print(const char*, int, int)
+  + void clear()
+  + void finalize()
+  + void draw_line/point/rect/circle(...)
+}
+
+class Storage {
+  - string _current_log_file
+  - fs_file_t _current_log_file_handle
+  + int init()
+  + int log_write(const char*)
+  + int print_storage_stats()
+  + int dt_write(int)
+  + int dt_read(time_t&)
+}
+
+class StatusClass {
+  + StatusClass()
+  + void power_on()
+  + void display_color(const led_rgb&)
+}
+
+NodeCallbacks *-- Context
+NodeCallbacks --> OLEDLayout : uses
+NodeCallbacks --> Storage : uses
+NodeCallbacks ..> "rcl_publisher_t"
+NodeCallbacks ..> "sensor_msgs__msg__*"
+NodeCallbacks ..> "k_spinlock"
+
+WifiHandler --> OLEDLayout : status UI
+OLEDLayout *-- OLEDWrapper
+OLEDLayout ..> "k_mutex"
+
+Storage ..> "Zephyr FS"
+StatusClass ..> "LED strip driver"
+
+@enduml

@@ -1,0 +1,64 @@
+@startuml system_architecture
+skinparam componentStyle rectangle
+skinparam BackgroundColor #FAFAFA
+skinparam ArrowColor #555555
+skinparam roundcorner 8
+
+rectangle "Development Host (x86)" as DEV #E8F4FD {
+  component "RViz2 / FoxGlove" as RVIZ
+  component "SLAM / Nav2" as SLAM_DEV
+  RVIZ <--> SLAM_DEV : ROS 2 DDS (Domain ID 10)
+}
+
+rectangle "Raspberry Pi 4  —  Ubuntu 22.04 / ROS 2 Humble" as PI4 #E8FDE8 {
+  component "robot_bringup\n(launch)" as BRINGUP
+  component "astro_slam\n(Cartographer)" as SLAM
+  component "astro_navigation\n(Nav2)" as NAV
+  component "teleop\n(keyboard)" as TELEOP
+  component "micro_ros_agent" as MRA
+  component "sllidar_node\n(RPLidar A1M8/C1)" as LIDAR
+  component "realsense2_camera\n(Intel D455)" as RS
+  component "depthai_ros_driver\n(OAK-D Lite)" as DAI
+  component "robot_state_publisher\n(URDF)" as RSP
+  component "astro_sensor\n(re-stamps IMU/GNSS/odom)" as SENSOR
+  component "astro_dynamixel_odometry\n(XL430)" as DYN
+  component "ros_time_publisher\n(1 kHz clock)" as RTP
+  component "ros_agent_watcher\n(watchdog)" as RAW
+}
+
+rectangle "Raspberry Pi Pico (RP2040)" as PICO1 #FFF8E1 {
+  component "FreeRTOS + micro-ROS" as FRT1
+  note right of FRT1
+    Nodes:
+    • bno055 (IMU)
+    • diff_drive (motors + odometry)
+    • gnss
+  end note
+}
+
+rectangle "Raspberry Pi Pico 2W (RP2350)" as PICO2 #FFF8E1 {
+  component "FreeRTOS + micro-ROS" as FRT2
+  note right of FRT2
+    Nodes:
+    • sensors (IMU, GNSS, ToF, display)
+    • diff_drive
+  end note
+}
+
+rectangle "Zephyr Board\n(RAK3112 / ESP32-S3 / Adafruit Feather)" as ZEP #FCE8F4 {
+  component "Zephyr RTOS + micro-ROS" as ZRTOS
+  note right of ZRTOS
+    Apps:
+    • sensor_node
+    • microros_node
+    • bluetooth
+    • sd_card_fs
+  end note
+}
+
+DEV <--> PI4 : Wi-Fi / Ethernet
+PI4 <--> PICO1 : USB serial / UART / UDP
+PI4 <--> PICO2 : USB serial / UART / UDP
+PI4 <--> ZEP   : USB serial / UART / UDP
+
+@enduml

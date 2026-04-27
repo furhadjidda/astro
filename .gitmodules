@@ -1,19 +1,19 @@
 [submodule "pico_firmware/external/micro_ros_raspberrypi_pico_sdk"]
-	path = pico_firmware/external/micro_ros_raspberrypi_pico_sdk
+	path = firmware/pico/external/micro_ros_raspberrypi_pico_sdk
 	url = https://github.com/micro-ROS/micro_ros_raspberrypi_pico_sdk.git
 	branch = humble
 [submodule "pico_firmware/external/pico-sdk"]
-	path = pico_firmware/external/pico-sdk
+	path = firmware/pico/external/pico-sdk
 	url = https://github.com/raspberrypi/pico-sdk.git
 [submodule "pico_firmware/external/FreeRTOS-Kernel"]
-	path = pico_firmware/external/FreeRTOS-Kernel
+	path = firmware/pico/external/FreeRTOS-Kernel
 	url = https://github.com/FreeRTOS/FreeRTOS-Kernel.git
 [submodule "pico_firmware/sensor_drivers"]
-	path = pico_firmware/sensor_drivers
+	path = firmware/pico/sensor_drivers
 	url = https://github.com/furhadjidda/sensor_drivers.git
 [submodule "pico_firmware/external/googletest"]
-	path = pico_firmware/external/googletest
+	path = firmware/pico/external/googletest
 	url = https://github.com/google/googletest.git
 [submodule "pico_firmware/external/pimoroni-pico"]
-	path = pico_firmware/external/pimoroni-pico
+	path = firmware/pico/external/pimoroni-pico
 	url = https://github.com/pimoroni/pimoroni-pico.git

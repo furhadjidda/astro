@@ -1,0 +1,58 @@
+@startuml microros_node_sequence
+skinparam BackgroundColor #FAFAFA
+skinparam ArrowColor #555555
+skinparam roundcorner 8
+
+actor Boot as B
+participant "main()" as Main
+participant "OLEDLayout" as Layout
+participant "Storage" as Store
+participant "WifiHandler" as Wifi
+participant "Zephyr Wi-Fi\nnet_mgmt" as Net
+participant "micro-ROS agent" as Agent
+participant "rcl/rclc" as Rcl
+participant "Executor Thread" as Exec
+participant "NodeCallbacks" as Cb
+participant "GNSS callback" as GnssCb
+
+B -> Main : boot firmware
+Main -> Layout : init_screen()
+Main -> Store : init()
+Main -> Wifi : initStation(layout)
+Wifi -> Net : NET_REQUEST_WIFI_CONNECT
+Net --> Wifi : NET_EVENT_IPV4_ADDR_ADD
+Wifi --> Main : connected
+
+Main -> Main : rmw_uros_set_custom_transport(...)
+Main -> Main : ping agent loop
+loop until reachable
+  Main -> Agent : rmw_uros_ping_agent(100,3)
+  Agent --> Main : reachable / timeout
+end
+
+Main -> Rcl : init options + support + node
+Main -> Rcl : create publishers and timers
+Main -> Cb : initialize(context)
+Main -> Exec : create executor thread
+
+par "executor loop"
+  loop every spin cycle
+    Exec -> Rcl : rclc_executor_spin_some()
+    Exec -> Cb : handleExecutorIteration()
+  end
+else "GNSS producer path"
+  GnssCb -> Cb : write NavSatFix fields
+  Cb -> Cb : k_spin_lock + set msg_ready bit
+end
+
+Exec -> Cb : gnssPublishTimerCallback()
+Cb -> Cb : k_spin_lock + copy snapshot + clear ready bit
+Cb -> Rcl : rcl_publish(snapshot)
+Cb -> Layout : display GNSS data
+Cb -> Store : log_write()
+
+Exec -> Cb : timeSyncTimerCallback()
+Cb -> Agent : rmw_uros_sync_session()
+Cb -> Main : clock_settime(CLOCK_REALTIME)
+
+@enduml

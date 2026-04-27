@@ -39,7 +39,7 @@ jobs:
         shell: bash
         run: |
           . /opt/zephyr-venv/bin/activate
-          cd zephyr_workspace
+          cd firmware/zephyr
           if [ ! -d ".west" ]; then
             west init -l west
             west update --narrow
@@ -50,7 +50,7 @@ jobs:
 
       - name: Build sensor node app
         shell: bash
-        working-directory: zephyr_workspace
+        working-directory: firmware/zephyr
         run: |
           . /opt/zephyr-venv/bin/activate
 
@@ -69,7 +69,7 @@ jobs:
 
       - name: Build Example Apps
         shell: bash
-        working-directory: zephyr_workspace
+        working-directory: firmware/zephyr
         run: |
           . /opt/zephyr-venv/bin/activate
 

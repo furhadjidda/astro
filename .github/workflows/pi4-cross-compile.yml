@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Import repositories from astro.repos
-        working-directory: ros2_ws
+        working-directory: ros2
         run: |
           python3 -m venv .ci-venv
           . .ci-venv/bin/activate
@@ -44,14 +44,14 @@ jobs:
       - name: CI diagnostics (commit + Dockerfile)
         run: |
           git rev-parse HEAD
-          sed -n '1,80p' ros2_ws/target_deploy_script/Dockerfile
+          sed -n '1,80p' ros2/deploy/Dockerfile
 
       - name: Cross-compile Pi4 workspace (build-only)
-        working-directory: ros2_ws
+        working-directory: ros2
         env:
           CMAKE_BUILD_PARALLEL_LEVEL: "4"
         run: |
-          python3 target_deploy_script/build_and_deploy_pi4.py \
+          python3 deploy/build_and_deploy_pi4.py \
             --skip-deploy \
             --first-run \
             --continue-on-error

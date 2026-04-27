@@ -1,0 +1,65 @@
+@startuml microros_node_component
+skinparam componentStyle rectangle
+skinparam BackgroundColor #FAFAFA
+skinparam ArrowColor #555555
+skinparam roundcorner 8
+left to right direction
+
+package "app_microros_node" #F8F8FF {
+  component "node_main.cpp\nBootstrap + wiring" as Main
+  component "NodeCallbacks" as Cb
+  component "WifiHandler" as Wifi
+  component "OLEDLayout" as Layout
+  component "OLEDWrapper" as Wrapper
+  component "Storage" as Store
+  component "StatusClass\n(optional board LED)" as Status
+}
+
+package "Execution Contexts" #FFF8E1 {
+  component "Main Thread" as MainThread
+  component "Executor Thread\n(rclc_executor_spin_some)" as ExecThread
+  component "GNSS Driver Callback\n(Zephyr context)" as GnssCb
+  component "NET MGMT Callback\n(NET_EVENT_IPV4_ADDR_ADD)" as NetCb
+  component "GPIO IRQ Callback\n(view switch button)" as GpioCb
+}
+
+package "micro-ROS / ROS 2" #E8FDE8 {
+  component "rcl/rclc" as Rclc
+  component "Custom Transport\nUDP/Serial" as Transport
+  component "micro_ros_agent\n(Raspberry Pi 4)" as Agent
+}
+
+package "Zephyr Services" #E8F4FD {
+  component "Wi-Fi Stack\n(net_mgmt + DHCP)" as WifiStack
+  component "Sensor Drivers\nBNO055 / IIM42652 / LPS22HB / GNSS" as Sensors
+  component "Display Driver\nSSD1306 + CFB" as Display
+  component "FS + SD card" as Fs
+}
+
+Main --> Wifi : initStation()
+Main --> Layout : startup and status screens
+Main --> Store : init() and log destination
+Main --> Rclc : node, publishers, timers, executor
+Main --> ExecThread : spawn
+Main --> Transport : set transport + ping agent
+Transport --> Agent : session and publish traffic
+
+ExecThread --> Cb : timer callbacks
+Cb --> Sensors : sample and read channels
+Cb --> Rclc : rcl_publish()
+Cb --> Layout : update cached screen data
+Cb --> Store : log_write()
+
+Wifi --> WifiStack : NET_REQUEST_WIFI_CONNECT
+WifiStack --> NetCb : IPv4 acquired event
+NetCb --> Wifi : k_sem_give(ipv4_ready_sem)
+
+GnssCb --> Cb : shared NavSatFix readiness via atomics
+GpioCb --> Cb : request OLED view switch
+
+Layout --> Wrapper : draw primitives and text
+Wrapper --> Display : cfb API
+Store --> Fs : fs_open/fs_write/fs_sync
+Status --> Display : board indicator output
+
+@enduml

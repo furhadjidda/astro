@@ -19,7 +19,7 @@ jobs:
 
     - name: Import repositories from .repos file
       shell: bash
-      working-directory: ros2_ws
+      working-directory: ros2
       run: |
         vcs import . < astro.repos
 
@@ -34,14 +34,14 @@ jobs:
 
     - name: Install ROS dependencies
       shell: bash
-      working-directory: ros2_ws
+      working-directory: ros2
       run: |
         source /opt/ros/humble/setup.bash
         rosdep install --from-paths src --ignore-src -r -y
 
     - name: Build with colcon
       shell: bash
-      working-directory: ros2_ws
+      working-directory: ros2
       run: |
         source /opt/ros/humble/setup.bash
         colcon build --event-handlers console_direct+

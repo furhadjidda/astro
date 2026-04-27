@@ -1,0 +1,42 @@
+@startuml tf_tree
+skinparam componentStyle rectangle
+skinparam BackgroundColor #FAFAFA
+skinparam ArrowColor #555555
+skinparam roundcorner 8
+
+object "map" as MAP #E8F4FD
+object "odom" as ODOM #E8FDE8 {
+  publisher = Cartographer or EKF
+}
+object "base_link" as BL #E8FDE8 {
+  publisher = astro_odometry_tf_broadcaster
+}
+object "base_footprint" as BF #FFF8E1 {
+  transform = static
+}
+object "imu_link" as IMU #FFF8E1 {
+  transform = static
+}
+object "laser" as LASER #FFF8E1 {
+  transform = static
+}
+object "camera_link" as CAM #FFF8E1 {
+  transform = static
+}
+object "wheel_left_link" as WL #FCE8F4 {
+  transform = URDF joint states
+}
+object "wheel_right_link" as WR #FCE8F4 {
+  transform = URDF joint states
+}
+
+MAP  --> ODOM
+ODOM --> BL
+BL   --> BF
+BL   --> IMU
+BL   --> LASER
+BL   --> CAM
+BL   --> WL
+BL   --> WR
+
+@enduml

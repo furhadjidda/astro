@@ -1,0 +1,50 @@
+@startuml microros_node_activity_flow
+skinparam BackgroundColor #FAFAFA
+skinparam ArrowColor #555555
+skinparam roundcorner 8
+
+start
+:Initialize sensors and message structs;
+if (Devices ready?) then (yes)
+  :Initialize OLED and Storage;
+else (no)
+  :Log and return error;
+  stop
+endif
+
+:Configure transport;
+if (UDP transport enabled?) then (yes)
+  :Run WifiHandler::initStation();
+  if (Wi-Fi + DHCP success?) then (yes)
+    :Set UDP transport params;
+  else (no)
+    :Display Wi-Fi failure;
+    stop
+  endif
+else (no)
+  :Set serial custom transport;
+endif
+
+:Wait for micro-ROS agent ping;
+if (Agent reachable?) then (yes)
+  :Init rcl support, node, publishers;
+else (no)
+  :Retry ping with short sleeps;
+endif
+
+:Build NodeCallbacks context;
+:Create timers and executor;
+:Start executor thread;
+:Enable init_complete gate;
+
+while (System running)
+  :rclc_executor_spin_some();
+  :Timer callbacks sample sensors;
+  :Publish ROS messages;
+  :Update OLED view/cache;
+  :Write SD log lines;
+  :Run periodic time sync;
+endwhile
+
+stop
+@enduml
