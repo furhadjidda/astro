@@ -64,12 +64,12 @@ static void mtk3333_process_char(struct mtk3333_data* data, char c, struct gnss_
         data->current_line = data->buffer_line1;
     }
 
-    gnss_nmea_parse(data->last_line, gnss_out);
+    int parse_ret = gnss_nmea_parse(data->last_line, gnss_out);
     // LOG_INF("Received NMEA sentence: %s", data->last_line);
-    if (strncmp(data->last_line, "$GPRMC", 6) == 0 || strncmp(data->last_line, "$GNRMC", 6) == 0 ||
-        strncmp(data->last_line, "$GNGGA", 6) == 0) {
-        *publish = true;
-    }
+    // Only publish when parsing succeeded. The current parser populates gnss_out from GGA,
+    // while RMC/GSV sentences are handled separately; publishing unsupported sentences would
+    // emit zero-initialized data and clobber valid fixes.
+    *publish = (parse_ret == 0);
 
     /* Check for GSV (satellite) sentences */
     if (strncmp(data->last_line, "$GPGSV", 6) == 0 || strncmp(data->last_line, "$GLGSV", 6) == 0 ||

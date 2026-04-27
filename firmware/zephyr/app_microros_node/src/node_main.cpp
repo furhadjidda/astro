@@ -254,7 +254,7 @@ static void mtk3333_gnss_data_cb(const struct device* dev, const struct gnss_dat
         (void)k_ticks_to_ns_near64(timepulse);
     }
     char buffer[128] = {0};
-    LOG_DBG("UTC Time: %02d %02d:%02d", data->utc.month, data->utc.hour, data->utc.minute);
+    LOG_DBG("UTC Time: %02d:%02d", data->utc.hour, data->utc.minute);
     snprintf(buffer, sizeof(buffer), "%02d:%02d", data->utc.hour, data->utc.minute);
 
     k_spinlock_key_t key = k_spin_lock(&mtk3333_msg_lock);
@@ -297,6 +297,8 @@ static void mtk3333_gnss_data_cb(const struct device* dev, const struct gnss_dat
     memset(buffer, 0, sizeof(buffer));
     snprintf(buffer, sizeof(buffer), "MTK3333: Lat=%.6f Lon=%.6f Alt=%.2f Fix=%d", mtk3333_nav_sat_fix_msg.latitude,
              mtk3333_nav_sat_fix_msg.longitude, mtk3333_nav_sat_fix_msg.altitude, data->info.fix_status);
+    LOG_DBG("MTK3333: Lat=%.6f Lon=%.6f Alt=%.2f Fix=%d", mtk3333_nav_sat_fix_msg.latitude,
+            mtk3333_nav_sat_fix_msg.longitude, mtk3333_nav_sat_fix_msg.altitude, data->info.fix_status);
     atomic_set_bit(mtk3333_msg_ready, 0);
     k_spin_unlock(&mtk3333_msg_lock, key);
 }
@@ -329,7 +331,7 @@ static void ublox_gnss_data_cb(const struct device* dev, const struct gnss_data*
         (void)k_ticks_to_ns_near64(timepulse);
     }
     char buffer[128] = {0};
-    LOG_DBG("UTC Time: %02d %02d:%02d", data->utc.month, data->utc.hour, data->utc.minute);
+    LOG_DBG("UTC Time: %02d:%02d", data->utc.hour, data->utc.minute);
     snprintf(buffer, sizeof(buffer), "%02d:%02d", data->utc.hour, data->utc.minute);
 
     k_spinlock_key_t key = k_spin_lock(&ublox_msg_lock);
@@ -371,6 +373,9 @@ static void ublox_gnss_data_cb(const struct device* dev, const struct gnss_data*
     memset(buffer, 0, sizeof(buffer));
     snprintf(buffer, sizeof(buffer), "Ublox: Lat=%.6f Lon=%.6f Alt=%.2f Fix=%d", ublox_nav_sat_fix_msg.latitude,
              ublox_nav_sat_fix_msg.longitude, ublox_nav_sat_fix_msg.altitude, data->info.fix_status);
+
+    LOG_DBG("ublox: Lat=%.6f Lon=%.6f Alt=%.2f Fix=%d", ublox_nav_sat_fix_msg.latitude, ublox_nav_sat_fix_msg.longitude,
+            ublox_nav_sat_fix_msg.altitude, data->info.fix_status);
     atomic_set_bit(ublox_msg_ready, 0);
     k_spin_unlock(&ublox_msg_lock, key);
 }
