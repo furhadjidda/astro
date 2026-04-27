@@ -6,11 +6,11 @@ Firmware for Zephyr RTOS-based boards (ESP32-S3, RAK Wireless, etc.) running mic
 
 | App | Directory | Description |
 |-----|-----------|-------------|
-| `app_sensor_node` | `firmware/zephyr/apps/sensor_node/` | Combined sensor node (IMU, GNSS, display) for Zephyr boards |
-| `app_microros_node` | `firmware/zephyr/apps/microros_node/` | micro-ROS node for sensor data publishing |
-| `app_bluetooth` | `firmware/zephyr/apps/bluetooth/` | BLE connectivity application |
-| `app_sd_card_fs` | `firmware/zephyr/apps/sd_card_fs/` | SD card filesystem for data logging |
-| `app_examples` | `firmware/zephyr/apps/examples/` | Example and test applications |
+| `app_sensor_node` | `firmware/zephyr/app_sensor_node/` | Combined sensor node (IMU, GNSS, display) for Zephyr boards |
+| `app_microros_node` | `firmware/zephyr/app_microros_node/` | micro-ROS node for sensor data publishing |
+| `app_bluetooth` | `firmware/zephyr/app_bluetooth/` | BLE connectivity application |
+| `app_sd_card_fs` | `firmware/zephyr/app_sd_card_fs/` | SD card filesystem for data logging |
+| `app_examples` | `firmware/zephyr/app_examples/` | Example and test applications |
 
 ## Supported Boards
 
@@ -88,7 +88,7 @@ Terminal 2 — start GDB:
 
 ## Custom Modules
 
-`firmware/zephyr/custom_modules/` contains Astro-specific Zephyr modules:
+`firmware/zephyr/astro_custom_modules/` contains Astro-specific Zephyr modules:
 
 - `gnss/` — GNSS driver integration
 - `iim42652_rak12033/` — RAK12033 IMU driver (IIM-42652)

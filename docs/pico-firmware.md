@@ -6,15 +6,15 @@ Firmware for Raspberry Pi Pico (RP2040) and Pico 2W (RP2350) running FreeRTOS + 
 
 | Node | Directory | Description |
 |------|-----------|-------------|
-| `pico_bno055_node` | `firmware/pico/nodes/bno055/` | Reads BNO055 IMU over I2C, publishes `sensor_msgs/Imu` via micro-ROS |
-| `pico_differential_drive_node` | `firmware/pico/nodes/differential_drive/` | PID-controlled DC motor drive with encoder odometry. Subscribes to `cmd_vel`, publishes `nav_msgs/Odometry` |
-| `pico_gnss_node` | `firmware/pico/nodes/gnss/` | Reads NMEA from PA1010D GPS, parses GGA sentences, publishes `sensor_msgs/NavSatFix` |
-| `pico_sensors_node` | `firmware/pico/nodes/sensors/` | Combined sensor node (IMU, GNSS, ToF, OLED display) using a sensor factory pattern |
-| `pico_micro_ros_example_app` | `firmware/pico/nodes/micro_ros_example/` | Minimal micro-ROS example for testing connectivity |
+| `pico_bno055_node` | `firmware/pico/pico_bno055_node/` | Reads BNO055 IMU over I2C, publishes `sensor_msgs/Imu` via micro-ROS |
+| `pico_differential_drive_node` | `firmware/pico/pico_differential_drive_node/` | PID-controlled DC motor drive with encoder odometry. Subscribes to `cmd_vel`, publishes `nav_msgs/Odometry` |
+| `pico_gnss_node` | `firmware/pico/pico_gnss_node/` | Reads NMEA from PA1010D GPS, parses GGA sentences, publishes `sensor_msgs/NavSatFix` |
+| `pico_sensors_node` | `firmware/pico/pico_sensors_node/` | Combined sensor node (IMU, GNSS, ToF, OLED display) using a sensor factory pattern |
+| `pico_micro_ros_example_app` | `firmware/pico/pico_micro_ros_example_app/` | Minimal micro-ROS example for testing connectivity |
 
 ## Sensor Drivers
 
-Reusable driver libraries in `firmware/pico/drivers/`:
+Reusable driver libraries in `firmware/pico/sensor_drivers/`:
 
 - `adafruit_bno055` — 9-DOF IMU
 - `adafruit_pa1010d_mini_gps` — GNSS module
@@ -55,7 +55,7 @@ cmake --build build_pico2_w
 1. Hold BOOTSEL and plug in the Pico (it appears as a USB mass storage device).
 2. Copy the `.uf2` file from the build directory to the Pico drive. Or use:
    ```bash
-   python3 tools/pico_reboot_and_copy.py
+   python3 tools/pico_reboot_and_copy/pico_reboot_and_copy.py firmware/pico/build_pico_w
    ```
 
 ## Design Documents

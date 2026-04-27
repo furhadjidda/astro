@@ -17,6 +17,7 @@
 # Zephyr firmware:
 #   just zephyr app_sensor_node rak        Build for RAK3112
 #   just zephyr app_sensor_node feather    Build for Adafruit Feather
+#   just zephyr-microros-rak               Build + flash app_microros_node for RAK
 #   just zephyr-all                        Build all apps for all boards
 #   just zephyr-init                       Initialize west workspace
 #
@@ -182,6 +183,15 @@ zephyr-all:
         echo "=== Building app_examples for ${board} ==="
         just zephyr-examples "${board}"
     done
+
+# Build + flash app_microros_node for RAK (override device: just zephyr-microros-rak /dev/ttyUSB0)
+[group('zephyr')]
+zephyr-microros-rak esp_device="/dev/rak_wireless_esp32s3":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    just zephyr app_microros_node rak
+    cd {{ zephyr_dir }}
+    west flash --esp-device "{{ esp_device }}" --build-dir build/app_microros_node/
 
 # ==============================================================================
 # ROS 2

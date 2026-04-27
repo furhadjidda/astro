@@ -69,7 +69,7 @@ Dependency installation is skipped in this quick path for speed.
 
 ```bash
 ./deploy/build_and_deploy_pi4.py \
-  --packages-select astro_sensor_publisher \
+  --packages-select astro_sensor \
   --skip-deploy
 ```
 
@@ -141,7 +141,7 @@ docker builder prune -af
 ```bash
 source /opt/ros/humble/setup.bash
 source ~/astro/ros2_ws/install/setup.bash
-ros2 launch robot_bringup bringup.launch.py
+ros2 launch robot_bringup robot_base.launch.py
 ```
 
 ---

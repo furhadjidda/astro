@@ -32,20 +32,20 @@ For implementation-level diagrams of `app_microros_node` (component, deployment,
 astro/
 ├── firmware/
 │   ├── pico/               Pico firmware (FreeRTOS + micro-ROS)
-│   │   ├── nodes/          Pico application nodes
-│   │   ├── drivers/        Sensor driver libraries
-│   │   ├── common/         Shared utilities (median filter, etc.)
-│   │   ├── config/         FreeRTOS config
+│   │   ├── pico_*_node/    Pico application nodes
+│   │   ├── sensor_drivers/ Sensor driver libraries
+│   │   ├── tests_common/   Host-side shared test utilities
+│   │   ├── free_rtos_config/ FreeRTOS configuration
 │   │   ├── designs/        PlantUML design diagrams
 │   │   └── external/       Git submodules (pico-sdk, FreeRTOS, micro-ROS, etc.)
 │   │
 │   └── zephyr/             Zephyr firmware (Zephyr RTOS + micro-ROS)
-│       ├── apps/           Zephyr application targets
-│       ├── custom_modules/ Astro-specific Zephyr modules
+│       ├── app_*/          Zephyr application targets
+│       ├── astro_custom_modules/ Astro-specific Zephyr modules
 │       └── west/           West manifest (west.yml)
 │
 ├── ros2/                   ROS 2 workspace for Raspberry Pi 4
-│   ├── src/                ROS 2 packages (see per-package READMEs)
+│   ├── src/                ROS 2 package sources (directory names)
 │   ├── deploy/             Cross-compile & deploy tooling for Pi4
 │   └── astro.repos         VCS import file for third-party packages
 │
@@ -76,7 +76,7 @@ Astro supports two drive systems that can be swapped:
 | Pico host tests | CMake + GTest | `cmake -S . -B build -DBUILD_FOR_HOST=ON && cmake --build build && ctest --test-dir build` | Test binaries |
 | Zephyr (ESP32-S3) | West | `west build -p always -b <board> --sysbuild app_sensor_node -- -DDTC_OVERLAY_FILE=... -DEXTRA_CONF_FILE=...` | `.bin` / flashable |
 | ROS 2 (native) | Colcon | `cd ros2/ && colcon build` | Install tree |
-| ROS 2 (Pi4 cross) | Docker + Colcon | `python3 ros2/deploy/build_and_deploy_pi4.py --pi user@<ip>` | ARM64 install tree |
+| ROS 2 (Pi4 cross) | Docker + Colcon | `python3 ros2/deploy/build_and_deploy_pi4.py --pi user@<ip>` | `ros2/install_pi4` |
 
 ## CI Pipelines
 

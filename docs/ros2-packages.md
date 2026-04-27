@@ -4,20 +4,20 @@ ROS 2 Humble packages that run on the Raspberry Pi 4 (or development host).
 
 ## Packages
 
-| Package | Type | Description |
-|---------|------|-------------|
-| `robot_bringup` | Launch | Main launch file — brings up all hardware drivers and transforms |
-| `astro_robot_description` | Description | URDF models (burger/waffle), meshes, and state publishers |
-| `astro_sensor_publisher` | Python | Re-stamps raw micro-ROS sensor messages with synchronized ROS time |
-| `astro_odometry_tf_broadcaster` | C++ | Subscribes to `/odom` and broadcasts the `odom → base_link` TF |
-| `astro_dynamixel_odomtery` | C++ | Dynamixel XL430 servo driver with diff-drive odometry |
-| `astro_slam` | Launch | Cartographer SLAM + Madgwick IMU filter |
-| `astro_cartographer` | Launch | Standalone Cartographer launch (without IMU filter) |
-| `astro_navigation` | Launch | Nav2 bringup with pre-built map |
-| `astro_teleop_twist_joy` | Python | Keyboard teleoperation (`cmd_vel` publisher) |
-| `astro_depthai_test` | Launch | OAK-D Lite RGBD smoke test and RViz launcher |
-| `astro_ros_agent_watcher` | Python | micro-ROS agent watchdog (auto-restart on heartbeat timeout) |
-| `ros_time_publisher` | Python | Publishes 1 kHz ROS clock on `/ros_time` for micro-ROS sync |
+| Source Directory | ROS Package Name | Type | Description |
+|------------------|------------------|------|-------------|
+| `robot_bringup` | `robot_bringup` | Launch | Main launch file — brings up hardware drivers and transforms |
+| `astro_robot_description` | `astro_robot_description` | Description | URDF models (burger/waffle), meshes, and state publishers |
+| `astro_sensor_publisher` | `astro_sensor` | Python | Re-stamps raw micro-ROS sensor messages with synchronized ROS time |
+| `astro_odometry_tf_broadcaster` | `astro_odometry_tf_broadcaster` | C++ | Subscribes to `/odom` and broadcasts the `odom -> base_link` TF |
+| `astro_dynamixel_odomtery` | `astro_dynamixel_odometry` | C++ | Dynamixel XL430 servo driver with diff-drive odometry |
+| `astro_slam` | `astro_slam` | Launch | Cartographer SLAM + Madgwick IMU filter |
+| `astro_cartographer` | `astro_cartographer` | Launch | Standalone Cartographer launch (without IMU filter) |
+| `astro_navigation` | `astro_navigation2` | Launch | Nav2 bringup with pre-built map |
+| `astro_teleop_twist_joy` | `astro_teleop` | Python | Teleoperation publisher (`cmd_vel`) |
+| `astro_depthai_test` | `astro_depthai_test` | Launch | OAK-D Lite RGBD smoke test and RViz launcher |
+| `astro_ros_agent_watcher` | `ros_agent_watcher` | Python | micro-ROS agent watchdog (auto-restart on heartbeat timeout) |
+| `ros_time_publisher` | `ros_time` | Python | Publishes ROS clock on `/ros_time` for micro-ROS sync |
 
 See each package's own README for topics, parameters, and usage details.
 
@@ -39,7 +39,7 @@ DepthAI ROS (`ros-humble-depthai-ros-v3`) is installed from apt.
 
 ```bash
 cd ros2
-vcs import . < astro.repos
+vcs import src < astro.repos
 source /opt/ros/humble/setup.bash
 rosdep install --from-paths src --ignore-src -r -y
 colcon build
@@ -84,13 +84,13 @@ ros2 launch robot_bringup robot_base.launch.py \
 
 ```bash
 # SLAM (Cartographer + IMU filter)
-ros2 launch astro_slam slam.launch.py
+ros2 launch astro_slam astro_slam.launch.py
 
 # Standalone cartographer
 ros2 launch astro_cartographer cartographer.launch.py
 
 # Navigation
-ros2 launch astro_navigation navigation2.launch.py
+ros2 launch astro_navigation2 navigation2.launch.py
 
 # GNSS visualization
 ros2 launch foxglove_bridge foxglove_bridge_launch.xml
