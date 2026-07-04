@@ -119,7 +119,7 @@ void NodeCallbacks::bno055ImuTimerCallback(rcl_timer_t* timer, int64_t last_call
                                               ctx_.bno055_imu_msg->orientation.z);
     ctx_.oled_layout->finalize_screen();
     memset(buffer, 0, sizeof(buffer));
-    snprintf(buffer, sizeof(buffer), "X=%.3f Y=%.3f Z=%.3f", ctx_.bno055_imu_msg->orientation.x,
+    snprintf(buffer, sizeof(buffer), "bno055 X=%.3f Y=%.3f Z=%.3f", ctx_.bno055_imu_msg->orientation.x,
              ctx_.bno055_imu_msg->orientation.y, ctx_.bno055_imu_msg->orientation.z);
     ctx_.storage->log_write(buffer);
 
@@ -289,7 +289,11 @@ void NodeCallbacks::iim42652TimerCallback(rcl_timer_t* timer, int64_t last_call_
 
     LOG_DBG("IIM42652 accel x=%.3f y=%.3f z=%.3f", ctx_.iim42652_imu_msg->linear_acceleration.x,
             ctx_.iim42652_imu_msg->linear_acceleration.y, ctx_.iim42652_imu_msg->linear_acceleration.z);
-
+    char buffer[64];
+    memset(buffer, 0, sizeof(buffer));
+    snprintf(buffer, sizeof(buffer), "iim42652 X=%.3f Y=%.3f Z=%.3f", ctx_.iim42652_imu_msg->linear_acceleration.x,
+             ctx_.iim42652_imu_msg->linear_acceleration.y, ctx_.iim42652_imu_msg->linear_acceleration.z);
+    ctx_.storage->log_write(buffer);
     RCSOFTCHECK(rcl_publish(ctx_.iim42652_imu_publisher, ctx_.iim42652_imu_msg, NULL));
 }
 
@@ -334,7 +338,7 @@ void NodeCallbacks::lps22hbTimerCallback(rcl_timer_t* timer, int64_t last_call_t
     char buffer[64];
     ctx_.oled_layout->display_temperature_pressure(temp.val1, temp.val2, press.val1, press.val2);
     memset(buffer, 0, sizeof(buffer));
-    snprintf(buffer, sizeof(buffer), "T=%d.%02dC P=%d.%02dkPa", temp.val1, abs(temp.val2) / 10000, press.val1,
+    snprintf(buffer, sizeof(buffer), "lps22hb T=%d.%02dC P=%d.%02dkPa", temp.val1, abs(temp.val2) / 10000, press.val1,
              abs(press.val2) / 10000);
     ctx_.storage->log_write(buffer);
     ctx_.oled_layout->finalize_screen();
