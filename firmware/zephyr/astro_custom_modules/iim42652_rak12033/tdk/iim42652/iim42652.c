@@ -577,6 +577,7 @@ static int iim42652_channel_get(const struct device* dev, enum sensor_channel ch
 
 static int iim42652_sample_fetch(const struct device* dev, enum sensor_channel chan) {
     struct iim42652_data* data = dev->data;
+    const struct iim42652_config* config = dev->config;
     int ret;
 
     k_mutex_lock(&data->bus_lock, K_FOREVER);
@@ -584,9 +585,29 @@ static int iim42652_sample_fetch(const struct device* dev, enum sensor_channel c
     /* Burst-read temp + accel + gyro in a single I2C transaction (0x1D–0x2A,
      * 14 bytes) so accel and gyro always come from the same latch cycle.
      * The mutex prevents any other driver on the shared i2c0 bus from
-     * interleaving between the two transfers. */
+     * interleaving between the two transfers.
+     *
+     * On ESP32 the I2C peripheral can get stuck in a bad state (hardware
+     * errata) causing -EFAULT (-14) after several minutes of operation.
+     * Detect this and recover the bus inline with one retry before giving up. */
     uint8_t raw[14];
     ret = read_register(dev, IIM42652_REG_TEMP_DATA1_UI, raw, sizeof(raw));
+    if (ret == -EFAULT) {
+        LOG_WRN("IIM42652 I2C error %d — attempting bus recovery", ret);
+        int rc = i2c_recover_bus(config->i2c_bus.bus);
+        if (rc != 0) {
+            LOG_ERR("IIM42652 bus recovery failed: %d", rc);
+        } else {
+            k_msleep(2);
+            ret = read_register(dev, IIM42652_REG_TEMP_DATA1_UI, raw, sizeof(raw));
+            if (ret != 0) {
+                LOG_ERR("IIM42652 retry after recovery still failed: %d", ret);
+            } else {
+                LOG_INF("IIM42652 recovered from bus error");
+            }
+        }
+    }
+
     k_mutex_unlock(&data->bus_lock);
     if (ret != 0) {
         return ret;

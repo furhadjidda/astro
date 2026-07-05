@@ -73,7 +73,7 @@ int OLEDLayout::init_screen() {
 
 void OLEDLayout::set_display_updates_enabled(bool enabled) {
     k_mutex_lock(&display_mutex, K_FOREVER);
-    display_updates_enabled = enabled;
+    display_updates_enabled = enabled && (oled_wrapper != nullptr) && oled_wrapper->is_available();
     k_mutex_unlock(&display_mutex);
 }
 

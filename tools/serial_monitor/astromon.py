@@ -122,7 +122,8 @@ def main():
         if ser is not None:
             try:
                 ser.close()
-            except Exception:
+            except (Exception, KeyboardInterrupt):
+                print("Error closing serial port, but exiting anyway.")
                 pass
         print(f"Log saved to {log_filename}")
 
