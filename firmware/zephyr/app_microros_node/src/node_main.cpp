@@ -105,8 +105,8 @@ const struct device* st_lps22hb_dev = DEVICE_DT_GET_ANY(st_lps22hb_press);
 #define EXECUTOR_PRIORITY 4
 
 #define GNSS_PUBLISH_PERIOD_MS 1000
-#define IMU_PUBLISH_PERIOD_MS 200
-#define IIM42652_PUBLISH_PERIOD_MS 200
+#define IMU_PUBLISH_PERIOD_MS 500
+#define IIM42652_PUBLISH_PERIOD_MS 500
 #define TIME_SYNC_PERIOD_MS 1000
 #define LPS22HB_PUBLISH_PERIOD_MS 2000
 #define OLED_VIEW_SWITCH_PERIOD_MS 5000
@@ -462,7 +462,7 @@ int main(void) {
 
     /* Delay between BNO055 and IIM42652 init to avoid I2C bus contention
      * and allow the first IMU to settle before the second is powered on. */
-    k_msleep(100);
+    k_msleep(1000);
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(iim42652), okay)
 #if Z_DEVICE_DT_FLAGS(DT_NODELABEL(iim42652)) & DEVICE_FLAG_INIT_DEFERRED

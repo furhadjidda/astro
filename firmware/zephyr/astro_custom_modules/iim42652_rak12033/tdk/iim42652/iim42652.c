@@ -65,13 +65,17 @@ static int bank_selection(const struct device* dev, uint8_t bank_sel) {
     }
 
     uint8_t tmp;
-    ret = read_register(dev, IIM42652_REG_BANK_SEL, &tmp, 1);
-    if (ret != 0) {
-        return ret;
+    for (int attempt = 0; attempt < 3; attempt++) {
+        k_msleep(5);  // settle before reading back, not after
+        ret = read_register(dev, IIM42652_REG_BANK_SEL, &tmp, 1);
+        if (ret == 0 && tmp == bank_sel) {
+            LOG_DBG("Bank selected: %d", tmp);
+            return 0;
+        }
     }
 
     LOG_DBG("Bank selected: %d", tmp);
-    k_msleep(1);
+    k_msleep(5);
 
     /* Verify the bank switch actually took effect.  After an MCU soft-reset
      * without a power cycle the sensor can be in a non-zero bank; if the
@@ -677,8 +681,8 @@ static int iim42652_init(const struct device* dev) {
          * Without an explicit ODR write the sensor powers up at hardware-reset
          * default (1 kHz), but leaving it unconfigured means sample_fetch's
          * DRDY gate is the only protection — an explicit rate is safer. */
-        set_accel_frequency(dev, IIM42652_ACCEL_CONFIG0_ODR_100_HZ);
-        set_gyro_frequency(dev, IIM42652_GYRO_CONFIG0_ODR_100_HZ);
+        set_accel_frequency(dev, IIM42652_ACCEL_CONFIG0_ODR_1_KHZ);
+        set_gyro_frequency(dev, IIM42652_ACCEL_CONFIG0_ODR_1_KHZ);
 
         /* Gyro needs 45ms minimum on-time before first valid sample (datasheet) */
         k_msleep(50);
