@@ -14,6 +14,8 @@ Astro is a differential-drive robot built on the TurtleBot3 platform, powered by
 
 | Document | Description |
 |----------|-------------|
+| [Build, Flash, and Use](docs/build-flash-use.md) | Canonical setup, build, flash, deployment, launch, and cleanup instructions |
+| [Repository Tools](docs/tools.md) | Purpose, usage, dependencies, and caveats for every repository utility |
 | [Architecture](docs/architecture.md) | System diagram, data flow, TF tree, and build targets |
 | [micro-ROS Node Deep Dive](docs/microros-node-deep-dive.md) | app_microros_node component/deployment/class/sequence/activity diagrams + Wi-Fi and synchronization notes |
 | [Diagram Authoring Guide](docs/DIAGRAMS.md) | How PlantUML diagrams are authored, encoded, and embedded |
@@ -55,19 +57,15 @@ git submodule update --init --recursive
 
 ### 2. Build ROS 2 packages
 ```bash
-cd ros2
-vcs import src < astro.repos
 source /opt/ros/humble/setup.bash
-rosdep install --from-paths src --ignore-src -r -y
-colcon build
-source install/setup.bash
+just ros2-deps
+just ros2
+source ros2/install/setup.bash
 ```
 
 ### 3. Build Pico firmware
 ```bash
-cd firmware/pico
-cmake -S . -B build_pico2_w -DPICO_BOARD=pico2_w -DPICO_PLATFORM=rp2350 -DMCU_TYPE=cortex-m33
-cmake --build build_pico2_w
+just pico pico2_w
 ```
 
 ### 4. Launch the robot
@@ -78,7 +76,7 @@ ros2 launch robot_bringup robot_base.launch.py \
     microros_dev:=/dev/pimoroni_pico_2W
 ```
 
-See [ROS 2 Packages](docs/ros2-packages.md) for all launch arguments and additional launch files.
+See [Build, Flash, and Use](docs/build-flash-use.md) for Zephyr firmware, flashing, deployment, and cleanup. See [ROS 2 Packages](docs/ros2-packages.md) for all launch arguments and additional launch files.
 
 ## Acknowledgments
 

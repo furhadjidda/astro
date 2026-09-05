@@ -38,19 +38,16 @@ DepthAI ROS (`ros-humble-depthai-ros-v3`) is installed from apt.
 ### Native build (on Pi4 or host)
 
 ```bash
-cd ros2
-vcs import src < astro.repos
 source /opt/ros/humble/setup.bash
-rosdep install --from-paths src --ignore-src -r -y
-colcon build
-source install/setup.bash
+just ros2-deps
+just ros2
+source ros2/install/setup.bash
 ```
 
 ### Cross-compile for Pi4 (from x86 host)
 
 ```bash
-cd ros2/deploy
-python3 build_and_deploy_pi4.py --pi ubuntu@<PI_IP> --first-run
+just ros2-pi4 ubuntu@<PI_IP> --first-run
 ```
 
 See [ros2/deploy/README.md](../ros2/deploy/README.md) for Docker + QEMU setup details.
