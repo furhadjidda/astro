@@ -24,6 +24,7 @@ struct iim42652_config {
 };
 
 struct iim42652_data {
+    struct k_mutex bus_lock;
     struct iim42652_vector3_data acc;
     struct iim42652_vector3_data gyro;
     float temperature;
@@ -64,13 +65,17 @@ static int bank_selection(const struct device* dev, uint8_t bank_sel) {
     }
 
     uint8_t tmp;
-    ret = read_register(dev, IIM42652_REG_BANK_SEL, &tmp, 1);
-    if (ret != 0) {
-        return ret;
+    for (int attempt = 0; attempt < 3; attempt++) {
+        k_msleep(5);  // settle before reading back, not after
+        ret = read_register(dev, IIM42652_REG_BANK_SEL, &tmp, 1);
+        if (ret == 0 && tmp == bank_sel) {
+            LOG_DBG("Bank selected: %d", tmp);
+            return 0;
+        }
     }
 
     LOG_DBG("Bank selected: %d", tmp);
-    k_msleep(1);
+    k_msleep(5);
 
     /* Verify the bank switch actually took effect.  After an MCU soft-reset
      * without a power cycle the sensor can be in a non-zero bank; if the
@@ -572,46 +577,68 @@ static int iim42652_channel_get(const struct device* dev, enum sensor_channel ch
 
 static int iim42652_sample_fetch(const struct device* dev, enum sensor_channel chan) {
     struct iim42652_data* data = dev->data;
-    IIM42652_axis_t accel_data;
-    IIM42652_axis_t gyro_data;
-    float temperature;
+    const struct iim42652_config* config = dev->config;
     int ret;
-    int fetch_ret = 0;
 
-    // Read sensor data
-    ret = get_accel_data(dev, &accel_data);
-    if (ret == 0) {
-        /* Convert raw to m/s².
-         * Default FSR = ±16g → sensitivity = 2048 LSB/g.
-         * Zephyr SENSOR_CHAN_ACCEL_XYZ must be in m/s² (not g). */
-        float acc_x = (float)accel_data.x / 2048.0f * 9.80665f;
-        float acc_y = (float)accel_data.y / 2048.0f * 9.80665f;
-        float acc_z = (float)accel_data.z / 2048.0f * 9.80665f;
-        data->acc.x = acc_x;
-        data->acc.y = acc_y;
-        data->acc.z = acc_z;
+    k_mutex_lock(&data->bus_lock, K_FOREVER);
 
-        LOG_DBG("Accel X: %.3f m/s2, Y: %.3f m/s2, Z: %.3f m/s2", acc_x, acc_y, acc_z);
-    } else {
-        fetch_ret = ret;
+    /* Burst-read temp + accel + gyro in a single I2C transaction (0x1D–0x2A,
+     * 14 bytes) so accel and gyro always come from the same latch cycle.
+     * The mutex prevents any other driver on the shared i2c0 bus from
+     * interleaving between the two transfers.
+     *
+     * On ESP32 the I2C peripheral can get stuck in a bad state (hardware
+     * errata) causing -EFAULT (-14) after several minutes of operation.
+     * Detect this and recover the bus inline with one retry before giving up. */
+    uint8_t raw[14];
+    ret = read_register(dev, IIM42652_REG_TEMP_DATA1_UI, raw, sizeof(raw));
+    if (ret == -EFAULT) {
+        LOG_WRN("IIM42652 I2C error %d — attempting bus recovery", ret);
+        int rc = i2c_recover_bus(config->i2c_bus.bus);
+        if (rc != 0) {
+            LOG_ERR("IIM42652 bus recovery failed: %d", rc);
+        } else {
+            k_msleep(2);
+            ret = read_register(dev, IIM42652_REG_TEMP_DATA1_UI, raw, sizeof(raw));
+            if (ret != 0) {
+                LOG_ERR("IIM42652 retry after recovery still failed: %d", ret);
+            } else {
+                LOG_INF("IIM42652 recovered from bus error");
+            }
+        }
     }
 
-    ret = get_gyro_data(dev, &gyro_data);
-    if (ret == 0) {
-        // Convert to °/s (±2000°/s range: 16.4 LSB/(°/s))
-        float gyro_x = (float)gyro_data.x / 16.4f;
-        float gyro_y = (float)gyro_data.y / 16.4f;
-        float gyro_z = (float)gyro_data.z / 16.4f;
-        data->gyro.x = gyro_x;
-        data->gyro.y = gyro_y;
-        data->gyro.z = gyro_z;
-
-        LOG_DBG("Gyro X: %.2f °/s, Y: %.2f °/s, Z: %.2f °/s", gyro_x, gyro_y, gyro_z);
-    } else if (fetch_ret == 0) {
-        fetch_ret = ret;
+    k_mutex_unlock(&data->bus_lock);
+    if (ret != 0) {
+        return ret;
     }
 
-    return fetch_ret;
+    /* Temperature: raw[0]=TEMP1, raw[1]=TEMP0 */
+    int16_t temp_raw = (int16_t)((raw[0] << 8) | raw[1]);
+    data->temperature = (float)temp_raw / 132.48f + 25.0f;
+
+    /* Accel: raw[2..7] = X1,X0,Y1,Y0,Z1,Z0 */
+    int16_t ax = (int16_t)((raw[2] << 8) | raw[3]);
+    int16_t ay = (int16_t)((raw[4] << 8) | raw[5]);
+    int16_t az = (int16_t)((raw[6] << 8) | raw[7]);
+    /* FSR ±16g default: 2048 LSB/g */
+    data->acc.x = (float)ax / 2048.0f * 9.80665f;
+    data->acc.y = (float)ay / 2048.0f * 9.80665f;
+    data->acc.z = (float)az / 2048.0f * 9.80665f;
+
+    /* Gyro: raw[8..13] = X1,X0,Y1,Y0,Z1,Z0 */
+    int16_t gx = (int16_t)((raw[8] << 8) | raw[9]);
+    int16_t gy = (int16_t)((raw[10] << 8) | raw[11]);
+    int16_t gz = (int16_t)((raw[12] << 8) | raw[13]);
+    /* FSR ±2000 dps default: 16.4 LSB/(dps) */
+    data->gyro.x = (float)gx / 16.4f;
+    data->gyro.y = (float)gy / 16.4f;
+    data->gyro.z = (float)gz / 16.4f;
+
+    LOG_DBG("IIM42652 accel %.3f %.3f %.3f m/s2  gyro %.2f %.2f %.2f dps", data->acc.x, data->acc.y, data->acc.z,
+            data->gyro.x, data->gyro.y, data->gyro.z);
+
+    return 0;
 }
 
 static int iim42652_init(const struct device* dev) {
@@ -625,6 +652,7 @@ static int iim42652_init(const struct device* dev) {
     }
 
     LOG_INF("Initializing IIM42652");
+    k_mutex_init(&((struct iim42652_data*)dev->data)->bus_lock);
     k_msleep(100);
 
     /* After a warm MCU reset the I2C bus can be left stuck (SDA held low by
@@ -669,6 +697,13 @@ static int iim42652_init(const struct device* dev) {
         if (ret != 0) return ret;
         ret = temperature_enable(dev);
         if (ret != 0) return ret;
+
+        /* Set default ODR: 100 Hz for both accel and gyro.
+         * Without an explicit ODR write the sensor powers up at hardware-reset
+         * default (1 kHz), but leaving it unconfigured means sample_fetch's
+         * DRDY gate is the only protection — an explicit rate is safer. */
+        set_accel_frequency(dev, IIM42652_ACCEL_CONFIG0_ODR_1_KHZ);
+        set_gyro_frequency(dev, IIM42652_ACCEL_CONFIG0_ODR_1_KHZ);
 
         /* Gyro needs 45ms minimum on-time before first valid sample (datasheet) */
         k_msleep(50);

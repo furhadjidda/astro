@@ -97,6 +97,18 @@
         "build_target": true,
         "build*": true,
         "zephyr_workspace/.west": true
+    },
+    "files.exclude": {
+        "**/build": true,
+        "**/build_*": true,
+        "**/build*/**": true,
+        "**/install": true,
+        "**/install_*": true,
+        "**/log": true,
+        "**/log_*": true,
+        "**/.west": true,
+        "**/host_build": true,
+        "**/target_build": true
     }
 
 }

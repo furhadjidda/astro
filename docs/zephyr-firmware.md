@@ -34,26 +34,22 @@ Tested versions:
 
 ## Building
 
+Run these commands from the repository root. The `just` recipes provide Astro's board target, overlay, configuration, and sysbuild options.
+
 ### Initial workspace setup
 
 ```bash
-cd firmware/zephyr
-west init -l west
-west update --narrow
-west packages pip --install
-west blobs fetch hal_espressif   # Required for ESP32 targets
+just zephyr-init
 ```
 
 ### Build for a board
 
 ```bash
-cd firmware/zephyr
+# RAK3112
+just zephyr app_sensor_node rak
 
-# Example: RAK3112
-west build -p always -b rak3112/esp32s3/procpu --sysbuild \
-  app_sensor_node \
-  -- -DDTC_OVERLAY_FILE='boards/rak_wireless_rak3312.overlay' \
-     -DEXTRA_CONF_FILE='boards/rak_wireless_rak3312.conf'
+# Adafruit Feather ESP32-S3
+just zephyr app_sensor_node feather
 ```
 
 > **Important:** Clean micro-ROS artifacts before switching boards:
@@ -66,12 +62,15 @@ west build -p always -b rak3112/esp32s3/procpu --sysbuild \
 ### Flashing
 
 ```bash
-# ESP32 boards
-west flash --esp-device /dev/<device_symlink>
+# Build and flash the RAK micro-ROS application.
+just zephyr-microros-rak
 
-# RP2350 boards
-west flash
+# Or flash an existing ESP32 build manually.
+cd firmware/zephyr
+west flash --esp-device /dev/<device_symlink> --build-dir build/<app>
 ```
+
+See [Build, Flash, and Use Astro](build-flash-use.md) for supported recipe arguments and clean-build guidance.
 
 ## Debugging ESP32-S3 via JTAG
 

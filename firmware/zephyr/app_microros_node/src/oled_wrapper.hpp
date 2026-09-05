@@ -28,6 +28,8 @@ class OLEDWrapper {
 
     int init();
 
+    bool is_available() const;
+
     void print(const char* message, int x, int y);
 
     void clear();
@@ -46,6 +48,7 @@ class OLEDWrapper {
 
    private:
     const struct device* display_dev;
+    bool available = false;
     uint16_t _rows = 0;
     uint8_t _ppt = 0;
     uint8_t _font_width = 0;

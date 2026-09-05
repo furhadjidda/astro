@@ -25,29 +25,24 @@ Reusable driver libraries in `firmware/pico/sensor_drivers/`:
 
 ## Building
 
+Run these commands from the repository root. The `just` recipes select the correct SDK paths and target configuration.
+
 ### Host build (for running unit tests)
 
 ```bash
-cd firmware/pico
-cmake -S . -B build_host -DBUILD_FOR_HOST=ON
-cmake --build build_host
-ctest --test-dir build_host
+just pico-test
 ```
 
 ### Target build — Pico W (RP2040, Cortex-M0)
 
 ```bash
-cd firmware/pico
-cmake -S . -B build_pico_w -DPICO_BOARD=pico_w -DMCU_TYPE=cortex-m0
-cmake --build build_pico_w
+just pico pico_w
 ```
 
 ### Target build — Pico 2W (RP2350, Cortex-M33)
 
 ```bash
-cd firmware/pico
-cmake -S . -B build_pico2_w -DPICO_BOARD=pico2_w -DPICO_PLATFORM=rp2350 -DMCU_TYPE=cortex-m33
-cmake --build build_pico2_w
+just pico pico2_w
 ```
 
 ### Flashing
@@ -57,6 +52,8 @@ cmake --build build_pico2_w
    ```bash
    python3 tools/pico_reboot_and_copy/pico_reboot_and_copy.py firmware/pico/build_pico_w
    ```
+
+See [Build, Flash, and Use Astro](build-flash-use.md) for the service-assisted flashing prerequisites.
 
 ## Design Documents
 
