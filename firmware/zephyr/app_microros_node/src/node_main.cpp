@@ -61,7 +61,7 @@ LOG_MODULE_REGISTER(all_sensors_module, LOG_LEVEL_DBG);
 
 Storage storage;
 
-static const struct device* const display_dev = DEVICE_DT_GET_ANY(solomon_ssd1306fb);
+static const struct device* const display_dev = DEVICE_DT_GET_ANY(solomon_ssd1306);
 OLEDWrapper oled_wrapper(display_dev);
 OLEDLayout oled_layout(&oled_wrapper);
 

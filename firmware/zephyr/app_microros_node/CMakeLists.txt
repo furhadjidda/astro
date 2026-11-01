@@ -28,6 +28,7 @@ endif()
 
 
 target_sources(app PRIVATE src/node_main.cpp src/node_callbacks.cpp src/gnss_handler.cpp src/wifi_handler.cpp src/storage.cpp src/oled_wrapper.cpp src/oled_layout.cpp src/cfb_font_0608.c)
+set_source_files_properties(src/wifi_handler.cpp PROPERTIES COMPILE_OPTIONS "-fpermissive")
 message(board name is ${BOARD} \n\n)
 if(BOARD STREQUAL "adafruit_feather_esp32s3")
     target_sources(app PRIVATE src/status_class.cpp)

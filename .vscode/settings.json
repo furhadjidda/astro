@@ -109,6 +109,7 @@
         "**/.west": true,
         "**/host_build": true,
         "**/target_build": true
-    }
+    },
+    "cmake.sourceDirectory": "/projects/github_repos/astro/firmware/pico"
 
 }

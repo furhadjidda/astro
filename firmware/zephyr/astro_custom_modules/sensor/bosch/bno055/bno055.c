@@ -189,7 +189,7 @@ static int bno055_set_power(const struct device* dev, bno055_powermode_t power) 
             return err;
         }
 
-        err = i2c_reg_read_byte_dt(&config->i2c_bus, BNO055_PWR_MODE_ADDR, &power);
+        err = i2c_reg_read_byte_dt(&config->i2c_bus, BNO055_PWR_MODE_ADDR, &reg);
         if (err < 0) {
             return err;
         }
@@ -452,7 +452,7 @@ static int set_ext_crystal_use(const struct device* dev, bool usextal) {
 static int get_calibration_data(const struct device* dev) {
     // bno055_write_register(BNO055_OPR_MODE_ADDR, OPERATION_MODE_CONFIG);
     const struct bno055_config* config = dev->config;
-    struct bno055_calib_data calibration_data;
+    CalibrationData calibration_data;
     int err = i2c_reg_write_byte_dt(&config->i2c_bus, BNO055_OPR_MODE_ADDR, OPERATION_MODE_CONFIG);
     if (err < 0) {
         LOG_ERR("I2C communication failed %d", err);
@@ -460,7 +460,7 @@ static int get_calibration_data(const struct device* dev) {
     }
     k_sleep(K_MSEC(25));
 
-    err = i2c_reg_read_bytes_dt(&config->i2c_bus, 0x55, calibration_data, CALIBRATION_DATA_SIZE);
+    err = i2c_burst_read_dt(&config->i2c_bus, 0x55, calibration_data, sizeof(calibration_data));
     if (err < 0) {
         LOG_ERR("I2C communication failed %d", err);
         return err;

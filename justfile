@@ -116,15 +116,15 @@ _zephyr-board-vars board:
             echo 'zephyr_board=rak3112/esp32s3/procpu'; \
             echo 'overlay=boards/rak_wireless_rak3312.overlay'; \
             echo 'conf=boards/rak_wireless_rak3312.conf'; \
-            echo 'flash_snippet=flash-16M'; \
-            echo 'psram_snippet=psram-8M'; \
+            echo 'flash_snippet=espressif-flash-16M'; \
+            echo 'psram_snippet=espressif-psram-8M'; \
             ;; \
         feather) \
             echo 'zephyr_board=adafruit_feather_esp32s3/esp32s3/procpu'; \
             echo 'overlay=boards/adafruit_feather_s3.overlay'; \
             echo 'conf=boards/adafruit_feather_s3.conf'; \
-            echo 'flash_snippet=flash-4M'; \
-            echo 'psram_snippet=psram-2M'; \
+            echo 'flash_snippet=espressif-flash-4M'; \
+            echo 'psram_snippet=espressif-psram-2M'; \
             ;; \
     esac
 
