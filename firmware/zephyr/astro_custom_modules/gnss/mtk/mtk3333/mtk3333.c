@@ -13,6 +13,7 @@
 #include <zephyr/logging/log.h>
 
 #include "mtk3333_pmtk.h"
+#include "nmea_parser.h"
 
 LOG_MODULE_REGISTER(mtk3333, CONFIG_LOG_DEFAULT_LEVEL);
 
@@ -64,7 +65,7 @@ static void mtk3333_process_char(struct mtk3333_data* data, char c, struct gnss_
         data->current_line = data->buffer_line1;
     }
 
-    int parse_ret = gnss_nmea_parse(data->last_line, gnss_out);
+    int parse_ret = gnss_nmea_parse((const char*)data->last_line, gnss_out);
     // LOG_INF("Received NMEA sentence: %s", data->last_line);
     // Only publish when parsing succeeded. The current parser populates gnss_out from GGA,
     // while RMC/GSV sentences are handled separately; publishing unsupported sentences would
@@ -227,20 +228,25 @@ static int mtk3333_get_navigation_mode(const struct device* dev, enum gnss_navig
 static int mtk3333_set_enabled_systems(const struct device* dev, gnss_systems_t systems) {
     ARG_UNUSED(dev);
     ARG_UNUSED(systems);
-    mtk3333_send_command(dev, (const uint8_t*)PMTK_SET_NMEA_OUTPUT_ALLDATA, strlen(PMTK_SET_NMEA_OUTPUT_ALLDATA));
-    return GNSS_SYSTEM_GPS | GNSS_SYSTEM_GLONASS | GNSS_SYSTEM_GALILEO | GNSS_SYSTEM_BEIDOU;
+    return mtk3333_send_command(dev, PMTK_SET_NMEA_OUTPUT_ALLDATA, strlen(PMTK_SET_NMEA_OUTPUT_ALLDATA));
 }
 
 static int mtk3333_get_enabled_systems(const struct device* dev, gnss_systems_t* systems) {
-    if (systems) {
-        *systems = 0;
+    ARG_UNUSED(dev);
+    if (!systems) {
+        return -EINVAL;
     }
-    return GNSS_SYSTEM_GPS | GNSS_SYSTEM_GLONASS | GNSS_SYSTEM_GALILEO | GNSS_SYSTEM_BEIDOU;
+    *systems = GNSS_SYSTEM_GPS | GNSS_SYSTEM_GLONASS | GNSS_SYSTEM_GALILEO | GNSS_SYSTEM_BEIDOU;
+    return 0;
 }
 
-static gnss_systems_t mtk3333_get_supported_systems(const struct device* dev) {
+static int mtk3333_get_supported_systems(const struct device* dev, gnss_systems_t* systems) {
     ARG_UNUSED(dev);
-    return GNSS_SYSTEM_GPS | GNSS_SYSTEM_GLONASS | GNSS_SYSTEM_GALILEO | GNSS_SYSTEM_BEIDOU;
+    if (!systems) {
+        return -EINVAL;
+    }
+    *systems = GNSS_SYSTEM_GPS | GNSS_SYSTEM_GLONASS | GNSS_SYSTEM_GALILEO | GNSS_SYSTEM_BEIDOU;
+    return 0;
 }
 
 /* ----------------------------- GNSS API Table -------------------------- */

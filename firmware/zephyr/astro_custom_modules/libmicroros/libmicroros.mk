@@ -87,6 +87,7 @@ $(COMPONENT_PATH)/micro_ros_src/src:
 	git clone -b humble https://github.com/micro-ROS/rcl src/rcl; \
 	git clone -b humble https://github.com/ros2/rclc src/rclc; \
 	git clone -b fix/support_zephyr4.2+ https://github.com/furhadjidda/rcutils src/rcutils; \
+	git -C src/rcutils apply $(COMPONENT_PATH)/rcutils-zephyr-isatty.patch; \
 	git clone -b humble https://github.com/micro-ROS/micro_ros_msgs src/micro_ros_msgs; \
 	git clone -b humble https://github.com/micro-ROS/rmw-microxrcedds src/rmw-microxrcedds; \
 	git clone -b humble https://github.com/micro-ROS/rosidl_typesupport src/rosidl_typesupport; \

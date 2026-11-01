@@ -9,13 +9,14 @@ manifest:
     - name: zephyr
       remote: zephyrproject
       repo-path: zephyr
-      revision: v4.3.0
+      revision: v4.4.0
       import:
         name-allowlist:
           - hal_espressif
           - cmsis
           - mbedtls
           - tinycrypt
+          - tf-psa-crypto
           - esp-idf
           - fatfs
           - mcuboot

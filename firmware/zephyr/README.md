@@ -7,14 +7,94 @@ once done you need to activate the virtual environment to be able to build the r
 
 Note # 1: All the Zephyr supported board are listed here - https://docs.zephyrproject.org/latest/boards/index.html#
 
-Note # 2: At the time of writing this i am using these versions
+Note # 2: Previous Zephyr 4.3 baseline (kept here for rollback reference)
 ```
 CMake version: 3.22.1
 Python version 3.10.12
-Zephyr version: 4.3.99
+Zephyr version: 4.3.0
 Zephyr SDK version 0.17.4
 West version 1.5
 ```
+
+## Zephyr 4.4.0 Upgrade and 4.3.0 Rollback
+
+The RAK3112 micro-ROS build was verified with Zephyr 4.4.0, Python 3.12.13,
+West 1.5.0, CMake 3.22.1, and Zephyr SDK 1.0.1. The Python environment used
+for that build is `~/.venvs/zephyr-4.4`.
+
+### What changed for 4.4.0
+
+- `west/west.yml` pins Zephyr to `v4.4.0` and allows the imported
+	`tf-psa-crypto` project required by the 4.4 Mbed TLS module.
+- The 4.4 build needs Python 3.12+ and SDK 1.0+. The old SDK 0.17.4 was left
+	installed; SDK 1.0.1 was installed alongside it.
+- `west blobs fetch hal_espressif` supplies the Espressif binary blobs required
+	by the ESP32-S3 build.
+- The SSD1306 overlays use the 4.4 compatible `solomon,ssd1306`. BNO055 I2C
+	reads and the MTK3333 GNSS driver were updated for the 4.4 APIs.
+- The micro-ROS build now applies `astro_custom_modules/libmicroros/rcutils-zephyr-isatty.patch`
+	to its rcutils clone. The Python environment also needs `catkin_pkg` and
+	`empy==3.3.4` for the bundled micro-ROS Humble build.
+- `app_microros_node/CMakeLists.txt` applies `-fpermissive` only to
+	`src/wifi_handler.cpp`, to allow the C++ Ethernet API pointer conversion in
+	Zephyr 4.4. This emits a compiler warning for that conversion. The Zephyr
+	checkout itself is not modified for this workaround.
+
+### Fall back to Zephyr 4.3.0
+
+The workspace has uncommitted migration changes. Save or commit the changes you
+want to keep before switching versions.
+
+Then make these version-specific edits:
+
+1. In `firmware/zephyr/west/west.yml`, set the Zephyr revision to `v4.3.0` and
+	 remove `tf-psa-crypto` from `name-allowlist`. Zephyr 4.3.0 does not import it
+	 as a separate project.
+2. In both
+	 `app_microros_node/boards/rak_wireless_rak3312.overlay` and
+	 `app_microros_node/boards/adafruit_feather_s3.overlay`, change the display
+	 compatible back to `solomon,ssd1306fb`.
+
+3. In `app_microros_node/CMakeLists.txt`, remove the source-specific
+	 `-fpermissive` setting for `src/wifi_handler.cpp`; it is only needed with the
+	 Zephyr 4.4 Ethernet header.
+
+4. Use SDK 0.17.4 explicitly and update the Zephyr projects and Python package
+	 requirements:
+
+```sh
+source ~/.venvs/zephyr-4.4/bin/activate
+export ZEPHYR_SDK_INSTALL_DIR="$HOME/zephyr-sdk-0.17.4"
+cd firmware/zephyr
+west update
+west packages pip --install
+west blobs fetch hal_espressif
+```
+
+5. Clear only generated build/install/log output so micro-ROS is rebuilt with
+	 the 4.3 headers. These commands retain the cloned source repositories:
+
+```sh
+rm -rf build/app_microros_node \
+	astro_custom_modules/libmicroros/micro_ros_dev/build \
+	astro_custom_modules/libmicroros/micro_ros_dev/install \
+	astro_custom_modules/libmicroros/micro_ros_dev/log \
+	astro_custom_modules/libmicroros/micro_ros_src/build \
+	astro_custom_modules/libmicroros/micro_ros_src/install \
+	astro_custom_modules/libmicroros/micro_ros_src/log
+```
+
+6. From the repository root, rebuild the RAK target:
+
+```sh
+just zephyr app_microros_node rak
+```
+
+The build recipes use pristine Zephyr build directories. Do not run
+`just clean-zephyr-microros` for this rollback unless you also intend to delete
+and re-clone the micro-ROS source trees. To return to 4.4.0 later, restore the
+4.4 manifest/overlay values and add the source-specific `-fpermissive` setting
+back to `app_microros_node/CMakeLists.txt`.
 
 
 ### In this directory follow the below commands to set up the space.
