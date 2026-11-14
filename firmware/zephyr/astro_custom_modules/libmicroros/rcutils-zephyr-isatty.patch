@@ -1,0 +1,24 @@
+diff --git a/src/logging.c b/src/logging.c
+--- a/src/logging.c
++++ b/src/logging.c
+@@ -807,3 +807,7 @@
+ # define COLOR_YELLOW "\033[33m"
+-# define IS_STREAM_A_TTY(stream) (isatty(fileno(stream)) != 0)
++# if defined(__ZEPHYR__)
++#  define IS_STREAM_A_TTY(stream) (0)
++# else
++#  define IS_STREAM_A_TTY(stream) (isatty(fileno(stream)) != 0)
++# endif
+ #endif
+
+diff --git a/src/strcasecmp.c b/src/strcasecmp.c
+--- a/src/strcasecmp.c
++++ b/src/strcasecmp.c
+@@ -20,4 +20,7 @@
+ #include <errno.h>
+ #include <string.h>
++#ifndef _WIN32
++# include <strings.h>
++#endif
+
+ #include "rcutils/strcasecmp.h"

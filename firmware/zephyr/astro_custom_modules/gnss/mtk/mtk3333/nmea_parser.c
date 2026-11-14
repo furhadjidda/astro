@@ -111,13 +111,21 @@ static void parse_utc_time(const char* token, struct gnss_time* utc) {
  * ============================== */
 
 static void parse_gga(char* sentence, struct gnss_data* data) {
-    char* token;
     char* rest = sentence;  // Keep track of remaining string
     int field = 0;
     char lat_hemi = 0;
     char lon_hemi = 0;
 
-    while ((token = strsep(&rest, ",")) != NULL) {
+    while (rest != NULL) {
+        char* token = rest;
+        char* separator = strchr(rest, ',');
+        if (separator != NULL) {
+            *separator = '\0';
+            rest = separator + 1;
+        } else {
+            rest = NULL;
+        }
+
         if (*token == '\0') {
             field++;
             continue;  // Skip empty fields but increment counter

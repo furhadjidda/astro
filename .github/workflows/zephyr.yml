@@ -8,80 +8,97 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
+    timeout-minutes: 120
 
     strategy:
       fail-fast: false
       matrix:
-        board:
-          - name: adafruit_feather_esp32s3/esp32s3/procpu
+        board: [feather, rak]
+        include:
+          - board: feather
+            micro_ros: false
+            name: adafruit_feather_esp32s3/esp32s3/procpu
             overlay: boards/adafruit_feather_s3.overlay
             conf: boards/adafruit_feather_s3.conf
             sysbuild: true
-            flash: flash-4M
-            psram: psram-2M
-          - name: rak3112/esp32s3/procpu
+            flash: espressif-flash-4M
+            psram: espressif-psram-2M
+          - board: rak
+            micro_ros: true
+            name: rak3112/esp32s3/procpu
             overlay: boards/rak_wireless_rak3312.overlay
             conf: boards/rak_wireless_rak3312.conf
             sysbuild: true
-            flash: flash-16M
-            psram: psram-8M
-
-
-    container:
-      image: ghcr.io/furhadjidda/zephyr-dev:latest
-      options: --user root
+            flash: espressif-flash-16M
+            psram: espressif-psram-8M
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Activate venv and initialize workspace
-        shell: bash
+      - name: Build Zephyr CI image
         run: |
-          . /opt/zephyr-venv/bin/activate
-          cd firmware/zephyr
+          docker build \
+            --file docker/dockerfile \
+            --tag zephyr-dev:4.4.0 \
+            docker
+
+      - name: Initialize workspace and build Zephyr apps
+        run: |
+          docker run --rm \
+            --user "$(id -u):$(id -g)" \
+            --volume "$GITHUB_WORKSPACE:$GITHUB_WORKSPACE" \
+            --workdir "$GITHUB_WORKSPACE" \
+            --entrypoint bash \
+            --env HOME=/tmp/zephyr-home \
+            --env WORKSPACE="$GITHUB_WORKSPACE" \
+            --env BOARD='${{ matrix.name }}' \
+            --env OVERLAY='${{ matrix.overlay }}' \
+            --env CONF='${{ matrix.conf }}' \
+            --env FLASH='${{ matrix.flash }}' \
+            --env PSRAM='${{ matrix.psram }}' \
+            --env BUILD_MICRO_ROS='${{ matrix.micro_ros }}' \
+            zephyr-dev:4.4.0 \
+            -euo pipefail -c '
+          mkdir -p "$HOME"
+          git config --global --add safe.directory "*"
+          source /opt/zephyr-venv/bin/activate
+          cd "$WORKSPACE/firmware/zephyr"
+
           if [ ! -d ".west" ]; then
             west init -l west
-            west update --narrow
           fi
+          west update --narrow
           west packages pip --install
+          python -m pip install "setuptools<80"
           west blobs fetch hal_espressif
+          west help build >/dev/null
 
+          rm -rf build \
+            astro_custom_modules/libmicroros/micro_ros_dev/build \
+            astro_custom_modules/libmicroros/micro_ros_dev/install \
+            astro_custom_modules/libmicroros/micro_ros_dev/log \
+            astro_custom_modules/libmicroros/micro_ros_src/build \
+            astro_custom_modules/libmicroros/micro_ros_src/install \
+            astro_custom_modules/libmicroros/micro_ros_src/log \
+            astro_custom_modules/libmicroros/micro_ros_src/libmicroros \
+            astro_custom_modules/libmicroros/include
+          rm -f astro_custom_modules/libmicroros/libmicroros.a \
+            astro_custom_modules/libmicroros/configured_colcon.meta \
+            astro_custom_modules/libmicroros/zephyr_toolchain.cmake
 
-      - name: Build sensor node app
-        shell: bash
-        working-directory: firmware/zephyr
-        run: |
-          . /opt/zephyr-venv/bin/activate
+          west build -p always -b "$BOARD" -d build/app_sensor_node \
+            --sysbuild app_sensor_node -- \
+            -DDTC_OVERLAY_FILE="$OVERLAY" -DEXTRA_CONF_FILE="$CONF"
 
-          # Build command with optional --sysbuild
-          CMD="west build -p always -b '${{ matrix.board.name }}' -d build/app_sensor_node"
-
-          if [ "${{ matrix.board.sysbuild }}" = "true" ]; then
-            CMD="$CMD --sysbuild"
+          if [ "$BUILD_MICRO_ROS" = "true" ]; then
+            west build -p always -b "$BOARD" -d build/app_microros_node \
+              --sysbuild app_microros_node -- \
+              -DDTC_OVERLAY_FILE="$OVERLAY" -DEXTRA_CONF_FILE="$CONF"
           fi
 
-          CMD="$CMD app_sensor_node -- -DDTC_OVERLAY_FILE='${{ matrix.board.overlay }}' -DEXTRA_CONF_FILE='${{ matrix.board.conf }}'"
-
-          echo "Running: $CMD"
-          eval $CMD
-
-
-      - name: Build Example Apps
-        shell: bash
-        working-directory: firmware/zephyr
-        run: |
-          . /opt/zephyr-venv/bin/activate
-
-          # Build command with optional --sysbuild
-          CMD="west build -p always -b '${{ matrix.board.name }}' -d build/app_examples -S ${{ matrix.board.flash }} -S ${{ matrix.board.psram }} "
-
-          if [ "${{ matrix.board.sysbuild }}" = "true" ]; then
-            CMD="$CMD --sysbuild"
-          fi
-
-          CMD="$CMD app_examples -- -DDTC_OVERLAY_FILE='${{ matrix.board.overlay }}' -DEXTRA_CONF_FILE='${{ matrix.board.conf }}'"
-
-          echo "Running: $CMD"
-          eval $CMD
+          west build -p always -b "$BOARD" -d build/app_examples \
+            -S "$FLASH" -S "$PSRAM" --sysbuild app_examples -- \
+            -DDTC_OVERLAY_FILE="$OVERLAY" -DEXTRA_CONF_FILE="$CONF"
+          '
 

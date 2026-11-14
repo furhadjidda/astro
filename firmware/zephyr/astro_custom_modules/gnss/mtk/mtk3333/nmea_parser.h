@@ -12,6 +12,6 @@
 
 #include "mtk3333.h"
 
-int gnss_nmea_parse(const char* nmea, struct gnss_data* data)
+int gnss_nmea_parse(const char* nmea, struct gnss_data* data);
 
 #endif  // MTK3333_PARSER_H
