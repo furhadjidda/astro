@@ -48,7 +48,6 @@ pico_dir     := "firmware/pico"
 zephyr_dir   := "firmware/zephyr"
 ros2_dir     := "ros2"
 pico_sdk     := root / pico_dir / "external/pico-sdk"
-microros_dir := zephyr_dir / "astro_custom_modules/libmicroros"
 
 # Zephyr apps (excluding app_examples which needs snippet args)
 zephyr_apps  := "app_sensor_node app_microros_node app_bluetooth app_sd_card_fs"
@@ -239,12 +238,11 @@ clean-zephyr:
 # Clean Zephyr micro-ROS library artifacts
 [group('clean'), confirm("Remove micro-ROS library artifacts?")]
 clean-zephyr-microros:
-    rm -rf {{ microros_dir }}/libmicroros.a \
-           {{ microros_dir }}/include \
-           {{ microros_dir }}/micro_ros_dev \
-           {{ microros_dir }}/micro_ros_src \
-           {{ microros_dir }}/configured_colcon.meta \
-           {{ microros_dir }}/zephyr_toolchain.cmake
+    rm -rf {{ zephyr_dir }}/build/app_sensor_node/app_sensor_node/micro_ros \
+           {{ zephyr_dir }}/build/app_microros_node/app_microros_node/micro_ros \
+           {{ zephyr_dir }}/build/app_bluetooth/app_bluetooth/micro_ros \
+           {{ zephyr_dir }}/build/app_sd_card_fs/app_sd_card_fs/micro_ros \
+           {{ zephyr_dir }}/build/app_examples/app_examples/micro_ros
 
 # Clean Zephyr builds + micro-ROS library
 [group('clean'), confirm("Remove ALL Zephyr artifacts (builds + micro-ROS)?")]

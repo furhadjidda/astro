@@ -69,10 +69,6 @@ RUN python3 -m venv /opt/uv && \
         lark-parser \
         'empy==3.3.4' \
         colcon-common-extensions
-RUN chmod -R a+rX /opt/uv-python && \
-    chmod -R a+rwX /opt/zephyr-venv
-
-
 # -----------------------------------------------------------------------------
 # Sanity checks (fail fast if something is wrong)
 # -----------------------------------------------------------------------------
@@ -80,6 +76,8 @@ RUN test -x ${ZEPHYR_SDK_INSTALL_DIR}/gnu/${ZEPHYR_SDK_TOOLCHAIN}/bin/xtensa-esp
 RUN test -x ${ZEPHYR_SDK_INSTALL_DIR}/hosttools/sysroots/x86_64-pokysdk-linux/usr/bin/dtc
 RUN /opt/zephyr-venv/bin/python --version
 RUN /opt/zephyr-venv/bin/west --version
+RUN chmod -R a+rX /opt/uv-python && \
+    chmod -R a+rwX /opt/zephyr-venv
 
 # -----------------------------------------------------------------------------
 # Runtime configuration

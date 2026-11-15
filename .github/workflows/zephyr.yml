@@ -74,19 +74,6 @@ jobs:
           west blobs fetch hal_espressif
           west help build >/dev/null
 
-          rm -rf build \
-            astro_custom_modules/libmicroros/micro_ros_dev/build \
-            astro_custom_modules/libmicroros/micro_ros_dev/install \
-            astro_custom_modules/libmicroros/micro_ros_dev/log \
-            astro_custom_modules/libmicroros/micro_ros_src/build \
-            astro_custom_modules/libmicroros/micro_ros_src/install \
-            astro_custom_modules/libmicroros/micro_ros_src/log \
-            astro_custom_modules/libmicroros/micro_ros_src/libmicroros \
-            astro_custom_modules/libmicroros/include
-          rm -f astro_custom_modules/libmicroros/libmicroros.a \
-            astro_custom_modules/libmicroros/configured_colcon.meta \
-            astro_custom_modules/libmicroros/zephyr_toolchain.cmake
-
           west build -p always -b "$BOARD" -d build/app_sensor_node \
             --sysbuild app_sensor_node -- \
             -DDTC_OVERLAY_FILE="$OVERLAY" -DEXTRA_CONF_FILE="$CONF"

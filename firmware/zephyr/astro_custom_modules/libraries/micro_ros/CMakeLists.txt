@@ -3,6 +3,8 @@
 if(CONFIG_MICROROS)
 
 set(MICROROS_DIR ${ZEPHYR_CURRENT_MODULE_DIR})
+set(MICROROS_BUILD_DIR ${CMAKE_BINARY_DIR}/micro_ros)
+file(MAKE_DIRECTORY ${MICROROS_BUILD_DIR})
 
 if(CMAKE_GENERATOR STREQUAL "Unix Makefiles")
 set(submake "$(MAKE)")
@@ -40,10 +42,10 @@ include(ExternalProject)
 externalproject_add(libmicroros_project
     PREFIX     ${CMAKE_BINARY_DIR}/libmicroros-prefix
     SOURCE_DIR ${MICROROS_DIR}
-    BINARY_DIR ${MICROROS_DIR}
+    BINARY_DIR ${MICROROS_BUILD_DIR}
     CONFIGURE_COMMAND ""
     BUILD_COMMAND
-        ${submake} -f libmicroros.mk
+        ${submake} -f ${MICROROS_DIR}/libmicroros.mk
             X_CFLAGS=${external_project_cflags}
             X_CXXFLAGS=${external_project_cxxflags}
             X_CC=${CMAKE_C_COMPILER}
@@ -51,31 +53,38 @@ externalproject_add(libmicroros_project
             X_RANLIB=${CMAKE_RANLIB}
             X_CXX=${CMAKE_CXX_COMPILER}
             COMPONENT_PATH=${MICROROS_DIR}
+            BUILD_DIR=${MICROROS_BUILD_DIR}
             ZEPHYR_BASE=${ZEPHYR_BASE}
             PROJECT_BINARY_DIR=${PROJECT_BINARY_DIR}
     INSTALL_COMMAND ""
-    BUILD_BYPRODUCTS ${MICROROS_DIR}/libmicroros.a
+    BUILD_BYPRODUCTS ${MICROROS_BUILD_DIR}/libmicroros.a
     )
 
-zephyr_link_libraries(${MICROROS_DIR}/libmicroros.a)
+zephyr_link_libraries(${MICROROS_BUILD_DIR}/libmicroros.a)
 
 zephyr_interface_library_named(microros)
 add_dependencies(microros libmicroros_project)
-target_include_directories(microros INTERFACE ${MICROROS_DIR}/include)
+target_include_directories(microros INTERFACE ${MICROROS_BUILD_DIR}/include)
 
 execute_process(
     COMMAND
-        make --no-print-directory -f libmicroros.mk get_package_names
+        make --no-print-directory -f ${MICROROS_DIR}/libmicroros.mk get_package_names
             COMPONENT_PATH=${MICROROS_DIR}
+            BUILD_DIR=${MICROROS_BUILD_DIR}
     WORKING_DIRECTORY
-        ${MICROROS_DIR}
+        ${MICROROS_BUILD_DIR}
+    RESULT_VARIABLE
+        MICROROS_PACKAGE_RESULT
     OUTPUT_VARIABLE
         INCLUDE_ROS2_PACKAGES
     OUTPUT_STRIP_TRAILING_WHITESPACE
     )
+if(NOT "${MICROROS_PACKAGE_RESULT}" STREQUAL "0")
+    message(FATAL_ERROR "Failed to get micro-ROS package names: ${MICROROS_PACKAGE_RESULT}")
+endif()
 
 foreach(pkg ${INCLUDE_ROS2_PACKAGES})
-    target_include_directories(microros INTERFACE ${MICROROS_DIR}/include/${pkg})
+    target_include_directories(microros INTERFACE ${MICROROS_BUILD_DIR}/include/${pkg})
 endforeach()
 
 # micro-ROS transport library
@@ -91,7 +100,7 @@ else()
 endif()
 
 zephyr_library_named(microros_transports)
-zephyr_include_directories(${MICROROS_DIR}/include)
+zephyr_include_directories(${MICROROS_BUILD_DIR}/include)
 zephyr_include_directories(${MICROROS_TRANSPORT_DIR})
 
 zephyr_library_sources(
@@ -101,11 +110,4 @@ zephyr_library_sources(
 add_dependencies(microros microros_transports)
 add_dependencies(microros_transports libmicroros_project)
 
-# Cleaning
-
-set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
-    ${MICROROS_DIR}/include
-    ${MICROROS_DIR}/configured_colcon.meta
-    ${MICROROS_DIR}/zephyr_toolchain.cmake
-    )
 endif()
