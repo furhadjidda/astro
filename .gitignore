@@ -50,10 +50,12 @@ firmware/zephyr/zephyr_sensor_node/build
 firmware/zephyr/zephyr_sensor_node/modules/libmicroros/include
 firmware/zephyr/zephyr_sensor_node/modules/libmicroros/micro_ros_dev
 firmware/zephyr/zephyr_sensor_node/modules/libmicroros/micro_ros_src
-# micro-ROS generated artifacts
+# Legacy micro-ROS artifacts from before the module reorganization
 firmware/zephyr/astro_custom_modules/libmicroros/include
 firmware/zephyr/astro_custom_modules/libmicroros/micro_ros_dev
 firmware/zephyr/astro_custom_modules/libmicroros/micro_ros_src
+firmware/zephyr/astro_custom_modules/libmicroros/configured_colcon.meta
+firmware/zephyr/astro_custom_modules/libmicroros/zephyr_toolchain.cmake
 
 # ==============================================================================
 # Compiled objects & binaries

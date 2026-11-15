@@ -52,12 +52,8 @@ just zephyr app_sensor_node rak
 just zephyr app_sensor_node feather
 ```
 
-> **Important:** Clean micro-ROS artifacts before switching boards:
-> ```bash
-> rm -rf build/ modules/libmicroros/micro_ros_src/build \
->        modules/libmicroros/micro_ros_src/install/ \
->        modules/libmicroros/micro_ros_src/log/
-> ```
+The recipes use pristine build directories when switching boards. Micro-ROS
+dependencies and generated files are contained in the application build directory.
 
 ### Flashing
 
@@ -89,10 +85,10 @@ Terminal 2 — start GDB:
 
 `firmware/zephyr/astro_custom_modules/` contains Astro-specific Zephyr modules:
 
-- `gnss/` — GNSS driver integration
-- `iim42652_rak12033/` — RAK12033 IMU driver (IIM-42652)
-- `libmicroros/` — micro-ROS Zephyr module
-- `sensor/` — Sensor abstraction layer
+- `drivers/gnss/` — GNSS driver
+- `drivers/sensors/bno055/` — Bosch BNO055 driver
+- `drivers/sensors/iim42652/` — TDK IIM-42652 driver used by RAK12033
+- `libraries/micro_ros/` — micro-ROS Zephyr integration
 
 ## References
 

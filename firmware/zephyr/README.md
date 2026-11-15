@@ -32,7 +32,7 @@ for that build is `~/.venvs/zephyr-4.4`.
 	by the ESP32-S3 build.
 - The SSD1306 overlays use the 4.4 compatible `solomon,ssd1306`. BNO055 I2C
 	reads and the MTK3333 GNSS driver were updated for the 4.4 APIs.
-- The micro-ROS build now applies `astro_custom_modules/libmicroros/rcutils-zephyr-isatty.patch`
+- The micro-ROS build applies `astro_custom_modules/libraries/micro_ros/patches/rcutils-zephyr-isatty.patch`
 	to its rcutils clone. The Python environment also needs `catkin_pkg` and
 	`empy==3.3.4` for the bundled micro-ROS Humble build.
 - `app_microros_node/CMakeLists.txt` applies `-fpermissive` only to
@@ -71,30 +71,15 @@ west packages pip --install
 west blobs fetch hal_espressif
 ```
 
-5. Clear only generated build/install/log output so micro-ROS is rebuilt with
-	 the 4.3 headers. These commands retain the cloned source repositories:
-
-```sh
-rm -rf build/app_microros_node \
-	astro_custom_modules/libmicroros/micro_ros_dev/build \
-	astro_custom_modules/libmicroros/micro_ros_dev/install \
-	astro_custom_modules/libmicroros/micro_ros_dev/log \
-	astro_custom_modules/libmicroros/micro_ros_src/build \
-	astro_custom_modules/libmicroros/micro_ros_src/install \
-	astro_custom_modules/libmicroros/micro_ros_src/log
-```
-
-6. From the repository root, rebuild the RAK target:
+5. From the repository root, rebuild the RAK target:
 
 ```sh
 just zephyr app_microros_node rak
 ```
 
-The build recipes use pristine Zephyr build directories. Do not run
-`just clean-zephyr-microros` for this rollback unless you also intend to delete
-and re-clone the micro-ROS source trees. To return to 4.4.0 later, restore the
-4.4 manifest/overlay values and add the source-specific `-fpermissive` setting
-back to `app_microros_node/CMakeLists.txt`.
+The build recipes use pristine Zephyr build directories, so they also re-clone
+and rebuild micro-ROS. To return to 4.4.0 later, restore the 4.4 manifest and
+overlay values and the source-specific `-fpermissive` setting.
 
 
 ### In this directory follow the below commands to set up the space.
@@ -104,10 +89,7 @@ west update
 ```
 
 #### To build different boards
-make sure to run this before building for a new board
-```
-rm -rf build/ modules/libmicroros/micro_ros_src/build modules/libmicroros/micro_ros_src/install/ modules/libmicroros/micro_ros_src/log/
-```
+Use a pristine build (`west build -p always`) when changing boards.
 ```
 west build -p always -b arduino_nicla_vision/stm32h747xx/m7 --sysbuild . -- -DDTC_OVERLAY_FILE=boards/nicla-vision.overlay -DEXTRA_CONF_FILE=boards/nicla.conf
 
@@ -130,7 +112,21 @@ west build -p always -b pico_plus2/rp2350b/m33 -- -DEXTRA_CONF_FILE=boards/pimor
 
 
 ## References
-The original project structure was taken from https://github.com/micro-ROS/micro_ros_zephyr_module and adapted to suit my needs. I have left the build structure of the project exactly same but changed the code to suit my needs.
+The micro-ROS integration was adapted from https://github.com/micro-ROS/micro_ros_zephyr_module.
+
+## Custom modules
+
+`astro_custom_modules/drivers` contains separate GNSS and sensor Zephyr modules;
+`astro_custom_modules/libraries/micro_ros` contains the micro-ROS integration.
+Applications register their common modules through `astro_custom_modules/modules.cmake`
+before `find_package(Zephyr)` and explicitly add IIM42652 where needed.
+
+Micro-ROS clones and generated files live in `micro_ros/` inside each application
+build directory, not in the module source tree. Pristine builds remove that
+directory and therefore clone the dependencies again. `just clean-zephyr-microros`
+removes these files for the standard sysbuild directories without touching the
+module sources. `libraries/micro_ros/revisions.lock` pins the cloned repositories;
+update and test those revisions together when upgrading micro-ROS.
 
 
 

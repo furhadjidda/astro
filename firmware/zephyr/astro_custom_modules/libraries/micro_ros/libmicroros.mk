@@ -1,6 +1,13 @@
 .NOTPARALLEL:
 
-UROS_DIR = $(COMPONENT_PATH)/micro_ros_src
+ifndef COMPONENT_PATH
+$(error COMPONENT_PATH must point to the micro-ROS module)
+endif
+ifndef BUILD_DIR
+$(error BUILD_DIR must point to the micro-ROS build directory)
+endif
+
+UROS_DIR = $(BUILD_DIR)/micro_ros_src
 DEBUG ?= 0
 
 ifeq ($(DEBUG), 1)
@@ -15,24 +22,25 @@ CXXFLAGS_INTERNAL := $(X_CXXFLAGS)
 CFLAGS_INTERNAL := -c -I$(ZEPHYR_BASE)/include/posix -I$(PROJECT_BINARY_DIR)/include/generated $(CFLAGS_INTERNAL)
 CXXFLAGS_INTERNAL := -c -I$(ZEPHYR_BASE)/include/posix -I$(PROJECT_BINARY_DIR)/include/generated $(CXXFLAGS_INTERNAL)
 
-all: $(COMPONENT_PATH)/libmicroros.a
+all: $(BUILD_DIR)/libmicroros.a
 
 clean:
-	rm -rf $(COMPONENT_PATH)/libmicroros.a; \
-	rm -rf $(COMPONENT_PATH)/include; \
-	rm -rf $(COMPONENT_PATH)/zephyr_toolchain.cmake; \
-	rm -rf $(COMPONENT_PATH)/micro_ros_dev; \
-	rm -rf $(COMPONENT_PATH)/micro_ros_src;
+	rm -rf $(BUILD_DIR)/libmicroros.a; \
+	rm -rf $(BUILD_DIR)/include; \
+	rm -rf $(BUILD_DIR)/zephyr_toolchain.cmake; \
+	rm -rf $(BUILD_DIR)/micro_ros_dev; \
+	rm -rf $(BUILD_DIR)/micro_ros_src;
 
 ZEPHYR_CONF_FILE := $(PROJECT_BINARY_DIR)/.config
 
-get_package_names: $(COMPONENT_PATH)/micro_ros_src/src
-	@cd $(COMPONENT_PATH)/micro_ros_src/src; \
-	colcon list | awk '{print $$1}' | awk -v d=";" '{s=(NR==1?s:s d)$$0}END{print s}'
+get_package_names: $(BUILD_DIR)/micro_ros_src/.sources-ready
+	@cd $(BUILD_DIR)/micro_ros_src/src || exit 1; \
+	packages=$$(colcon list) || exit 1; \
+	printf '%s\n' "$$packages" | awk '{print $$1}' | awk -v d=";" '{s=(NR==1?s:s d)$$0}END{print s}'
 
-configure_colcon_meta: $(COMPONENT_PATH)/colcon.meta $(COMPONENT_PATH)/micro_ros_src/src
-	. $(COMPONENT_PATH)/utils.sh; \
-	cp $(COMPONENT_PATH)/colcon.meta $(COMPONENT_PATH)/configured_colcon.meta; \
+configure_colcon_meta: $(COMPONENT_PATH)/colcon.meta $(BUILD_DIR)/micro_ros_src/.sources-ready
+	set -e; export BUILD_DIR="$(BUILD_DIR)"; . $(COMPONENT_PATH)/utils.sh; \
+	cp $(COMPONENT_PATH)/colcon.meta $(BUILD_DIR)/configured_colcon.meta; \
 	ZEPHYR_CONF_FILE=$(ZEPHYR_CONF_FILE); \
 	update_meta_from_zephyr_config "CONFIG_MICROROS_NODES" "rmw_microxrcedds" "RMW_UXRCE_MAX_NODES"; \
 	update_meta_from_zephyr_config "CONFIG_MICROROS_PUBLISHERS" "rmw_microxrcedds" "RMW_UXRCE_MAX_PUBLISHERS"; \
@@ -56,38 +64,41 @@ configure_colcon_meta: $(COMPONENT_PATH)/colcon.meta $(COMPONENT_PATH)/micro_ros
 
 
 configure_toolchain: $(COMPONENT_PATH)/zephyr_toolchain.cmake.in
-	rm -f $(COMPONENT_PATH)/zephyr_toolchain.cmake; \
+	rm -f $(BUILD_DIR)/zephyr_toolchain.cmake; \
 	cat $(COMPONENT_PATH)/zephyr_toolchain.cmake.in | \
 		sed "s|@CMAKE_C_COMPILER@|$(X_CC)|g" | \
 		sed "s|@CMAKE_CXX_COMPILER@|$(X_CXX)|g" | \
 		sed "s|@CMAKE_SYSROOT@|$(COMPONENT_PATH)|g" | \
 		sed "s|@CFLAGS@|$(CFLAGS_INTERNAL)|g" | \
 		sed "s|@CXXFLAGS@|$(CXXFLAGS_INTERNAL)|g" \
-		> $(COMPONENT_PATH)/zephyr_toolchain.cmake
+		> $(BUILD_DIR)/zephyr_toolchain.cmake
 
-$(COMPONENT_PATH)/micro_ros_dev/install:
-	rm -rf micro_ros_dev; \
+$(BUILD_DIR)/micro_ros_dev/install:
+	set -e; cd $(BUILD_DIR); rm -rf micro_ros_dev; \
 	mkdir micro_ros_dev; cd micro_ros_dev; \
 	git clone -b humble https://github.com/ament/ament_cmake src/ament_cmake; \
-	cd src/ament_cmake; \
-	git checkout 089519b06bfa562e76dc96b6fa67d30cf84653b7;\
-	cd ../..; \
 	git clone -b humble https://github.com/ament/ament_lint src/ament_lint; \
 	git clone -b humble https://github.com/ament/ament_package src/ament_package; \
 	git clone -b humble https://github.com/ament/googletest src/googletest; \
 	git clone -b humble https://github.com/ros2/ament_cmake_ros src/ament_cmake_ros; \
 	git clone -b humble https://github.com/ament/ament_index src/ament_index; \
+	cd ..; \
+	while read -r repo revision; do \
+		case "$$repo" in micro_ros_dev/*) \
+			git -C "micro_ros_dev/src/$${repo#micro_ros_dev/}" checkout --detach "$$revision";; \
+		esac; \
+	done < $(COMPONENT_PATH)/revisions.lock; \
+	cd micro_ros_dev; \
 	colcon build --cmake-args -DBUILD_TESTING=OFF;
 
-$(COMPONENT_PATH)/micro_ros_src/src:
-	@rm -rf micro_ros_src; \
+$(BUILD_DIR)/micro_ros_src/.sources-ready:
+	@set -e; cd $(BUILD_DIR); rm -rf micro_ros_src; \
 	mkdir micro_ros_src; cd micro_ros_src; \
 	git clone -b ros2 https://github.com/eProsima/micro-CDR src/micro-CDR; \
 	git clone -b ros2 https://github.com/eProsima/Micro-XRCE-DDS-Client src/Micro-XRCE-DDS-Client; \
 	git clone -b humble https://github.com/micro-ROS/rcl src/rcl; \
 	git clone -b humble https://github.com/ros2/rclc src/rclc; \
 	git clone -b fix/support_zephyr4.2+ https://github.com/furhadjidda/rcutils src/rcutils; \
-	git -C src/rcutils apply $(COMPONENT_PATH)/rcutils-zephyr-isatty.patch; \
 	git clone -b humble https://github.com/micro-ROS/micro_ros_msgs src/micro_ros_msgs; \
 	git clone -b humble https://github.com/micro-ROS/rmw-microxrcedds src/rmw-microxrcedds; \
 	git clone -b humble https://github.com/micro-ROS/rosidl_typesupport src/rosidl_typesupport; \
@@ -103,6 +114,14 @@ $(COMPONENT_PATH)/micro_ros_src/src:
 	git clone -b humble https://github.com/ros2/rcl_logging src/rcl_logging; \
 	git clone -b humble https://github.com/ros2/ros2_tracing src/ros2_tracing; \
 	git clone -b humble https://github.com/micro-ROS/micro_ros_utilities src/micro_ros_utilities; \
+	cd ..; \
+	while read -r repo revision; do \
+		case "$$repo" in micro_ros_src/*) \
+			git -C "micro_ros_src/src/$${repo#micro_ros_src/}" checkout --detach "$$revision";; \
+		esac; \
+	done < $(COMPONENT_PATH)/revisions.lock; \
+	cd micro_ros_src; \
+	git -C src/rcutils apply $(COMPONENT_PATH)/patches/rcutils-zephyr-isatty.patch; \
 	touch src/ros2_tracing/test_tracetools/COLCON_IGNORE; \
     touch src/rosidl/rosidl_typesupport_introspection_cpp/COLCON_IGNORE; \
     touch src/rclc/rclc_examples/COLCON_IGNORE; \
@@ -110,9 +129,10 @@ $(COMPONENT_PATH)/micro_ros_src/src:
 	touch src/common_interfaces/std_srvs/COLCON_IGNORE; \
 	touch src/rcl/rcl_yaml_param_parser/COLCON_IGNORE; \
     touch src/rcl_logging/rcl_logging_spdlog/COLCON_IGNORE; \
-    touch src/rcl_interfaces/test_msgs/COLCON_IGNORE;
+    touch src/rcl_interfaces/test_msgs/COLCON_IGNORE; \
+	touch .sources-ready;
 
-$(COMPONENT_PATH)/micro_ros_src/install: configure_colcon_meta configure_toolchain $(COMPONENT_PATH)/micro_ros_dev/install $(COMPONENT_PATH)/micro_ros_src/src
+$(BUILD_DIR)/micro_ros_src/install: configure_colcon_meta configure_toolchain $(BUILD_DIR)/micro_ros_dev/install $(BUILD_DIR)/micro_ros_src/.sources-ready
 	cd $(UROS_DIR); \
 	@echo ">>> Sourcing micro-ROS ament environment"; \
 	. ../micro_ros_dev/install/local_setup.sh; \
@@ -122,7 +142,7 @@ $(COMPONENT_PATH)/micro_ros_src/install: configure_colcon_meta configure_toolcha
 	colcon build \
 		--merge-install \
 		--packages-ignore-regex=.*_cpp \
-		--metas $(COMPONENT_PATH)/configured_colcon.meta \
+		--metas $(BUILD_DIR)/configured_colcon.meta \
 		--cmake-args \
 		"--no-warn-unused-cli" \
 		-DCMAKE_POSITION_INDEPENDENT_CODE:BOOL=OFF \
@@ -130,10 +150,10 @@ $(COMPONENT_PATH)/micro_ros_src/install: configure_colcon_meta configure_toolcha
 		-DBUILD_SHARED_LIBS=OFF \
 		-DBUILD_TESTING=OFF \
 		-DCMAKE_BUILD_TYPE=$(BUILD_TYPE) \
-		-DCMAKE_TOOLCHAIN_FILE=$(COMPONENT_PATH)/zephyr_toolchain.cmake \
+		-DCMAKE_TOOLCHAIN_FILE=$(BUILD_DIR)/zephyr_toolchain.cmake \
 		-DCMAKE_VERBOSE_MAKEFILE=OFF; \
 
-$(COMPONENT_PATH)/libmicroros.a: $(COMPONENT_PATH)/micro_ros_src/install
+$(BUILD_DIR)/libmicroros.a: $(BUILD_DIR)/micro_ros_src/install
 	mkdir -p $(UROS_DIR)/libmicroros; cd $(UROS_DIR)/libmicroros; \
 	for file in $$(find $(UROS_DIR)/install/lib/ -name '*.a'); do \
 		folder=$$(echo $$file | sed -E "s/(.+)\/(.+).a/\2/"); \
@@ -143,6 +163,6 @@ $(COMPONENT_PATH)/libmicroros.a: $(COMPONENT_PATH)/micro_ros_src/install
 		done; \
 		cd ..; rm -rf $$folder; \
 	done ; \
-	$(X_AR) rc libmicroros.a *.obj; cp libmicroros.a $(COMPONENT_PATH); ${X_RANLIB} $(COMPONENT_PATH)/libmicroros.a; \
+	$(X_AR) rc libmicroros.a *.obj; cp libmicroros.a $(BUILD_DIR); ${X_RANLIB} $(BUILD_DIR)/libmicroros.a; \
 	cd ..; rm -rf libmicroros; \
-	cp -R $(UROS_DIR)/install/include $(COMPONENT_PATH)/include;
+	cp -R $(UROS_DIR)/install/include $(BUILD_DIR)/include;
