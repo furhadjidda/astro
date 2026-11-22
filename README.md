@@ -14,6 +14,7 @@ Astro is a differential-drive robot built on the TurtleBot3 platform, powered by
 
 | Document | Description |
 |----------|-------------|
+| [ROS 2 Docker Development](ros2/README.md) | Build, deploy, update, and debug the Pi 4 robot container |
 | [Build, Flash, and Use](docs/build-flash-use.md) | Canonical setup, build, flash, deployment, launch, and cleanup instructions |
 | [Repository Tools](docs/tools.md) | Purpose, usage, dependencies, and caveats for every repository utility |
 | [Architecture](docs/architecture.md) | System diagram, data flow, TF tree, and build targets |

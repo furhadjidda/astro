@@ -1,0 +1,14 @@
+services:
+  ros:
+    image: ${IMAGE:-astro:humble-arm64}
+    privileged: true
+    network_mode: host
+    ipc: host
+    restart: unless-stopped
+    environment:
+      ROS_DOMAIN_ID: ${ROS_DOMAIN_ID:-10}
+      RMW_IMPLEMENTATION: ${RMW_IMPLEMENTATION:-rmw_fastrtps_cpp}
+    volumes:
+      - /dev:/dev
+      - /run/udev:/run/udev:ro
+    command: ["ros2", "launch", "robot_bringup", "robot_base.launch.py"]
