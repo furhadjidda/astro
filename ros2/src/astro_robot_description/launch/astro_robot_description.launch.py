@@ -9,7 +9,10 @@ from launch_ros.actions import Node
 def generate_launch_description():
     use_sim_time = LaunchConfiguration("use_sim_time", default="false")
 
-    urdf_file_name = "urdf/waffle.urdf"
+    robot_model = os.environ.get("ASTRO_ROBOT_MODEL", "waffle")
+    if robot_model not in ("burger", "waffle"):
+        raise ValueError(f"Unsupported robot model: {robot_model}")
+    urdf_file_name = f"urdf/{robot_model}.urdf"
     urdf = os.path.join(
         get_package_share_directory("astro_robot_description"), urdf_file_name
     )

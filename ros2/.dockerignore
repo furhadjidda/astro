@@ -6,3 +6,4 @@ install_pi4/
 log_pi4/
 src/external/
 .git/
+.overlay/

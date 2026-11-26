@@ -72,6 +72,13 @@ normally named `astro-ros-1`. It runs
 `RMW_IMPLEMENTATION=rmw_fastrtps_cpp` by default. DepthAI is not started by
 this launch; see the [DepthAI smoke test](docs/PI_SETUP.md#pi-smoke-tests).
 
+The URDF defaults to `waffle`. To deploy a burger instead, run
+`make deploy PI=pi.local PI_USER=pi ROBOT_MODEL=burger`. This selects the URDF
+at runtime; it does not change odometry settings. For direct ROS launches,
+including Nav2 on another machine, set `ASTRO_ROBOT_MODEL=burger` in that
+machine's environment. See [navigation configuration](src/astro_navigation/README.md)
+before running a burger autonomously.
+
 ## Change, deploy, and verify
 
 1. **Desktop host:** edit the ROS packages, including launch/configuration files
@@ -96,6 +103,78 @@ branches and may move. Docker can reuse a cached fetch even after a branch
 advances; see [Pi setup](docs/PI_SETUP.md#build-and-deploy) for how to refresh
 it deliberately.
 
+## Faster development with package overlays
+
+This optional SSH workflow builds selected packages on the **desktop** for
+ARM64, transfers only their merged install overlay, and recreates the Pi
+service. It does not compile on the Pi. It is for development: make a full
+image for releases or when dependencies, interfaces, or build configuration
+change. **Secure or lift the wheels before every command that starts or
+restarts the service.**
+
+First, from the **desktop host** in `ros2/`, create a baseline:
+
+```bash
+make overlay-init PI=pi.local PI_USER=pi
+```
+
+This performs a full build and SSH deployment, then snapshots the baseline
+sources, install files, and builder package metadata under `ros2/.overlay/`. It may be
+slow and requires disk space. It overwrites the Pi Compose file just like
+`make deploy`. Run it again to establish a new baseline after a full image,
+package manifest, dependency, Dockerfile, entrypoint, or Compose change.
+
+After editing a package on the desktop, build and deploy it:
+
+```bash
+make overlay-deploy PI=pi.local PI_USER=pi PACKAGE=robot_bringup
+```
+
+Use the ROS **package name**, not necessarily its directory name. Each update
+rebuilds that package, its declared workspace dependents, and packages
+previously selected for this baseline. Dependencies must be declared correctly
+in package manifests; undeclared or external consumers and ABI compatibility
+are not automatically verified. Rebuild the full image for interface or
+dependency changes. The workflow checks the Pi image's platform, layers and
+configuration, local package manifests, baseline install files, and builder
+package versions, but these checks cannot prove hardware or ABI compatibility.
+
+The overlay remains active after a container or Pi restart. To return to the
+baseline image, from the **desktop host**:
+
+```bash
+make overlay-reset PI=pi.local PI_USER=pi
+```
+
+Reset recreates the service without the overlay and clears the selected package
+list. Old overlay releases on the Pi and baseline snapshots on the desktop are
+retained for inspection and consume disk space. An ordinary `make deploy`
+also recreates the service without the overlay; run `make overlay-init` before
+using overlay updates again. Use the same `IMAGE`, `REMOTE_DIR`, ROS variables,
+and build parallelism settings as the baseline. Do not edit the Pi Compose file
+independently while using this workflow. The baseline builder relies on BuildKit
+cache; if it is evicted, rebuilding it can be slow or fail the fingerprint
+check, requiring a new baseline.
+
+Use the same `ROBOT_MODEL` on `overlay-init`, `overlay-deploy`, and
+`overlay-reset`; for a burger baseline, add `ROBOT_MODEL=burger` to each.
+
+To inspect an active overlay, enter the container with `make shell` and source
+the overlay **after** the baseline (an exec shell does not run the entrypoint):
+
+```bash
+source /opt/ros/humble/setup.bash
+source /ws/install/setup.bash
+source /opt/astro-overlay/local_setup.bash
+ros2 pkg prefix robot_bringup
+```
+
+For an overlaid package, the prefix should be `/opt/astro-overlay`. Check logs
+and hardware as described below. Overlay deployment does not push an image to
+GHCR and is not part of CI. If an update fails after restarting the service,
+inspect its status and logs; retry or run `make overlay-reset` rather than
+assuming the old overlay is still active.
+
 ## Command reference
 
 ### Desktop host commands
@@ -108,6 +187,9 @@ Run from the desktop's `ros2/` directory:
 | Build and load the ARM64 image locally | `make build` |
 | Transfer an already-built image only | `make ship PI=pi.local PI_USER=pi` |
 | Build, transfer, and start/update the robot | `make deploy PI=pi.local PI_USER=pi` |
+| Create a full-image development baseline | `make overlay-init PI=pi.local PI_USER=pi` |
+| Build and deploy a package overlay | `make overlay-deploy PI=pi.local PI_USER=pi PACKAGE=robot_bringup` |
+| Return to the baseline image | `make overlay-reset PI=pi.local PI_USER=pi` |
 | Follow service logs | `make logs PI=pi.local PI_USER=pi` |
 | Open a shell in the running container | `make shell PI=pi.local PI_USER=pi` |
 | Connect to the Pi host | `ssh pi@pi.local` |

@@ -2,8 +2,8 @@
 ARG ROS_BASE=ros:humble-ros-base-jammy@sha256:a18afd4a42ad603579d03b9012385dfeaf2e848423f0a6c41699766e7849c86c
 ARG ROS_CORE=ros:humble-ros-core-jammy@sha256:1f9ff77348bbd0a2c06c1ee222b71e2e6dbf54b73cff63387a7bd4467a23a354
 ARG LIBREALSENSE_VERSION=v2.56.4
-ARG BUILD_JOBS=2
-ARG PARALLEL_WORKERS=2
+ARG BUILD_JOBS=16
+ARG PARALLEL_WORKERS=16
 
 FROM ${ROS_BASE} AS librealsense
 ARG LIBREALSENSE_VERSION
@@ -85,6 +85,42 @@ RUN --mount=type=cache,target=/root/.ccache \
       --parallel-workers "${PARALLEL_WORKERS}" --packages-skip-build-finished \
       --cmake-args -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF \
     && rm -rf /var/lib/apt/lists/*
+
+FROM builder AS overlay-baseline-check
+COPY --from=overlay-baseline /install/ /baseline-install/
+COPY --from=overlay-baseline /runtime-lib/ /baseline-runtime-lib/
+RUN diff -qr /ws/install /baseline-install \
+    && for lib in /baseline-runtime-lib/librealsense2.so*; do \
+         test -e "$lib" && cmp "$lib" "/usr/local/lib/${lib##*/}" || exit 1; \
+       done \
+    && dpkg-query -W -f='${binary:Package} ${Version}\n' | LC_ALL=C sort > /baseline-packages.txt
+
+FROM scratch AS overlay-fingerprint
+COPY --from=overlay-baseline-check /baseline-packages.txt /packages.txt
+
+FROM overlay-baseline-check AS overlay-builder
+ARG BUILD_JOBS
+ARG PARALLEL_WORKERS
+ARG OVERLAY_PACKAGES
+COPY --from=overlay-baseline /packages.txt /expected-packages.txt
+RUN cmp /baseline-packages.txt /expected-packages.txt
+WORKDIR /overlay
+COPY --from=overlay-source /src/ /overlay/src/
+RUN --mount=type=cache,target=/root/.ccache \
+    source /opt/ros/humble/setup.bash \
+    && source /ws/install/setup.bash \
+    && colcon list --base-paths src --names-only > /tmp/available-packages \
+    && for package in ${OVERLAY_PACKAGES}; do \
+         grep -Fxq "$package" /tmp/available-packages \
+           || { echo "Unknown local package: $package" >&2; exit 1; }; \
+       done \
+    && MAKEFLAGS="-j${BUILD_JOBS}" colcon build --base-paths src --merge-install \
+      --packages-above ${OVERLAY_PACKAGES} \
+      --parallel-workers "${PARALLEL_WORKERS}" \
+      --cmake-args -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
+
+FROM scratch AS overlay-export
+COPY --from=overlay-builder /overlay/install/ /
 
 FROM ${ROS_CORE} AS runtime
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]

@@ -8,7 +8,8 @@ services:
     environment:
       ROS_DOMAIN_ID: ${ROS_DOMAIN_ID:-10}
       RMW_IMPLEMENTATION: ${RMW_IMPLEMENTATION:-rmw_fastrtps_cpp}
+      ASTRO_ROBOT_MODEL: ${ASTRO_ROBOT_MODEL:-waffle}
     volumes:
       - /dev:/dev
       - /run/udev:/run/udev:ro
-    command: ["ros2", "launch", "robot_bringup", "robot_base.launch.py"]
+    command: ["ros2", "launch", "robot_bringup", "robot_base.launch.py", "enable_realsense:=false"]

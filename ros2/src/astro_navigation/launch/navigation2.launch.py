@@ -18,7 +18,10 @@ def generate_launch_description():
         ),
     )
 
-    param_file_name = "waffle.yaml"
+    robot_model = os.environ.get("ASTRO_ROBOT_MODEL", "waffle")
+    if robot_model not in ("burger", "waffle"):
+        raise ValueError(f"Unsupported robot model: {robot_model}")
+    param_file_name = f"{robot_model}.yaml"
     param_dir = LaunchConfiguration(
         "params_file",
         default=os.path.join(

@@ -10,11 +10,13 @@ URDF robot description package for Astro.
 
 ## Usage
 
-Automatically launched by `robot_bringup`. To launch standalone:
+`robot_bringup` publishes the URDF itself. To launch this publisher standalone:
 
 ```bash
-ros2 launch astro_robot_description display.launch.py
+ros2 launch astro_robot_description astro_robot_description.launch.py
 ```
+
+Set `ASTRO_ROBOT_MODEL=burger` to use the burger URDF; the default is `waffle`.
 
 ## Published Topics
 

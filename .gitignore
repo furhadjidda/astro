@@ -24,6 +24,7 @@ ros2/log/
 ros2/build_pi4/
 ros2/install_pi4/
 ros2/log_pi4/
+ros2/.overlay/
 
 # Vendored ROS packages pulled via vcs-import (regenerated from astro.repos)
 ros2/src/external
