@@ -7,12 +7,20 @@ IMAGE ?= astro:humble-arm64
 REMOTE_DIR ?= astro-robot
 ROS_DOMAIN_ID ?= 10
 RMW_IMPLEMENTATION ?= rmw_fastrtps_cpp
+ROBOT_MODEL ?= waffle
 BUILD_JOBS ?= 2
 PARALLEL_WORKERS ?= 2
+PACKAGE ?=
 SSH_TARGET = $(if $(PI_USER),$(PI_USER)@)$(PI)
-REMOTE_COMPOSE = IMAGE='$(IMAGE)' ROS_DOMAIN_ID='$(ROS_DOMAIN_ID)' RMW_IMPLEMENTATION='$(RMW_IMPLEMENTATION)' docker compose --project-name astro --file '$(REMOTE_DIR)/docker-compose.yml'
+ifneq ($(ROBOT_MODEL),burger)
+ifneq ($(ROBOT_MODEL),waffle)
+$(error ROBOT_MODEL must be burger or waffle)
+endif
+endif
 
-.PHONY: setup-buildx build ship deploy logs shell check-pi
+REMOTE_COMPOSE = IMAGE='$(IMAGE)' ROS_DOMAIN_ID='$(ROS_DOMAIN_ID)' RMW_IMPLEMENTATION='$(RMW_IMPLEMENTATION)' ASTRO_ROBOT_MODEL='$(ROBOT_MODEL)' docker compose --project-name astro --file '$(REMOTE_DIR)/docker-compose.yml'
+
+.PHONY: setup-buildx build ship deploy logs shell check-pi overlay-init overlay-deploy overlay-reset
 
 setup-buildx:
 	docker run --privileged --rm tonistiigi/binfmt:qemu-v9.2.2 --install arm64
@@ -42,3 +50,9 @@ logs: check-pi
 
 shell: check-pi
 	ssh -t "$(SSH_TARGET)" "$(REMOTE_COMPOSE) exec ros bash"
+
+overlay-init overlay-deploy overlay-reset: check-pi
+	PI="$(PI)" PI_USER="$(PI_USER)" IMAGE="$(IMAGE)" REMOTE_DIR="$(REMOTE_DIR)" \
+		ROS_DOMAIN_ID="$(ROS_DOMAIN_ID)" RMW_IMPLEMENTATION="$(RMW_IMPLEMENTATION)" ROBOT_MODEL="$(ROBOT_MODEL)" \
+		BUILD_JOBS="$(BUILD_JOBS)" PARALLEL_WORKERS="$(PARALLEL_WORKERS)" \
+		PACKAGE="$(PACKAGE)" bash scripts/overlay.sh "$@"

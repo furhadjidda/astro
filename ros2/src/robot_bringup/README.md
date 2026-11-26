@@ -13,6 +13,10 @@ ros2 launch robot_bringup robot_base.launch.py \
     microros_dev:=/dev/pimoroni_pico_2W
 ```
 
+Set `ASTRO_ROBOT_MODEL=burger` before launching to use the burger URDF;
+`waffle` is the default. This does not select odometry settings; the separate
+navigation launch reads the same environment variable on its own machine.
+
 ## Launch Arguments
 
 | Argument | Default | Description |
